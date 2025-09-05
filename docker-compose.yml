@@ -30,5 +30,13 @@ services:
     ports:
       - '5432:5432'
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
       - ./database/september3.sql:/docker-entrypoint-initdb.d/create_tables.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d DB"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  db_data:
