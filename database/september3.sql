@@ -97,6 +97,9 @@ across species". In this context, we'll have to identify a set of human
 "GWAS-identified SNPs". "SNP" means "single nucleotide polymorphism", a single
 letter change in the DNA code. I think that all of these will have to reside
 within a regulatory element, but I'll ask for confirmation later today.
+
+UPDATE: They do not have to reside in a regulatory element, but they should
+remain within the same window
 */
 CREATE TABLE gwas_variants (
     snp_id SERIAL PRIMARY KEY,
@@ -117,6 +120,9 @@ that we need to address. More specifically, I'm not 100% sure what
 give you a basic idea of the kind of data we want to find and
 process. Please remember to ask our client for clarification on 
 what visualizations she wants.
+
+UPDATE: I will restructure this because our main goal is to have
+a track/line paradigm for the visualizations
 */
 
 DO $$
