@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Comparative Regulatory Genomics</title>
+  <style>
+    /* Reset & Layout */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f9f9f9;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background-color: #004080;
+      color: white;
+      padding: 1rem 2rem;
+      font-size: 1.5rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    nav {
+      background: #e0e5ec;
+      padding: 0.5rem 1rem;
+      display: flex;
+      gap: 0.5rem;
+      font-weight: 600;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      flex-shrink: 0;
+    }
+    nav button {
+      background: none;
+      border: none;
+      padding: 0.6rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #004080;
+      border-bottom: 3px solid transparent;
+      transition: border-color 0.3s, background-color 0.3s, color 0.3s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    nav button:hover {
+      background-color: #cce0ff;
+    }
+    nav button.active {
+      border-bottom: 3px solid #004080;
+      font-weight: bold;
+      background-color: #a6c8ff;
+      color: #002550;
+    }
+    main {
+      flex-grow: 1;
+      max-width: 1100px;
+      width: 100%;
+      margin: 1rem auto 2rem;
+      padding: 1rem 1rem;
+      background: white;
+      box-shadow: 0 2px 6px rgb(0 0 0 / 0.1);
+      border-radius: 8px;
+      min-height: 60vh;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* Home */
+    #home .hero {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: #004080;
+      font-weight: 600;
+    }
+    #home .quick-search {
+      margin-bottom: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    #home input[type="text"],
+    #home button {
+      font-size: 1rem;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    #home input[type="text"] {
+      flex-grow: 1;
+      min-width: 200px;
+    }
+    #home button {
+      background-color: #0073e6;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      min-width: 100px;
+      transition: background-color 0.3s;
+    }
+    #home button:hover {
+      background-color: #005bb5;
+    }
+
+    /* Shared Headings & Text */
+    h2 {
+      color: #004080;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+    p {
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+
+    /* Data Browser grid layout - only on wider screens */
+    @media (min-width: 700px) {
+      #data-browser-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 2rem;
+      }
+    }
+
+    #gene-info {
+      padding: 0;
+      border: none;
+      margin-bottom: 1rem;
+    }
+    @media (min-width:700px){
+      #gene-info {
+        border-right: 1px solid #ccc;
+        padding-right: 1rem;
+        margin-bottom: 0;
+      }
+    }
+    #gene-info h2 {
+      margin-top: 0;
+    }
+    #gene-summary {
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    #stats {
+      margin-top: 1rem;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    #genome-browser {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      height: 350px;
+      background: #e8f0fe;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    #genome-browser h3 {
+      margin: 0;
+      padding: 0.5rem 1rem;
+      background: #004080;
+      color: white;
+      font-weight: 600;
+    }
+    #browser-placeholder {
+      padding: 1rem;
+      color: #666;
+      font-style: italic;
+      height: 275px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      text-align: center;
+    }
+    #variant-table {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      min-width: 600px;
+    }
+    th, td {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #004080;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f4f6fa;
+    }
+    #export-section {
+      margin-top: 1rem;
+      text-align: right;
+    }
+    #export-button {
+      background-color: #009900;
+      color: white;
+      padding: 0.5rem 1rem;
+      border: none;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #export-button:hover {
+      background-color: #006600;
+    }
+    #downloads ul {
+      list-style-type: disc;
+      margin-left: 1.5rem;
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    /* Responsive text adjustment */
+    @media (max-width: 600px) {
+      body {
+        font-size: 14px;
+      }
+      header {
+        font-size: 1.25rem;
+        padding: 1rem;
+      }
+      nav button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+      }
+      main {
+        margin: 0.5rem 1rem 1.5rem;
+        padding: 1rem;
+      }
+      #home input[type="text"] {
+        width: 100%;
+        margin-right: 0;
+      }
+      #home .quick-search {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+      #genome-browser {
+        height: 250px;
+      }
+      #browser-placeholder {
+        height: 200px;
+        font-size: 0.9rem;
+      }
+      table {
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>Comparative Regulatory Genomics</header>
+  <nav aria-label="Primary site navigation">
+    <button class="tablink active" data-tab="home" aria-selected="true">Home</button>
+    <button class="tablink" data-tab="explore" aria-selected="false">Explore Genes</button>
+    <button class="tablink" data-tab="data-browser" aria-selected="false">Data Browser</button>
+    <button class="tablink" data-tab="comparative" aria-selected="false">Comparative Views</button>
+    <button class="tablink" data-tab="downloads" aria-selected="false">Downloads</button>
+    <button class="tablink" data-tab="documentation" aria-selected="false">Documentation</button>
+  </nav>
+
+  <main>
+    <!-- Home -->
+    <section id="home" class="tab-content active" tabindex="0" aria-label="Home page">
+      <div class="hero">Explore cross-species conservation of disease-related regulatory regions</div>
+      <div class="quick-search">
+        <input type="text" aria-label="Search by gene symbol or SNP" placeholder="Search by gene symbol or SNP..." id="search-input" />
+        <button id="search-button">Search</button>
+      </div>
+      <p>Welcome to the Comparative Regulatory Genomics platform. Start by searching a gene or SNP to explore its regulatory landscape conservation across human, rhesus macaque, and mouse.</p>
+    </section>
+
+    <!-- Explore Genes -->
+    <section id="explore" class="tab-content" tabindex="0" aria-label="Explore Genes page">
+      <h2>Explore Genes</h2>
+      <p>Browse disease-related genes implicated in addiction, alcohol use, and stress response. Filter gene lists, view gene function summaries, and access relevant literature links here.</p>
+      <div id="gene-list-container">
+        <ul id="gene-list" style="list-style:none; padding-left:0; max-height:300px; overflow-y:auto; border:1px solid #ccc; border-radius:6px;"></ul>
+      </div>
+    </section>
+
+    <!-- Data Browser -->
+    <section id="data-browser" class="tab-content" tabindex="0" aria-label="Data Browser page">
+      <h2>Gene Overview & Genome Browser</h2>
+      <div id="data-browser-container">
+        <section id="gene-info">
+          <div id="gene-summary">
+            <p><strong>Gene:</strong> <span id="detail-gene-name"></span></p>
+            <p><strong>Description:</strong> <span id="detail-gene-desc"></span></p>
+            <p><strong>Orthologs:</strong> <span id="detail-gene-orthologs"></span></p>
+            <p><strong>GWAS Associations:</strong> <span id="detail-gene-gwas"></span></p>
+          </div>
+          <div id="stats" aria-label="Summary of regulatory element conservation and SNP overlap">
+            <p>Conserved regulatory elements: <span id="detail-conserved"></span>%</p>
+            <p>Divergent regulatory elements: <span id="detail-divergent"></span>%</p>
+            <p>SNPs in conserved regions: <span id="detail-snp-conserved"></span></p>
+            <p>SNPs in divergent regions: <span id="detail-snp-divergent"></span></p>
+          </div>
+        </section>
+        <section id="genome-browser" aria-label="Genome browser visualization">
+          <h3>Genome Browser (Human | Rhesus | Mouse)</h3>
+          <div id="browser-placeholder" aria-live="polite" aria-atomic="true">
+            [Interactive multi-species genome browser visualization placeholder]
+          </div>
+          <div id="variant-table">
+            <h3>GWAS Variant Summary</h3>
+            <table aria-label="Table of GWAS variants">
+              <thead>
+                <tr>
+                  <th>SNP ID</th>
+                  <th>Species</th>
+                  <th>Position</th>
+                  <th>Trait</th>
+                  <th>Conservation Status</th>
+                </tr>
+              </thead>
+              <tbody id="variant-table-body">
+              </tbody>
+            </table>
+          </div>
+          <div id="export-section">
+            <button id="export-button" onclick="alert('Download - Demo mode')">Download Results (CSV)</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- Comparative Views -->
+    <section id="comparative" class="tab-content" tabindex="0" aria-label="Comparative Views page">
+      <h2>Comparative Views</h2>
+      <p>This section offers aggregated visual comparisons of regulatory conservation and GWAS variant impacts across species.</p>
+      <p><em>[Placeholder for heatmaps, scatterplots, and summary tables]</em></p>
+    </section>
+
+    <!-- Downloads -->
+    <section id="downloads" class="tab-content" tabindex="0" aria-label="Downloads page">
+      <h2>Downloads</h2>
+      <p>Download datasets including gene regulatory region data, GWAS SNP annotations, and cross-species conservation scores.</p>
+      <ul>
+        <li>Gene regulatory region data</li>
+        <li>GWAS SNP annotations</li>
+        <li>Cross-species conservation scores</li>
+      </ul>
+      <p><em>[Placeholder for download links and dataset descriptions]</em></p>
+    </section>
+
+    <!-- Documentation -->
+    <section id="documentation" class="tab-content" tabindex="0" aria-label="Documentation page">
+      <h2>Documentation</h2>
+      <p>User guides, API references, and example workflows to assist researchers in using this platform effectively.</p>
+      <p><em>[Placeholder for detailed documentation and FAQs]</em></p>
+    </section>
+  </main>
+
+  <script>
+    // Hardcoded gene data - for demonstration & search simulation
+    const genes = [
+      {
+        symbol: "CREB1",
+        description: "cAMP responsive element binding protein 1, involved in transcriptional regulation relevant to addiction and stress response.",
+        orthologs: ["Rhesus macaque", "Mouse"],
+        gwasCount: 15,
+        conservedPercent: 78,
+        divergentPercent: 22,
+        snpConserved: 12,
+        snpDivergent: 3,
+        variants: [
+          {snp: "rs123456", species: "Human", pos: "chr2:124567890", trait: "Addiction", conservation: "Conserved"},
+          {snp: "rs234567", species: "Mouse", pos: "chr3:56789012", trait: "Stress Response", conservation: "Divergent"},
+          {snp: "rs345678", species: "Rhesus", pos: "chr5:98765432", trait: "Alcohol Use", conservation: "Conserved"}
+        ]
+      },
+      {
+        symbol: "DRD2",
+        description: "Dopamine receptor D2, a key gene in addiction pathways and psychiatric disorders.",
+        orthologs: ["Rhesus macaque", "Mouse"],
+        gwasCount: 10,
+        conservedPercent: 72,
+        divergentPercent: 28,
+        snpConserved: 8,
+        snpDivergent: 2,
+        variants: [
+          {snp: "rs456789", species: "Human", pos: "chr11:113456789", trait: "Addiction", conservation: "Conserved"},
+          {snp: "rs567890", species: "Mouse", pos: "chr10:56789010", trait: "Alcohol Use", conservation: "Divergent"}
+        ]
+      },
+      {
+        symbol: "SLC6A4",
+        description: "Serotonin transporter gene, implicated in stress response and mood disorders.",
+        orthologs: ["Rhesus macaque", "Mouse"],
+        gwasCount: 12,
+        conservedPercent: 80,
+        divergentPercent: 20,
+        snpConserved: 9,
+        snpDivergent: 3,
+        variants: [
+          {snp: "rs678901", species: "Human", pos: "chr17:67890123", trait: "Stress Response", conservation: "Conserved"},
+          {snp: "rs789012", species: "Rhesus", pos: "chr16:78901234", trait: "Mood Disorder", conservation: "Conserved"}
+        ]
+      },
+      {
+        symbol: "OPRM1",
+        description: "Mu opioid receptor gene involved in addiction and analgesic pathways.",
+        orthologs: ["Rhesus macaque", "Mouse"],
+        gwasCount: 6,
+        conservedPercent: 68,
+        divergentPercent: 32,
+        snpConserved: 4,
+        snpDivergent: 2,
+        variants: [
+          {snp: "rs890123", species: "Human", pos: "chr6:89012345", trait: "Addiction", conservation: "Conserved"},
+          {snp: "rs901234", species: "Mouse", pos: "chr4:90123456", trait: "Pain Response", conservation: "Divergent"}
+        ]
+      },
+      {
+        symbol: "FKBP5",
+        description: "Gene modulating stress hormone receptor sensitivity, linked to stress disorders.",
+        orthologs: ["Rhesus macaque", "Mouse"],
+        gwasCount: 8,
+        conservedPercent: 74,
+        divergentPercent: 26,
+        snpConserved: 6,
+        snpDivergent: 2,
+        variants: [
+          {snp: "rs012345", species: "Human", pos: "chr6:12345678", trait: "Stress Response", conservation: "Conserved"},
+          {snp: "rs123457", species: "Mouse", pos: "chr11:23456789", trait: "Stress Response", conservation: "Divergent"}
+        ]
+      }
+    ];
+
+    // Initialize Explore Genes list with all genes
+    function populateGeneList() {
+      const listContainer = document.getElementById('gene-list');
+      listContainer.innerHTML = '';
+      genes.forEach(gene => {
+        const li = document.createElement('li');
+        li.textContent = `${gene.symbol} - ${gene.description.substring(0, 60)}...`;
+        li.style.padding = '6px 12px';
+        li.style.cursor = 'pointer';
+        li.title = gene.description;
+        li.tabIndex = 0;
+        li.addEventListener('click', () => {
+          showGeneInDataBrowser(gene.symbol);
+          switchTabTo('data-browser');
+        });
+        listContainer.appendChild(li);
+      });
+    }
+
+    // Fill Data Browser details for selected gene symbol
+    function showGeneInDataBrowser(symbol) {
+      const gene = genes.find(g => g.symbol.toLowerCase() === symbol.toLowerCase());
+      if (!gene) {
+        alert('Gene not found.');
+        return;
+      }
+      document.getElementById('detail-gene-name').textContent = gene.symbol;
+      document.getElementById('detail-gene-desc').textContent = gene.description;
+      document.getElementById('detail-gene-orthologs').textContent = gene.orthologs.join(', ');
+      document.getElementById('detail-gene-gwas').textContent = gene.gwasCount + ' SNPs associated';
+      document.getElementById('detail-conserved').textContent = gene.conservedPercent;
+      document.getElementById('detail-divergent').textContent = gene.divergentPercent;
+      document.getElementById('detail-snp-conserved').textContent = gene.snpConserved;
+      document.getElementById('detail-snp-divergent').textContent = gene.snpDivergent;
+
+      // Populate variant table
+      const tbody = document.getElementById('variant-table-body');
+      tbody.innerHTML = '';
+      gene.variants.forEach(v => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${v.snp}</td>
+          <td>${v.species}</td>
+          <td>${v.pos}</td>
+          <td>${v.trait}</td>
+          <td>${v.conservation}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Tab switching - common function
+    function switchTabTo(tabId) {
+      document.querySelectorAll('nav button.tablink').forEach(btn => {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+        btn.setAttribute('tabindex', '-1');
+      });
+      document.querySelectorAll('main .tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      const btn = document.querySelector(`nav button[data-tab="${tabId}"]`);
+      const content = document.getElementById(tabId);
+      if (btn && content) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        btn.setAttribute('tabindex', '0');
+        content.classList.add('active');
+        content.focus();
+      }
+    }
+
+    // Add event listeners to nav buttons
+    document.querySelectorAll('nav button.tablink').forEach(button => {
+      button.addEventListener('click', () => {
+        switchTabTo(button.getAttribute('data-tab'));
+      });
+    });
+
+    // Search button functionality
+    document.getElementById('search-button').addEventListener('click', () => {
+      const val = document.getElementById('search-input').value.trim();
+      if (!val) {
+        alert('Please enter a gene symbol or SNP.');
+        return;
+      }
+      // Simple search for gene symbol match
+      const gene = genes.find(g => g.symbol.toLowerCase() === val.toLowerCase());
+      if (gene) {
+        showGeneInDataBrowser(gene.symbol);
+        switchTabTo('data-browser');
+        return;
+      }
+      // If no gene match, search all variants for SNP match
+      for (const g of genes) {
+        const variant = g.variants.find(v => v.snp.toLowerCase() === val.toLowerCase());
+        if (variant) {
+          showGeneInDataBrowser(g.symbol);
+          switchTabTo('data-browser');
+          return;
+        }
+      }
+      alert('No matching gene or SNP found.');
+    });
+
+    // Initialize gene list on page load
+    populateGeneList();
+  </script>
+</body>
+</html>
