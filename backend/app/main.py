@@ -12,7 +12,7 @@ conn = engine.connect()
 metadata_obj = MetaData()
 metadata_obj.create_all(engine)
 # Gets table information from existing database
-some_table = Table("species", metadata_obj, autoload_with=engine)
+some_table = Table("genes", metadata_obj, autoload_with=engine)
 
 Session = sessionmaker(engine)
 session = Session()
