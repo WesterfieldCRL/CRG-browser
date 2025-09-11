@@ -20,11 +20,16 @@ export default function Page() {
     // Call endpoint
   }
 
-  function handleOutputClick() {
+  async function handleOutputClick() {
     //setOutput("Data go here");
     setOutputClicked(true);
     // Call endpoint
-
+    try {
+    const response = await axios.get('/get/species?name=' + input);
+      setOutput(response.data);
+    } catch (error) {
+      console.error(error);
+    }
     setOutput("data goes here");
   }
 

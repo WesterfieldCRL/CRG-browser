@@ -12,7 +12,7 @@ conn = engine.connect()
 metadata_obj = MetaData()
 metadata_obj.create_all(engine)
 # Gets table information from existing database
-species_table = Table("genes", metadata_obj, autoload_with=engine)
+genes_table = Table("genes", metadata_obj, autoload_with=engine)
 
 Session = sessionmaker(engine)
 session = Session()
@@ -34,7 +34,7 @@ app = FastAPI(lifespan=lifespan)
 # Dummy endpoint
 @app.get("/")
 async def root():
-    stmt = select('*').select_from(species_table)
+    stmt = select('*').select_from(genes_table)
 
     result = session.execute(stmt)
 
@@ -51,7 +51,7 @@ async def root():
 @app.get("/get/species")
 async def get_species(name: str):
 
-    stmt = select(species_table).where(species_table.c.scientific_name == name)
+    stmt = select(genes_table).where(genes_table.c.scientific_name == name)
     result = session.execute(stmt).all()
     users = [dict(row._mapping) for row in result]
 
