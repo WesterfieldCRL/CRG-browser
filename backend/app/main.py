@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine, Table, MetaData, select
 from sqlalchemy.orm import sessionmaker
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Connect to PostgreSQL database
@@ -31,6 +32,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+origins = [
+    "http://localhost:5432",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Dummy endpoint
 @app.get("/")
 async def root():
@@ -51,7 +65,7 @@ async def root():
 @app.get("/get/species")
 async def get_species(name: str):
 
-    stmt = select(genes_table).where(genes_table.c.scientific_name == name)
+    stmt = select(genes_table).where(genes_table.c.species == name)
     result = session.execute(stmt).all()
     users = [dict(row._mapping) for row in result]
 
