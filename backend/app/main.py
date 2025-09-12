@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Table, MetaData, select, insert
 from sqlalchemy.orm import sessionmaker
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 
 # Connect to PostgreSQL database
@@ -71,11 +72,19 @@ async def get_species(name: str):
 
     return users
 
+class Gene_Model(BaseModel) :
+    gene_id: str 
+    species: str
+    human_gene_name: str
+    chromosome: int
+    start_position: int
+    end_position: int
+
 # This endpoint will insert a given item into the genes table
 @app.post("/insert_genes")
-async def insert_species(gene_id_input: str, species_input: str, human_gene_name_input: str, chromosome_input: int, start_position_input: int, end_position_input: int):
-    stmt = insert(genes_table).values(gene_id=gene_id_input, species=species_input, 
-                                      human_gene_name=human_gene_name_input, chromosome=chromosome_input, 
-                                      start_position=start_position_input, end_position=end_position_input)
+async def insert_species(gene_model: Gene_Model):
+    stmt = insert(genes_table).values(gene_id=gene_model.gene_id, species=gene_model.species, 
+                                      human_gene_name=gene_model.human_gene_name, chromosome=gene_model.chromosome, 
+                                      start_position=gene_model.start_position, end_position=gene_model.end_position)
     result = session.execute(stmt)
     return result
