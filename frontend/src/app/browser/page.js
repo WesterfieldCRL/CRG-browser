@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 // THIS IS NOT A FINAL PAGE, JUST A TEMP PAGE TO TEST THE BROWSER FUNCTIONALITY
 // TODO: Remove Json viewer dependency once not needed
 
+
 export default function Page() {
   const[input, setInput] = React.useState("");
   const[outputClicked, setOutputClicked] = React.useState(false);
@@ -18,6 +19,11 @@ export default function Page() {
 
   function handleInputClick(data) {
     // Call endpoint
+    try {
+      const response = axios.post("http://localhost:8000/insert_genes", data);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   async function handleOutputClick() {
