@@ -1,7 +1,9 @@
 from fastapi import FastAPI
-from sqlalchemy import create_engine, Table, MetaData, select
+from sqlalchemy import create_engine, Table, MetaData, select, insert
 from sqlalchemy.orm import sessionmaker
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 
 # Connect to PostgreSQL database
@@ -12,7 +14,7 @@ conn = engine.connect()
 metadata_obj = MetaData()
 metadata_obj.create_all(engine)
 # Gets table information from existing database
-some_table = Table("genes", metadata_obj, autoload_with=engine)
+genes_table = Table("genes", metadata_obj, autoload_with=engine)
 
 Session = sessionmaker(engine)
 session = Session()
@@ -31,10 +33,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+origins = [
+    "http://localhost:5432",
+    "http://localhost:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Dummy endpoint
 @app.get("/")
 async def root():
-    stmt = select('*').select_from(some_table)
+    stmt = select('*').select_from(genes_table)
 
     result = session.execute(stmt)
 
@@ -43,3 +58,33 @@ async def root():
         output += str(row) + "\n"
 
     return {output}
+
+
+# This endpoint will return all elements in the table matching the given name
+# example: 
+#           given "Homo sapiens" this endpoint will return ('Homo sapiens', 'human', 'GRCh38'),
+@app.get("/get_genes")
+async def get_species(name: str):
+
+    stmt = select(genes_table).where(genes_table.c.species == name)
+    result = session.execute(stmt).all()
+    users = [dict(row._mapping) for row in result]
+
+    return users
+
+class Gene_Model(BaseModel) :
+    gene_id: str 
+    species: str
+    human_gene_name: str
+    chromosome: int
+    start_position: int
+    end_position: int
+
+# This endpoint will insert a given item into the genes table
+@app.post("/insert_genes")
+async def insert_species(gene_model: Gene_Model):
+    stmt = insert(genes_table).values(gene_id=gene_model.gene_id, species=gene_model.species, 
+                                      human_gene_name=gene_model.human_gene_name, chromosome=gene_model.chromosome, 
+                                      start_position=gene_model.start_position, end_position=gene_model.end_position)
+    result = session.execute(stmt)
+    return result
