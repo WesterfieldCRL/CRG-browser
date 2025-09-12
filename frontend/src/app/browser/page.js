@@ -17,7 +17,6 @@ export default function Page() {
   const onSubmit = data => handleInputClick(data);
 
   function handleInputClick(data) {
-    setInput(data.example);
     // Call endpoint
   }
 
@@ -26,7 +25,7 @@ export default function Page() {
     setOutputClicked(true);
     // Call endpoint
     try {
-    const response = await axios.get("http://localhost:8000/get/species?name=" + input);
+    const response = await axios.get("http://localhost:8000/get_genes?name=" + input);
       setOutput(response.data);
     } catch (error) {
       setOutput("Error fetching data");
@@ -44,18 +43,29 @@ export default function Page() {
       <form onSubmit={handleSubmit(onSubmit)} style={{display: "flex",  gap: "10px"}}>
         <input type="submit" />
 
-        <input {...register("example", { required: true })} className='border'/>
-        {errors.example && <span>This field is required</span>}
+        <input {...register("gene_id", { required: true })} placeholder="gene_id" className='border'/>
+        {errors.gene_id && <span>This field is required</span>}
 
-        <input {...register("exampleRequired", { required: true })} className='border'/>
-        {errors.exampleRequired && <span>This field is required</span>}
+        <input {...register("species", { required: true })} className='border' placeholder="species"/>
+        {errors.species && <span>This field is required</span>}
+
+        <input {...register("human_gene_name", { required: true })} className='border' placeholder="human_gene_name"/>
+        {errors.human_gene_name && <span>This field is required</span>}
+
+        <input {...register("chromosome", { required: true })} className='border' placeholder="chromosome"/>
+        {errors.chromosome && <span>This field is required</span>}
+
+        <input {...register("start_position", { required: true })} className='border' placeholder="start_position"/>
+        {errors.start_position && <span>This field is required</span>}
+
+        <input {...register("end_position", { required: true })} className='border' placeholder="end_position"/>
+        {errors.end_position && <span>This field is required</span>}
       </form>
       <div style={{display: "flex",  gap: "10px"}}>
         <button onClick={handleOutputClick}>Search for gene</button>
         <input className="border" type="text" name="name" value={input} onChange={handleChange}/>
       </div>
-      {outputClicked ? 
-        <JSONTree data={output} /> : ""}
+      {outputClicked ? <JSONTree data={output} /> : ""}
       
     </div>
   );

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from sqlalchemy import create_engine, Table, MetaData, select
+from sqlalchemy import create_engine, Table, MetaData, select, insert
 from sqlalchemy.orm import sessionmaker
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,7 +62,7 @@ async def root():
 # This endpoint will return all elements in the table matching the given name
 # example: 
 #           given "Homo sapiens" this endpoint will return ('Homo sapiens', 'human', 'GRCh38'),
-@app.get("/get/species")
+@app.get("/get_genes")
 async def get_species(name: str):
 
     stmt = select(genes_table).where(genes_table.c.species == name)
@@ -70,3 +70,12 @@ async def get_species(name: str):
     users = [dict(row._mapping) for row in result]
 
     return users
+
+# This endpoint will insert a given item into the genes table
+@app.post("/insert_genes")
+async def insert_species(gene_id_input: str, species_input: str, human_gene_name_input: str, chromosome_input: int, start_position_input: int, end_position_input: int):
+    stmt = insert(genes_table).values(gene_id=gene_id_input, species=species_input, 
+                                      human_gene_name=human_gene_name_input, chromosome=chromosome_input, 
+                                      start_position=start_position_input, end_position=end_position_input)
+    result = session.execute(stmt)
+    return result
