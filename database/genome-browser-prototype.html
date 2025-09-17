@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kiron's Genome Browser</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    background:#f4f7fa;
+    margin:0; padding:0;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  h1 {
+    text-align:center;
+    margin:30px 0 15px;
+    font-size:2.2em;
+    color:#243b53;
+  }
+  .controls {
+    margin-bottom:20px;
+    background:white;
+    padding:12px 20px;
+    border-radius:8px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.08);
+  }
+  select {
+    font-size:15px;
+    padding:6px 10px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    background:#fff;
+  }
+  .browser {
+    overflow-x:auto;
+    border:1px solid #ccc;
+    padding:20px;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 3px 12px rgba(0,0,0,0.08);
+    margin-bottom:20px;
+    width:85%;
+  }
+  .track { margin:25px 0; }
+  .track-label {
+    font-weight:bold;
+    font-size:16px;
+    margin-bottom:8px;
+    color:#243b53;
+  }
+  .sequence { display:inline-block; white-space:pre; }
+  .nucleotide {
+    display:inline-block;
+    padding:4px;
+    margin:1px;
+    border-radius:4px;
+    cursor:pointer;
+    min-width:18px;
+    text-align:center;
+    font-size:13px;
+    transition:transform 0.1s ease;
+  }
+  .nucleotide:hover { transform:scale(1.15); }
+  .conserved { background:#bde5d2; } /* pastel teal */
+  .divergent { background:#fddac2; } /* soft peach */
+  .regulatory { background:#ffe066 !important; color:black; } /* sunflower yellow */
+  .snp { background:#1976d2 !important; color:white !important; } /* deep blue */
+  .summary {
+    margin:20px 0;
+    font-weight:bold;
+    font-size:15px;
+    background:white;
+    padding:12px 18px;
+    border-radius:8px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.08);
+    color:#243b53;
+  }
+  .tooltip {
+    position:absolute;
+    padding:5px 10px;
+    background:#333;
+    color:#fff;
+    border-radius:5px;
+    font-size:12px;
+    display:none;
+    z-index:10;
+  }
+  #popup {
+    position:fixed;
+    top:20%;
+    left:50%; transform:translateX(-50%);
+    width:480px;
+    background:white;
+    border:2px solid #334e68;
+    padding:20px;
+    display:none;
+    z-index:20;
+    border-radius:10px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  }
+  #popup h3 { margin-top:0; color:#102a43; }
+  #popup button {
+    margin-top:15px;
+    padding:6px 14px;
+    font-size:14px;
+    border:none;
+    border-radius:6px;
+    background:#334e68;
+    color:white;
+    cursor:pointer;
+  }
+  #popup button:hover { background:#486581; }
+</style>
+</head>
+<body>
+  <h1>Kiron's Genome Browser</h1>
+  <div class="controls">
+    <label for="geneSelect"><strong>Select Gene:</strong></label>
+    <select id="geneSelect"></select>
+  </div>
+
+  <div class="browser" id="browser"></div>
+  <div class="summary" id="summary"></div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <div id="popup">
+    <h3>Details</h3>
+    <div id="popupContent"></div>
+    <button onclick="closePopup()">Close</button>
+  </div>
+
+<script>
+/* Dataset with only descriptions/annotations (sequences generated dynamically) */
+const dataset = {
+  "DRD4": {
+    description: "Dopamine receptor D4, a GPCR involved in dopamine signaling, attention, novelty-seeking behavior, ADHD risk.",
+    annotations: {
+      "Homo sapiens":    { regulatory:[{start:35,end:45,type:"Promoter"}], snps:[{pos:15,ref:"G",alt:"C"}] },
+      "Mus musculus":    { regulatory:[{start:50,end:60,type:"Enhancer"}], snps:[{pos:70,ref:"A",alt:"T"}] },
+      "Macaca mulatta":  { regulatory:[{start:80,end:90,type:"Enhancer"}], snps:[{pos:20,ref:"C",alt:"A"}] }
+    }
+  },
+  "CHRNA6": {
+    description: "Nicotinic acetylcholine receptor alpha-6 subunit, expressed in midbrain dopamine neurons; modulates addiction and Parkinson’s disease pathways.",
+    annotations: {
+      "Homo sapiens":    { regulatory:[{start:5,end:15,type:"Promoter"}], snps:[{pos:30,ref:"C",alt:"T"}] },
+      "Mus musculus":    { regulatory:[{start:40,end:50,type:"Enhancer"}], snps:[{pos:75,ref:"G",alt:"A"}] },
+      "Macaca mulatta":  { regulatory:[{start:60,end:70,type:"Promoter"}], snps:[{pos:10,ref:"A",alt:"G"}] }
+    }
+  },
+  "ALDH1A4-AS1": {
+    description: "Long non-coding RNA antisense to ALDH1A4 gene; implicated in transcriptional regulation and metabolic processes.",
+    annotations: {
+      "Homo sapiens":    { regulatory:[{start:20,end:30,type:"Enhancer"}], snps:[{pos:55,ref:"A",alt:"G"}] },
+      "Mus musculus":    { regulatory:[{start:10,end:18,type:"Promoter"}], snps:[{pos:25,ref:"C",alt:"T"}] },
+      "Macaca mulatta":  { regulatory:[{start:70,end:80,type:"Silencer"}], snps:[{pos:5,ref:"T",alt:"C"}] }
+    }
+  }
+};
+
+/* Generate random genome sequence of length len */
+function randomSeq(len=100){
+  const bases=["A","T","C","G"];
+  let out="";
+  for(let i=0;i<len;i++){
+    out+=bases[Math.floor(Math.random()*4)];
+  }
+  return out;
+}
+
+/* Generate more conserved sequences for two randomly chosen genes */
+function generateSequencesWithBias(){
+  // pick 2 genes to bias for conservation
+  const geneKeys=Object.keys(dataset);
+  const shuffled=[...geneKeys].sort(()=>0.5-Math.random());
+  const conservedGenes=shuffled.slice(0,2);
+  const divergentGenes=shuffled.slice(2);
+
+  // assign sequences for conserved genes: species similar with few differences
+  conservedGenes.forEach(g=>{
+    const baseSeq=randomSeq(100);
+    dataset[g].sequences={
+      "Homo sapiens":baseSeq,
+      "Mus musculus":mutateSequence(baseSeq,3), // very few mutations
+      "Macaca mulatta":mutateSequence(baseSeq,3)
+    };
+  });
+  // assign sequences for divergent gene: all random full
+  divergentGenes.forEach(g=>{
+    dataset[g].sequences={
+      "Homo sapiens":randomSeq(100),
+      "Mus musculus":randomSeq(100),
+      "Macaca mulatta":randomSeq(100)
+    };
+  });
+}
+
+/* Slightly mutate a sequence at n random positions */
+function mutateSequence(seq,n){
+  const bases=["A","T","C","G"];
+  let chars=seq.split("");
+  for(let j=0;j<n;j++){
+    let idx=Math.floor(Math.random()*chars.length);
+    const newBase=bases[Math.floor(Math.random()*4)];
+    chars[idx]=newBase;
+  }
+  return chars.join("");
+}
+
+/* Conservation check */
+function isConserved(position,seqs){
+  const bases=Object.values(seqs).map(s=>s[position]);
+  return bases.every(b=>b===bases[0]);
+}
+
+/* Render genome browser */
+const browser=document.getElementById("browser");
+const tooltip=document.getElementById("tooltip");
+const popup=document.getElementById("popup");
+const popupContent=document.getElementById("popupContent");
+const summary=document.getElementById("summary");
+const geneSelect=document.getElementById("geneSelect");
+
+function render(geneName){
+  const data=dataset[geneName];
+  const seqs=data.sequences;
+  const annots=data.annotations;
+  browser.innerHTML="";
+  let conservedCount=0,divergentCount=0;
+  const seqLength=seqs["Homo sapiens"].length;
+
+  for(let i=0;i<seqLength;i++){
+    if(isConserved(i,seqs)) conservedCount++; else divergentCount++;
+  }
+
+  for(const [species,seq] of Object.entries(seqs)){
+    const track=document.createElement("div");
+    track.className="track";
+    const label=document.createElement("div");
+    label.className="track-label";
+    label.textContent=species;
+    track.appendChild(label);
+
+    const seqSpan=document.createElement("div");
+    seqSpan.className="sequence";
+
+    for(let i=0;i<seq.length;i++){
+      const base=document.createElement("span");
+      base.className="nucleotide";
+      base.textContent=seq[i];
+      const conserved=isConserved(i,seqs);
+      base.classList.add(conserved?"conserved":"divergent");
+
+      let tooltipText=`Position ${i} | Base:${seq[i]} | ${conserved?"Conserved":"Divergent"}`;
+
+      annots[species].regulatory.forEach(reg=>{
+        if(i>=reg.start && i<=reg.end){
+          base.classList.add("regulatory");
+          tooltipText+=` | Regulatory: ${reg.type}`;
+        }
+      });
+      annots[species].snps.forEach(snp=>{
+        if(i===snp.pos){
+          base.classList.add("snp");
+          tooltipText+=` | SNP: ${snp.ref}->${snp.alt}`;
+        }
+      });
+
+      base.dataset.tooltip=tooltipText;
+      base.addEventListener("mouseover",e=>{
+        tooltip.style.display="block";
+        tooltip.textContent=base.dataset.tooltip;
+        tooltip.style.left=(e.pageX+10)+"px";
+        tooltip.style.top=(e.pageY+10)+"px";
+      });
+      base.addEventListener("mouseout",()=>tooltip.style.display="none");
+
+      base.addEventListener("click",()=>{
+        let detail=`<p><strong>Gene:</strong> ${geneName}</p>
+        <p><strong>Description:</strong> ${data.description}</p>
+        <p><strong>Species:</strong> ${species}</p>
+        <p><strong>Position:</strong> ${i}</p>
+        <p><strong>Base:</strong> ${seq[i]}</p>
+        <p><strong>Status:</strong> ${conserved? "Conserved":"Divergent"}</p>`;
+        annots[species].regulatory.forEach(reg=>{
+          if(i>=reg.start && i<=reg.end){
+            detail+=`<p><strong>Regulatory Element:</strong> ${reg.type} (${reg.start}-${reg.end})</p>`;
+          }
+        });
+        annots[species].snps.forEach(snp=>{
+          if(i===snp.pos){
+            detail+=`<p><strong>SNP:</strong> ${snp.ref}→${snp.alt}</p>`;
+          }
+        });
+        popupContent.innerHTML=detail;
+        popup.style.display="block";
+      });
+
+      seqSpan.appendChild(base);
+    }
+    track.appendChild(seqSpan);
+    browser.appendChild(track);
+  }
+
+  summary.textContent=`Gene length: ${seqLength} | Conserved positions: ${conservedCount} | Divergent positions: ${divergentCount}`;
+}
+function closePopup(){popup.style.display="none";}
+
+/* Init */
+generateSequencesWithBias();
+Object.keys(dataset).forEach(g=>{
+  let opt=document.createElement("option");
+  opt.value=g; opt.textContent=g;
+  geneSelect.appendChild(opt);
+});
+geneSelect.addEventListener("change",()=>render(geneSelect.value));
+
+geneSelect.value="DRD4";
+render("DRD4");
+</script>
+</body>
+</html>
