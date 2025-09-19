@@ -4,10 +4,13 @@ import React from 'react';
 import axios from "axios";
 import { JSONTree } from 'react-json-tree';
 import { useForm } from "react-hook-form";
+import { Tracker } from '@/components/Tracker'
 
 // THIS IS NOT A FINAL PAGE, JUST A TEMP PAGE TO TEST THE BROWSER FUNCTIONALITY
 // TODO: Remove Json viewer dependency once not needed
 
+
+const data = [  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-red-600", tooltip: "Error" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-red-600", tooltip: "Error" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-yellow-600", tooltip: "Warn" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },  { color: "bg-emerald-600", tooltip: "Tracker Info" },]
 
 export default function Page() {
   const[input, setInput] = React.useState("");
@@ -46,6 +49,7 @@ export default function Page() {
   return (
     <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
       <p>Data Browser Temp Page</p>
+      <Tracker data={data} hoverEffect={true} />
       <form onSubmit={handleSubmit(onSubmit)} style={{display: "flex",  gap: "10px"}}>
         <input type="submit" />
 
