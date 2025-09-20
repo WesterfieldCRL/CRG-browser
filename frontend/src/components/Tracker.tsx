@@ -11,6 +11,7 @@ interface TrackerBlockProps {
   tooltip?: string
   hoverEffect?: boolean
   defaultBackgroundColor?: string
+  label?: string
 }
 
 const Block = ({
@@ -18,6 +19,7 @@ const Block = ({
   tooltip,
   defaultBackgroundColor,
   hoverEffect,
+  label,
 }: TrackerBlockProps) => {
   const [open, setOpen] = React.useState(false)
   return (
@@ -36,7 +38,14 @@ const Block = ({
               color || defaultBackgroundColor,
               hoverEffect ? "hover:opacity-50" : "",
             )}
-          />
+          >
+            <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+        }}>{label}</div>
+          </div>
         </div>
       </HoverCardPrimitives.Trigger>
       <HoverCardPrimitives.Portal>
