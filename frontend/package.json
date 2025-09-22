@@ -16,11 +16,7 @@
     "geist": "^1.5.1",
     "next": "15.5.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "react-hook-form": "^7.62.0",
-    "react-json-tree": "^0.20.0",
-    "tailwind-merge": "^3.3.1",
-    "tailwind-variants": "^3.1.1"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
