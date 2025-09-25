@@ -5,6 +5,7 @@ interface PageNavigationProps {
   totalPages: number;
   setPageIndex: React.Dispatch<React.SetStateAction<number>>;
   sequences: Record<string, string>;
+  selectedGene: string; // Added selectedGene prop to customize FASTA output
 }
 
 export default function PageNavigation({
@@ -12,15 +13,17 @@ export default function PageNavigation({
   totalPages,
   setPageIndex,
   sequences,
+  selectedGene,
 }: PageNavigationProps) {
+  // State to control page number input box (1-based for user friendliness)
   const [inputPage, setInputPage] = useState<string>((pageIndex + 1).toString());
 
-  // Keep input in sync if pageIndex changes outside input (e.g. Prev/Next buttons)
+  // Keep input box synced with external programmatic page changes
   useEffect(() => {
     setInputPage((pageIndex + 1).toString());
   }, [pageIndex]);
 
-  // Allow only digits or empty string in the input field
+  // Allow only digits or empty string in input box
   function handlePageInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     if (/^\d*$/.test(val)) {
@@ -28,15 +31,16 @@ export default function PageNavigation({
     }
   }
 
-  // Navigate to page on blur or enter press
+  // Validate and navigate when input loses focus or enter key pressed
   function navigateToPage() {
     const num = parseInt(inputPage);
     if (!isNaN(num)) {
+      // Clamp page number within valid range
       const clamped = Math.min(Math.max(num, 1), totalPages);
       setPageIndex(clamped - 1);
       setInputPage(clamped.toString());
     } else {
-      // Reset invalid input to current page
+      // Reset input if invalid
       setInputPage((pageIndex + 1).toString());
     }
   }
@@ -52,25 +56,32 @@ export default function PageNavigation({
     }
   }
 
-  // Adjust input width based on number of digits entered + 1 char buffer
+  // Input width dynamically adjusts per number length (+4 chars extra for comfort)
   const inputWidth = Math.max(inputPage.length, 1) + 4;
 
-  // Prepare FASTA download
+  // Handles download of sequences as FASTA file with gene and species in header
   function handleDownload() {
+    // Compose FASTA formatted content, header = >{gene}|{species}
     const content = Object.entries(sequences)
-      .map(([species, seq]) => `>${species}\n${seq}`)
+      .map(([species, seq]) => `>${selectedGene}|${species}\n${seq}`)
       .join("\n");
+
+    // Filename includes gene name
+    const fileName = `sequences-${selectedGene}.fasta`;
+
+    // Create blob and simulate anchor click to download file
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "sequences.fasta";
+    a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return (
     <div className="page-nav">
+      {/* Prev button disables on first page */}
       <button
         onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
         disabled={pageIndex === 0}
@@ -78,6 +89,7 @@ export default function PageNavigation({
         ← Prev
       </button>
 
+      {/* Page input for direct page number navigation */}
       <span>
         Page{" "}
         <input
@@ -105,6 +117,7 @@ export default function PageNavigation({
         of {totalPages}
       </span>
 
+      {/* Next button disables on last page */}
       <button
         onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
         disabled={pageIndex === totalPages - 1}
@@ -112,8 +125,10 @@ export default function PageNavigation({
         Next →
       </button>
 
+      {/* Download button triggers FASTA download */}
       <button onClick={handleDownload}>Download Sequences</button>
 
+      {/* Inline CSS for styling the navigation */}
       <style>{`
         .page-nav {
           margin: 20px 0;
