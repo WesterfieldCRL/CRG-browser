@@ -1,43 +1,36 @@
-from fastapi import FastAPI
-from sqlalchemy import create_engine, Table, MetaData, select, insert
+from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from sqlalchemy import create_engine, Table, MetaData, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker
-from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 
+# Database connection URL - update as necessary
+DATABASE_URL = "postgresql+psycopg2://postgres:postgres@db:5432/DB"
 
-# Connect to PostgreSQL database
-engine = create_engine("postgresql+psycopg2://postgres:postgres@db:5432/DB")
-conn = engine.connect()
+# Create SQLAlchemy engine and metadata object
+engine = create_engine(DATABASE_URL)
+metadata = MetaData()
 
-# Loads exisitng table metadata
-metadata_obj = MetaData()
-metadata_obj.create_all(engine)
-# Gets table information from existing database
-genes_table = Table("genes", metadata_obj, autoload_with=engine)
+# Reflect existing tables from the database
+genes_table = Table("genes", metadata, autoload_with=engine)
+regulatory_elements_table = Table("regulatory_elements", metadata, autoload_with=engine)
+snps_table = Table("snps", metadata, autoload_with=engine)
 
-Session = sessionmaker(engine)
+# Create a configured "Session" class and session instance
+Session = sessionmaker(bind=engine)
 session = Session()
 
-# Runs on startup and must finish before accepting requests
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Starting up...")
+# Initialize FastAPI app
+app = FastAPI()
 
-    # Runs on shutdown
-    yield
-    print("Shutting down...")
-    session.close()
-    conn.close()
-
-
-app = FastAPI(lifespan=lifespan)
-
+# CORS origins allowed to communicate with this backend
 origins = [
     "http://localhost:5432",
     "http://localhost:3000",
 ]
 
+# Add CORS middleware to allow frontend communication
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -46,45 +39,201 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dummy endpoint
-@app.get("/")
-async def root():
-    stmt = select('*').select_from(genes_table)
 
+# Pydantic models for request validation and serialization
+
+class GeneModel(BaseModel):
+    gene_id: str = Field(..., description="Unique gene identifier")
+    species: str = Field(..., description="Species name")
+    human_gene_name: str = Field(..., description="Human gene symbol")
+    chromosome: int = Field(..., ge=1, le=30, description="Chromosome number (1-30)")
+    start_position: int = Field(..., ge=0, description="Genomic start coordinate")
+    end_position: int = Field(..., ge=0, description="Genomic end coordinate")
+    aligned_sequence: Optional[str] = Field("ABC", description="Aligned DNA sequence placeholder")
+
+
+class RegulatoryElementModel(BaseModel):
+    element_id: Optional[int] = Field(None, description="Regulatory element ID")
+    species: str = Field(..., description="Species name")
+    chromosome: int = Field(..., ge=1, le=30, description="Chromosome number (1-30)")
+    start_position: int = Field(..., ge=0, description="Start coordinate")
+    end_position: int = Field(..., ge=0, description="End coordinate")
+    element_type: str = Field(..., description="Type of regulatory element")
+    description: Optional[str] = Field(None, description="Optional regulatory element description")
+
+
+class SNPModel(BaseModel):
+    snp_id: str = Field(..., description="SNP identifier (e.g., rsID)")
+    species: str = Field(..., description="Species name")
+    chromosome: int = Field(..., ge=1, le=30, description="Chromosome number (1-30)")
+    position: int = Field(..., ge=0, description="SNP genomic coordinate")
+    reference_allele: str = Field(..., min_length=1, max_length=1, description="Reference nucleotide (A,C,G,T)")
+    alternate_allele: str = Field(..., min_length=1, max_length=1, description="Alternate nucleotide (A,C,G,T)")
+    consequence: Optional[str] = Field(None, description="Functional annotation")
+    gene_id: Optional[str] = Field(None, description="Linked gene identifier")
+
+
+# --- Gene Endpoints ---
+
+@app.get("/genes/", response_model=List[GeneModel])
+def get_genes(species: Optional[str] = Query(None, description="Filter by species")):
+    """
+    Get genes filtered by species if specified.
+    """
+    stmt = select(genes_table)
+    if species:
+        stmt = stmt.where(genes_table.c.species == species)
+    results = session.execute(stmt).fetchall()
+    return [dict(row._mapping) for row in results]
+
+
+@app.get("/genes/{gene_id}", response_model=GeneModel)
+def get_gene(gene_id: str):
+    """
+    Get a single gene by gene_id.
+    Raises 404 if not found.
+    """
+    stmt = select(genes_table).where(genes_table.c.gene_id == gene_id)
+    result = session.execute(stmt).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="Gene not found")
+    return dict(result._mapping)
+
+
+@app.post("/genes/", status_code=201)
+def insert_gene(gene: GeneModel):
+    """
+    Insert a new gene.
+    Fail if gene_id already exists.
+    """
+    exists = session.execute(select(genes_table).where(genes_table.c.gene_id == gene.gene_id)).first()
+    if exists:
+        raise HTTPException(status_code=400, detail="Gene ID already exists")
+    stmt = insert(genes_table).values(**gene.dict())
+    session.execute(stmt)
+    session.commit()
+    return {"status": "Gene inserted"}
+
+
+@app.put("/genes/{gene_id}")
+def update_gene(gene_id: str, gene: GeneModel):
+    """
+    Update an existing gene by gene_id.
+    """
+    stmt = update(genes_table).where(genes_table.c.gene_id == gene_id).values(**gene.dict())
     result = session.execute(stmt)
-
-    output = ""
-    for row in result:
-        output += str(row) + "\n"
-
-    return {output}
+    session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Gene not found")
+    return {"status": "Gene updated"}
 
 
-# This endpoint will return all elements in the table matching the given name
-# example: 
-#           given "Homo sapiens" this endpoint will return ('Homo sapiens', 'human', 'GRCh38'),
-@app.get("/get_genes")
-async def get_species(name: str):
-
-    stmt = select(genes_table).where(genes_table.c.species == name)
-    result = session.execute(stmt).all()
-    users = [dict(row._mapping) for row in result]
-
-    return users
-
-class Gene_Model(BaseModel) :
-    gene_id: str 
-    species: str
-    human_gene_name: str
-    chromosome: int
-    start_position: int
-    end_position: int
-
-# This endpoint will insert a given item into the genes table
-@app.post("/insert_genes")
-async def insert_species(gene_model: Gene_Model):
-    stmt = insert(genes_table).values(gene_id=gene_model.gene_id, species=gene_model.species, 
-                                      human_gene_name=gene_model.human_gene_name, chromosome=gene_model.chromosome, 
-                                      start_position=gene_model.start_position, end_position=gene_model.end_position)
+@app.delete("/genes/{gene_id}")
+def delete_gene(gene_id: str):
+    """
+    Delete a gene by gene_id.
+    """
+    stmt = delete(genes_table).where(genes_table.c.gene_id == gene_id)
     result = session.execute(stmt)
-    return result
+    session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Gene not found")
+    return {"status": "Gene deleted"}
+
+
+# --- Regulatory Elements Endpoints ---
+
+@app.get("/regulatory_elements/", response_model=List[RegulatoryElementModel])
+def get_reg_elements(species: Optional[str] = Query(None), element_type: Optional[str] = Query(None)):
+    """
+    Get regulatory elements optionally filtered by species and/or element_type.
+    """
+    stmt = select(regulatory_elements_table)
+    if species:
+        stmt = stmt.where(regulatory_elements_table.c.species == species)
+    if element_type:
+        stmt = stmt.where(regulatory_elements_table.c.element_type == element_type)
+    results = session.execute(stmt).fetchall()
+    return [dict(row._mapping) for row in results]
+
+
+@app.post("/regulatory_elements/", status_code=201)
+def insert_regulatory_element(element: RegulatoryElementModel):
+    """
+    Insert a new regulatory element.
+    """
+    # element_id is serial, so it's omitted or None when inserting
+    data = element.dict()
+    data.pop("element_id", None)  # Remove if present
+    stmt = insert(regulatory_elements_table).values(**data)
+    session.execute(stmt)
+    session.commit()
+    return {"status": "Regulatory element inserted"}
+
+
+@app.delete("/regulatory_elements/{element_id}")
+def delete_regulatory_element(element_id: int):
+    """
+    Delete regulatory element by ID.
+    """
+    stmt = delete(regulatory_elements_table).where(regulatory_elements_table.c.element_id == element_id)
+    result = session.execute(stmt)
+    session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Regulatory element not found")
+    return {"status": "Regulatory element deleted"}
+
+
+# --- SNP Endpoints ---
+
+@app.get("/snps/", response_model=List[SNPModel])
+def get_snps(species: Optional[str] = Query(None), gene_id: Optional[str] = Query(None)):
+    """
+    Get SNPs optionally filtered by species and/or gene_id.
+    """
+    stmt = select(snps_table)
+    if species:
+        stmt = stmt.where(snps_table.c.species == species)
+    if gene_id:
+        stmt = stmt.where(snps_table.c.gene_id == gene_id)
+    results = session.execute(stmt).fetchall()
+    return [dict(row._mapping) for row in results]
+
+
+@app.get("/snps/{snp_id}", response_model=SNPModel)
+def get_snp(snp_id: str):
+    """
+    Get a SNP by its identifier.
+    """
+    stmt = select(snps_table).where(snps_table.c.snp_id == snp_id)
+    result = session.execute(stmt).first()
+    if not result:
+        raise HTTPException(status_code=404, detail="SNP not found")
+    return dict(result._mapping)
+
+
+@app.post("/snps/", status_code=201)
+def insert_snp(snp: SNPModel):
+    """
+    Insert new SNP record.
+    """
+    exists = session.execute(select(snps_table).where(snps_table.c.snp_id == snp.snp_id)).first()
+    if exists:
+        raise HTTPException(status_code=400, detail="SNP ID already exists")
+    stmt = insert(snps_table).values(**snp.dict())
+    session.execute(stmt)
+    session.commit()
+    return {"status": "SNP inserted"}
+
+
+@app.delete("/snps/{snp_id}")
+def delete_snp(snp_id: str):
+    """
+    Delete SNP by its ID.
+    """
+    stmt = delete(snps_table).where(snps_table.c.snp_id == snp_id)
+    result = session.execute(stmt)
+    session.commit()
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="SNP not found")
+    return {"status": "SNP deleted"}
