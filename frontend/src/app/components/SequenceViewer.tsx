@@ -129,7 +129,6 @@ export default function SequenceViewer({
           line-height: 1.3;
           overflow-x: hidden;
           padding-bottom: 4px;
-          border-bottom: 1px solid #ccc;
           cursor: default;
           user-select: none;
           width: 100%;
