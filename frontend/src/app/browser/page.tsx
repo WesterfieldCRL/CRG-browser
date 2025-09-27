@@ -1,19 +1,15 @@
 // page.tsx
-// React component for main genome browser page
-// Fetches gene data and sequences from backend using updated services.tsx
-// Displays sequences with paging and tooltip info for conserved/divergent bases
+// Fully updated React functional component for Genome Browser
+// Uses TypeScript, hooks, and calls backend via services.tsx
+// Displays selectable genes and paginated aligned DNA sequences
+// Includes tooltips to show conservation info on nucleotide hover
 
 "use client";
 
 import React, { useState, useEffect } from "react";
-import {
-  fetchGenes,
-  fetchGeneById,
-  fetchRegulatoryElements,
-  fetchSNPs,
-} from "../browser/services"; // Import API service functions
+import { fetchGenes } from "../browser/services"; // API calls centrally managed here
 
-// Species and display name mapping - could be moved to backend later
+// Species list and display mapping (could eventually come from backend)
 const speciesList = ["Homo sapiens", "Mus musculus", "Macaca mulatta"];
 const speciesDisplay: Record<string, string> = {
   "Homo sapiens": "Homo sapiens",
@@ -21,47 +17,52 @@ const speciesDisplay: Record<string, string> = {
   "Macaca mulatta": "Macaca mulatta",
 };
 
-// List of genes available - initially empty, fetched dynamically
-// A previous static array can be removed in favor of dynamic fetching
 export default function Page() {
-  // Selected gene symbol - defaults to empty until genes loaded
+  // State for the currently selected gene symbol
   const [selectedGene, setSelectedGene] = useState<string | null>(null);
 
-  // Map of species to aligned DNA sequences for selected gene
+  // Map species → aligned DNA sequence string for selected gene
   const [sequences, setSequences] = useState<Record<string, string>>({});
 
-  // All available human gene names (symbols)
+  // List of all human gene names (for dropdown)
   const [allGenes, setAllGenes] = useState<string[]>([]);
 
-  // Loading and error states
+  // Loading and error states for feedback
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination states
+  // Pagination: current page and nucleotides shown per page
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(100);
 
-  // Tooltip state for nucleotide hover info
+  // Tooltip info to show on nucleotide hover
   const [tooltip, setTooltip] = useState<{
     text: string;
     x: number;
     y: number;
   } | null>(null);
 
-  // On mount: fetch available genes from backend for initial dropdown
+  // Fetch all genes (human species) once on component mount
   useEffect(() => {
     async function loadGenes() {
       try {
         setLoading(true);
-        const genes = await fetchGenes("Homo sapiens"); // Get human genes only for list
+        const genes = (await fetchGenes("Homo sapiens")) as Array<{
+          human_gene_name: string;
+        }>;
+
+        // Extract unique human gene names and sort alphabetically
         const geneNames = Array.from(
-          new Set(genes.map((g: any) => g.human_gene_name))
+          new Set(genes.map((g) => g.human_gene_name))
         ).sort();
+
         setAllGenes(geneNames);
-        // Select first gene by default
+
+        // Default to first gene if available
         if (geneNames.length > 0) setSelectedGene(geneNames[0]);
+
         setLoading(false);
-      } catch (e) {
+      } catch {
         setError("Failed to load gene list");
         setLoading(false);
       }
@@ -69,27 +70,28 @@ export default function Page() {
     loadGenes();
   }, []);
 
-  // When selectedGene changes, fetch aligned sequences for all species
+  // Fetch sequences for all species whenever selectedGene changes
   useEffect(() => {
     async function loadSequences() {
       if (!selectedGene) return;
       setLoading(true);
       setError(null);
+
       try {
-        // For each species, fetch gene info (including aligned_sequence)
         const seqMap: Record<string, string> = {};
         for (const sp of speciesList) {
-          // Fetch gene records by species and human gene symbol
-          const genes = await fetchGenes(sp);
-          const gene = genes.find(
-            (g: any) => g.human_gene_name === selectedGene
-          );
+          const genes = (await fetchGenes(sp)) as Array<{
+            human_gene_name: string;
+            aligned_sequence: string;
+          }>;
+          // Find gene matching selected human gene name in this species
+          const gene = genes.find((g) => g.human_gene_name === selectedGene);
           seqMap[sp] = gene?.aligned_sequence ?? "";
         }
         setSequences(seqMap);
-        setPageIndex(0); // Reset page on gene switch
+        setPageIndex(0); // Reset page on gene change
         setLoading(false);
-      } catch (e) {
+      } catch {
         setError("Failed to load sequences");
         setLoading(false);
       }
@@ -97,22 +99,24 @@ export default function Page() {
     loadSequences();
   }, [selectedGene]);
 
-  // Calculate total pages based on longest sequence length and page size
+  // Calculate max sequence length to determine number of pages
   const maxLength =
-    Math.max(...Object.values(sequences).map((s) => s.length), 0) || 0;
+    Math.max(...Object.values(sequences).map((seq) => seq.length), 0) || 0;
   const totalPages = Math.max(1, Math.ceil(maxLength / pageSize));
 
-  // Render nucleotide spans, highlighting conserved/divergent bases, with tooltip
+  // Render nucleotide spans with conservation/difference highlights & tooltip
   function renderNucleotides(segment: string[], start: number) {
     return segment.map((base, i) => {
       const absIndex = start + i + 1;
+
+      // Get bases at this position across species, filtering non-empty
       const basesAtPos = Object.values(sequences)
         .map((seq) => seq[start + i])
         .filter(Boolean);
 
+      // Check if base is conserved (all same)
       const conserved =
-        basesAtPos.length > 1 &&
-        basesAtPos.every((b) => b === basesAtPos[0]);
+        basesAtPos.length > 1 && basesAtPos.every((b) => b === basesAtPos[0]);
 
       const className = "nucleotide " + (conserved ? "conserved" : "divergent");
       const tooltipText = conserved
@@ -136,6 +140,7 @@ export default function Page() {
 
   return (
     <main>
+      {/* Global styles */}
       <style>{`
         body, main {
           margin: 0; padding: 0;
@@ -218,7 +223,7 @@ export default function Page() {
           color: #a10000;
         }
         .tooltip {
-          position: absolute;
+          position: fixed;
           background: #123c7c;
           color: white;
           padding: 6px 10px;
@@ -230,9 +235,10 @@ export default function Page() {
         }
       `}</style>
 
+      {/* Page Title */}
       <h1>Genome Browser</h1>
 
-      {/* Gene selection dropdown */}
+      {/* Gene Selection */}
       <div className="controls">
         <label htmlFor="geneSelect">Select Gene:</label>
         <select
@@ -249,11 +255,11 @@ export default function Page() {
         </select>
       </div>
 
-      {/* Show loading or error messages */}
+      {/* Loading and error indicators */}
       {loading && <div>Loading sequences...</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
 
-      {/* Sequence display container */}
+      {/* Sequence display */}
       <div className="container-box">
         {Object.keys(sequences).length === 0 && !loading && (
           <p>Select a gene to view sequences.</p>
@@ -263,6 +269,7 @@ export default function Page() {
           const start = pageIndex * pageSize;
           const end = Math.min(seq.length, (pageIndex + 1) * pageSize);
           const segment = Array.from(seq.slice(start, end));
+
           return (
             <div className="species-row" key={species}>
               <div className="species-label">
@@ -273,7 +280,7 @@ export default function Page() {
           );
         })}
 
-        {/* Pagination buttons */}
+        {/* Pagination controls */}
         <div className="controls">
           <button
             disabled={pageIndex === 0}
@@ -293,12 +300,9 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Tooltip displayed near mouse pointer */}
+      {/* Tooltip */}
       {tooltip && (
-        <div
-          className="tooltip"
-          style={{ top: tooltip.y, left: tooltip.x, position: "fixed" }}
-        >
+        <div className="tooltip" style={{ top: tooltip.y, left: tooltip.x }}>
           {tooltip.text}
         </div>
       )}
