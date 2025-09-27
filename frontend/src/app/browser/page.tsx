@@ -1,26 +1,18 @@
 // page.tsx
-// Main Genome Browser page component in React + TypeScript
-// Refactors previously monolithic code into modular, typed, reusable pieces:
-// - Uses PageNavigation for pagination and download controls,
-// - SequenceViewer to render aligned DNA sequences with conservation highlighting,
-// - Tooltip for advanced tooltip display with boundary-aware positioning.
-//
-// Responsibilities:
-// - Manage global state (gene list, selected gene, sequences, pagination, loading, errors, tooltip)
-// - Fetch gene list and sequences on mount and gene change
-// - Pass props and handlers down to child components
-//
-// Comments included per professional software engineering best practices
+// Main page component for Genome Browser in React + TypeScript,
+// implementing dynamic pagination based on container width and nucleotide width,
+// avoiding horizontal scrollbars via responsive design.
 
+// Imports
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { fetchGenes } from "../browser/services";
 import PageNavigation from "../components/PageNavigation";
 import SequenceViewer from "../components/SequenceViewer";
 import Tooltip from "../components/Tooltip";
 
-// Species to display and their display strings
+// Species to display and their display names
 const speciesList = ["Homo sapiens", "Mus musculus", "Macaca mulatta"];
 const speciesDisplay: Record<string, string> = {
   "Homo sapiens": "Homo sapiens",
@@ -28,50 +20,65 @@ const speciesDisplay: Record<string, string> = {
   "Macaca mulatta": "Macaca mulatta",
 };
 
+// Fixed width (in pixels) of a single nucleotide block rendered in SequenceViewer
+const NUCLEOTIDE_WIDTH_PX = 18;
+
 export default function Page() {
-  // State: currently selected gene symbol (human gene name)
+  // --------------------
+  // State Declarations
+  // --------------------
+
+  // Selected gene symbol (human gene)
   const [selectedGene, setSelectedGene] = useState<string | null>(null);
 
-  // Aligned sequences keyed by species for the selected gene
+  // Aligned sequences per species for selected gene
   const [sequences, setSequences] = useState<Record<string, string>>({});
 
-  // List of all human genes for dropdown population
+  // Available human genes for dropdown selection
   const [allGenes, setAllGenes] = useState<string[]>([]);
 
-  // Loading and error states for user feedback/UX
+  // Loading and error states for user feedback
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pagination state: current page index and size (nucleotides per page)
+  // Pagination: current page index (zero-based)
   const [pageIndex, setPageIndex] = useState<number>(0);
-  const [pageSize] = useState<number>(100); // Fixed page size for now
 
-  // Tooltip state to show info on nucleotide hover
+  // Pagination: number of nucleotides per page, dynamically calculated
+  const [pageSize, setPageSize] = useState<number>(100); // default before measurement
+
+  // Tooltip info shown on nucleotide hover
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
-  // On initial mount: fetch all human genes for dropdown list
+  // Ref for container DOM element to measure available width
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // --------------------
+  // Effects and Callbacks
+  // --------------------
+
+  // Fetch all human genes once on mount for gene selection
   useEffect(() => {
     async function loadGenes() {
       try {
         setLoading(true);
-        const genesRes = (await fetchGenes("Homo sapiens")) as Array<{
+        const genes = (await fetchGenes("Homo sapiens")) as Array<{
           human_gene_name: string;
         }>;
 
-        // Unique, sorted human gene names from API response
-        const uniqueGeneNames = Array.from(
-          new Set(genesRes.map((g) => g.human_gene_name))
+        // Extract unique, sorted gene names
+        const geneNames = Array.from(
+          new Set(genes.map((g) => g.human_gene_name))
         ).sort();
 
-        setAllGenes(uniqueGeneNames);
+        setAllGenes(geneNames);
 
-        // Default to first gene if available
-        if (uniqueGeneNames.length > 0) {
-          setSelectedGene(uniqueGeneNames[0]);
+        // Default select first gene if available
+        if (geneNames.length > 0) {
+          setSelectedGene(geneNames[0]);
         }
-
         setLoading(false);
-      } catch (e) {
+      } catch {
         setError("Failed to load gene list");
         setLoading(false);
       }
@@ -79,7 +86,7 @@ export default function Page() {
     loadGenes();
   }, []);
 
-  // When selectedGene changes: fetch aligned sequences for all species
+  // Fetch aligned sequences for all species whenever selectedGene changes
   useEffect(() => {
     async function loadSequences() {
       if (!selectedGene) return;
@@ -89,21 +96,17 @@ export default function Page() {
       try {
         const seqMap: Record<string, string> = {};
         for (const sp of speciesList) {
-          // Fetch all genes for species
           const genes = (await fetchGenes(sp)) as Array<{
             human_gene_name: string;
             aligned_sequence: string;
           }>;
-
-          // Find gene matching the same human gene name
           const gene = genes.find((g) => g.human_gene_name === selectedGene);
           seqMap[sp] = gene?.aligned_sequence ?? "";
         }
-
         setSequences(seqMap);
-        setPageIndex(0); // Reset pagination to first page on gene change
+        setPageIndex(0); // Reset page on gene change
         setLoading(false);
-      } catch (e) {
+      } catch {
         setError("Failed to load sequences");
         setLoading(false);
       }
@@ -111,23 +114,59 @@ export default function Page() {
     loadSequences();
   }, [selectedGene]);
 
-  // Calculate maximum sequence length across species to determine pages
+  // Handler to update pageSize based on container width and nucleotide width
+  const updatePageSize = useCallback(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.clientWidth;
+
+      // Number of nucleotides that fit horizontally without overflow;
+      // floor to avoid clipping partially visible bases.
+      const maxBases = Math.floor(containerWidth / NUCLEOTIDE_WIDTH_PX);
+
+      // Ensure at least one base per page
+      const newPageSize = Math.max(1, maxBases);
+
+      setPageSize(newPageSize);
+    }
+  }, []);
+
+  // Update pageSize on mount and whenever window size changes
+  useEffect(() => {
+    updatePageSize(); // Initial call on mount
+
+    window.addEventListener("resize", updatePageSize);
+    return () => window.removeEventListener("resize", updatePageSize);
+  }, [updatePageSize]);
+
+  // Calculate max sequence length for pagination bounds
   const maxLength =
     Math.max(...Object.values(sequences).map((seq) => seq.length), 0) || 0;
+
+  // Calculate total pages based on dynamic pageSize
   const totalPages = Math.max(1, Math.ceil(maxLength / pageSize));
 
+  // Clamp 'pageIndex' if totalPages decreases
+  useEffect(() => {
+    if (pageIndex >= totalPages) {
+      setPageIndex(totalPages - 1);
+    }
+  }, [pageIndex, totalPages]);
+
+  // --------------------
+  // JSX Render
+  // --------------------
   return (
     <main>
-      {/* Page heading */}
+      {/* Page Title */}
       <h1>Genome Browser</h1>
 
-      {/* Gene selection dropdown */}
+      {/* Gene Selection Controls */}
       <div className="controls">
         <label htmlFor="gene-select">Select Gene:</label>
         <select
           id="gene-select"
-          disabled={loading || allGenes.length === 0}
           value={selectedGene ?? ""}
+          disabled={loading || allGenes.length === 0}
           onChange={(e) => setSelectedGene(e.target.value)}
           aria-label="Select gene"
         >
@@ -139,18 +178,23 @@ export default function Page() {
         </select>
       </div>
 
-      {/* Display loading or error feedback */}
+      {/* Status Messages */}
       {loading && <div className="info">Loading sequences...</div>}
       {error && <div className="error">{error}</div>}
 
-      {/* Sequence viewer container */}
-      <div className="container-box" aria-live="polite">
-        {/* Instruction for empty state */}
+      {/* Container box fills 90% viewport width for responsive layout */}
+      <div
+        className="container-box"
+        ref={containerRef}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {/* Instructions when no sequences available */}
         {Object.keys(sequences).length === 0 && !loading && (
-          <p>Please select a gene to view aligned DNA sequences.</p>
+          <p>Select a gene to view aligned DNA sequences.</p>
         )}
 
-        {/* SequenceViewer renders sequences with conservation coloring + tooltips */}
+        {/* Sequence display */}
         <SequenceViewer
           sequences={sequences}
           speciesList={speciesList}
@@ -170,10 +214,10 @@ export default function Page() {
         />
       </div>
 
-      {/* Tooltip displayed when hovering nucleotides */}
+      {/* Tooltip displayed on nucleotide hover */}
       {tooltip && <Tooltip tooltip={tooltip} />}
 
-      {/* Styled components for layout and UI */}
+      {/* Inline styles and layout */}
       <style>{`
         main {
           margin: 0;
@@ -215,13 +259,15 @@ export default function Page() {
           cursor: not-allowed;
           opacity: 0.6;
         }
+        /* Container width fills 90% of viewport width for responsive bases count */
         .container-box {
-          width: 100%;
+          width: 90vw;
           max-width: 900px;
           background: white;
           border-radius: 8px;
           box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
           padding: 20px;
+          box-sizing: border-box;
         }
         .info {
           font-style: italic;

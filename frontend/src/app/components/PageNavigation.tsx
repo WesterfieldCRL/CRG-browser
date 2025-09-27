@@ -1,23 +1,33 @@
+// PageNavigation.tsx
+// Pagination component with direct input and download functionality,
+// fully typed with TypeScript, enhanced accessibility, and modern styling.
+
 import React, { useState, useEffect } from "react";
 
 interface PageNavigationProps {
-  pageIndex: number; // Current zero-based page index
-  totalPages: number; // Total number of pages available
-  setPageIndex: React.Dispatch<React.SetStateAction<number>>; // Setter for changing page index
-  sequences: Record<string, string>; // Sequences keyed by species (for download)
-  selectedGene: string; // Gene name for FASTA header and file naming
+  // Current zero-based page index
+  pageIndex: number;
+  // Total number of pages
+  totalPages: number;
+  // Setter to update current page index
+  setPageIndex: React.Dispatch<React.SetStateAction<number>>;
+  // Sequences by species, used for FASTA download
+  sequences: Record<string, string>;
+  // Selected gene symbol for FASTA headers and filename
+  selectedGene: string;
 }
 
 /**
- * PageNavigation component provides controls to navigate paginated sequence data.
- * Includes previous/next buttons, direct page number input, and sequences download.
+ * PageNavigation Component provides:
+ * - Previous/Next buttons (with disabled states)
+ * - Input box for direct page number entry (validated and clamped)
+ * - Download button to export sequences as multi-FASTA file
  *
  * Features:
- * - Input box for quick page navigation with input validation and clamping.
- * - Prev/Next buttons with disabled states.
- * - Download button exporting displayed sequences as multi-FASTA file.
- * - Accessible labels and keyboard-friendly input.
- * - Modern styling with transitions and button feedback.
+ * - Accessible labels and roles for screen readers
+ * - Keyboard-friendly: Enter key submits input
+ * - Dynamic input width based on content length
+ * - Modern, consistent styling with smooth hover/focus effects
  */
 export default function PageNavigation({
   pageIndex,
@@ -26,15 +36,15 @@ export default function PageNavigation({
   sequences,
   selectedGene,
 }: PageNavigationProps) {
-  // Local state to control the page number input box (1-based for user clarity)
+  // Local input state (1-based page display for user)
   const [inputPage, setInputPage] = useState<string>((pageIndex + 1).toString());
 
-  // Sync input box with external pageIndex changes for correctness
+  // Sync input box state whenever pageIndex prop changes externally
   useEffect(() => {
     setInputPage((pageIndex + 1).toString());
   }, [pageIndex]);
 
-  // Allow only empty or digits in input for smooth typing experience
+  // Allow only digits or empty string for smooth typing experience
   function handlePageInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     if (/^\d*$/.test(val)) {
@@ -42,66 +52,72 @@ export default function PageNavigation({
     }
   }
 
-  // Validate and apply navigation upon blur or pressing Enter
+  // Validate and update pageIndex based on inputPage
   function navigateToPage() {
-    const pageNum = parseInt(inputPage, 10);
-    if (!isNaN(pageNum)) {
-      // Clamp to valid 1-based page range and update
-      const clamped = Math.min(Math.max(pageNum, 1), totalPages);
+    const num = parseInt(inputPage, 10);
+    if (!isNaN(num)) {
+      // Clamp input page within bounds [1, totalPages]
+      const clamped = Math.min(Math.max(num, 1), totalPages);
       setPageIndex(clamped - 1);
-      setInputPage(clamped.toString());
+      setInputPage(clamped.toString()); // Reset input to clamped to keep consistent
     } else {
-      // Reset invalid input to current page
+      // Invalid input: reset to current page
       setInputPage((pageIndex + 1).toString());
     }
   }
 
+  // Called when input loses focus
   function handleInputBlur() {
     navigateToPage();
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  // Submit input on Enter key press
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       navigateToPage();
+      // Remove focus to trigger blur validation
       (e.target as HTMLInputElement).blur();
     }
   }
 
-  // Dynamically adjust input width based on number of digits + padding
+  // Dynamically adjust input width based on input length (+ padding chars)
   const inputWidth = Math.max(inputPage.length, 1) + 4;
 
-  // Trigger download of sequences in FASTA format
+  // Compose and trigger download of sequences as multi-FASTA file
   function handleDownload() {
-    // Compose multi-FASTA content with headers ">gene|species"
-    const fastaContent = Object.entries(sequences)
+    // Compose FASTA content string
+    const content = Object.entries(sequences)
       .map(([species, seq]) => `>${selectedGene}|${species}\n${seq}`)
       .join("\n");
 
     const fileName = `sequences-${selectedGene}.fasta`;
-    // Create blob and programmatically click anchor for download
-    const blob = new Blob([fastaContent], { type: "text/plain" });
+
+    // Create blob link and simulate click for file download
+    const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = fileName;
-    anchor.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a); // Append for Firefox support
+    a.click();
+    a.remove(); // Clean up
     URL.revokeObjectURL(url);
   }
 
   return (
-    <div className="page-navigation" role="navigation" aria-label="Page navigation controls">
+    <nav className="page-nav" aria-label="Pagination navigation">
       {/* Previous Page Button */}
       <button
-        onClick={() => setPageIndex((idx) => Math.max(0, idx - 1))}
+        type="button"
         disabled={pageIndex === 0}
         aria-disabled={pageIndex === 0}
         aria-label="Go to previous page"
-        type="button"
+        onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
       >
         ← Prev
       </button>
 
-      {/* Page Number Input for direct navigation */}
+      {/* Page Input Control */}
       <label htmlFor="page-number-input" className="sr-only">
         Page number input
       </label>
@@ -114,35 +130,38 @@ export default function PageNavigation({
         onChange={handlePageInputChange}
         onBlur={handleInputBlur}
         onKeyDown={handleKeyDown}
-        style={{ width: `${inputWidth}ch` }}
-        aria-describedby="pagination-total-pages"
         aria-label="Current page number"
+        aria-describedby="page-total"
+        style={{ width: `${inputWidth}ch` }}
       />
-
-      {/* Display total pages */}
-      <span id="pagination-total-pages" aria-live="polite" aria-atomic="true">
+      <span id="page-total" aria-live="polite" aria-atomic="true">
         {" "}
         of {totalPages}
       </span>
 
       {/* Next Page Button */}
       <button
-        onClick={() => setPageIndex((idx) => Math.min(totalPages - 1, idx + 1))}
-        disabled={pageIndex >= totalPages - 1}
-        aria-disabled={pageIndex >= totalPages - 1}
-        aria-label="Go to next page"
         type="button"
+        disabled={pageIndex === totalPages - 1}
+        aria-disabled={pageIndex === totalPages - 1}
+        aria-label="Go to next page"
+        onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
       >
         Next →
       </button>
 
-      {/* Download Sequences Button */}
-      <button onClick={handleDownload} type="button" aria-label="Download sequences as FASTA file">
+      {/* Download FASTA Button */}
+      <button
+        type="button"
+        aria-label="Download sequences as FASTA file"
+        onClick={handleDownload}
+      >
         Download Sequences
       </button>
 
+      {/* Styles */}
       <style>{`
-        /* Visually hidden utility for accessibility */
+        /* Visually hidden label for screen readers */
         .sr-only {
           border: 0 !important;
           clip: rect(1px, 1px, 1px, 1px) !important;
@@ -157,46 +176,43 @@ export default function PageNavigation({
           white-space: nowrap !important;
         }
 
-        .page-navigation {
+        .page-nav {
           display: flex;
+          gap: 20px;
           align-items: center;
-          gap: 16px;
+          justify-content: center;
           font-weight: 600;
           font-size: 1rem;
           color: #123c7c;
           user-select: none;
           flex-wrap: wrap;
-          justify-content: center;
-          max-width: 480px;
-          margin: 0 auto;
         }
 
-        .page-navigation button {
-          padding: 10px 18px;
+        .page-nav button {
+          padding: 10px 16px;
           border-radius: 6px;
           border: 1px solid #123c7c;
           background-color: #123c7c;
           color: white;
           cursor: pointer;
           transition: background-color 0.2s ease, box-shadow 0.2s ease;
-          font-weight: 600;
-          user-select: none;
           min-width: 90px;
+          user-select: none;
         }
 
-        .page-navigation button:hover:not(:disabled) {
+        .page-nav button:hover:not(:disabled) {
           background-color: #0d2a55;
           box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
         }
 
-        .page-navigation button:disabled,
-        .page-navigation button[aria-disabled="true"] {
+        .page-nav button:disabled,
+        .page-nav button[aria-disabled="true"] {
           opacity: 0.5;
           cursor: not-allowed;
           box-shadow: none;
         }
 
-        .page-navigation input[type="text"] {
+        .page-nav input[type="text"] {
           padding: 8px 12px;
           text-align: center;
           font-weight: 600;
@@ -211,11 +227,11 @@ export default function PageNavigation({
           user-select: text;
         }
 
-        .page-navigation input[type="text"]:focus {
+        .page-nav input[type="text"]:focus {
           border-color: #0d2a55;
           box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
         }
       `}</style>
-    </div>
+    </nav>
   );
 }
