@@ -1,40 +1,45 @@
 // SequenceViewer.tsx
-// React functional component to render DNA sequences aligned by species,
-// with dynamically paged segments and nucleotide conservation highlighting.
-// Provides accessible tooltips on nucleotide hover.
-// Fully typed with TypeScript and professionally commented for maintainability.
+// React functional component rendering aligned DNA sequences by species,
+// with equal vertical height rows inside a tall container.
+// Supports pagination, nucleotide conservation coloring, and accessible tooltips.
+// Fully typed with TypeScript and clean code style for professional use.
 
 import React from "react";
 
+// Props interface representing essential inputs to the component
 interface SequenceViewerProps {
-  // Dictionary of aligned sequences keyed by species name
+  // Aligned sequences keyed by species name
   sequences: Record<string, string>;
 
-  // Ordered array of species keys controlling display order
+  // Display order of species keys
   speciesList: string[];
 
-  // Mapping of species keys to friendly display names
+  // Mapping of species key to friendly display name
   speciesDisplay: Record<string, string>;
 
-  // Zero-based index of the current pagination page
+  // Current pagination page (zero-based)
   pageIndex: number;
 
-  // Number of nucleotides to display per page, calculated dynamically
+  // Number of nucleotides per page slice
   pageSize: number;
 
-  // Setter function for updating tooltip state on nucleotide hover
+  // Tooltip setter function accepts either tooltip data or null to clear
   setTooltip: (tip: { text: string; x: number; y: number } | null) => void;
 }
 
 /**
  * SequenceViewer Component
  * ------------------------
- * Renders one page (segment) of aligned nucleotide sequences across species,
- * highlighting conserved nucleotides (all same base) in blue and divergent in red.
- * Each nucleotide is a span with mouse event handlers to update tooltip info.
+ * Renders aligned nucleotide sequences for a subset (page) of the full sequence per species,
+ * organized in rows. Each species row is guaranteed equal height within a tall container
+ * for consistent UI. Nucleotides are color-coded by conservation (blue for conserved, red for divergent),
+ * and show accessible tooltips on hover.
  * 
- * Assumes each nucleotide has fixed width styling for layout calculations.
- * Supports keyboard and screen-reader accessibility with aria attributes.
+ * Accessibility features:
+ * - Aria roles and labels for nucleotide spans for screen readers
+ * - Aria-live regions on species labels for dynamic updates
+ * 
+ * Styling is scoped with Styled JSX and leverages flexbox for layout and equal row heights.
  */
 export default function SequenceViewer({
   sequences,
@@ -45,34 +50,34 @@ export default function SequenceViewer({
   setTooltip,
 }: SequenceViewerProps) {
   /**
-   * Renders spans for a segment of nucleotides, applying visual and interaction effects.
-   * 
-   * @param segment The nucleotide array for current page segment
-   * @param start Zero-based index offset into the full sequence
-   * @returns Array of <span> elements representing nucleotides
+   * Renders nucleotide spans with interactive and visual features for a segment.
+   *
+   * @param segment Array of nucleotide characters for the current page segment
+   * @param start Zero-based global index offset in the full sequence for this segment
+   * @returns Array of React elements for each nucleotide span
    */
   function renderNucleotides(segment: string[], start: number) {
-    // Loop over bases, compute conservation, assign classes and tooltip data
     return segment.map((base, offset) => {
-      const absIndex = start + offset + 1; // 1-based position for display
+      const absIndex = start + offset + 1; // 1-based position for user-friendly display
 
-      // Gather bases at this position across all species (filter out empty)
+      // Gather bases from all species at the current nucleotide index to determine conservation
       const basesAtPos = Object.values(sequences)
         .map((seq) => seq[start + offset])
         .filter(Boolean);
 
-      // Determine if site is conserved: more than 1 base and all identical
+      // Determine if nucleotides at this position are conserved (all identical and >1 base)
       const conserved =
         basesAtPos.length > 1 && basesAtPos.every((b) => b === basesAtPos[0]);
 
-      // Set CSS class for coloring: blue if conserved, red if divergent
+      // Assign color class for nucleotide: 'conserved' or 'divergent'
       const className = "nucleotide " + (conserved ? "conserved" : "divergent");
 
-      // Tooltip text describing conservation info and base detail
+      // Construct tooltip text for screen reader and mouse hover context
       const tooltipText = conserved
         ? `Conserved | Position ${absIndex} | Base: ${base}`
         : `Divergent | Position ${absIndex} | Base: ${base}`;
 
+      // Return interactive span element for this nucleotide
       return (
         <span
           key={absIndex}
@@ -92,98 +97,124 @@ export default function SequenceViewer({
 
   return (
     <>
-      {/* Render each species row in display order */}
-      {speciesList.map((speciesKey) => {
-        // Fallback species display name if missing in map
-        const displayName = speciesDisplay[speciesKey] ?? speciesKey;
+      {/* Root container enforcing vertical height and equal row sizing via flex */}
+      <div className="species-container" role="list" aria-label="Species sequences">
+        {/* Map over species to render each species' sequence row */}
+        {speciesList.map((speciesKey) => {
+          const displayName = speciesDisplay[speciesKey] ?? speciesKey;
+          const seq = sequences[speciesKey] || "";
 
-        // Retrieve sequence for species or empty string if missing
-        const seq = sequences[speciesKey] || "";
+          // Calculate nucleotide segment for current page
+          const start = pageIndex * pageSize;
+          const end = Math.min(seq.length, start + pageSize);
+          const segment = Array.from(seq.slice(start, end));
 
-        // Calculate the segment indices for current page
-        const start = pageIndex * pageSize;
-        const end = Math.min(seq.length, start + pageSize);
-
-        // Extract segment array of bases to display
-        const segment = Array.from(seq.slice(start, end));
-
-        return (
-          <section
-            className="species-row"
-            key={speciesKey}
-            aria-labelledby={`label-${speciesKey}`}
-          >
-            {/* Species label with aria connection for screen readers */}
-            <h2
-              className="species-label"
-              id={`label-${speciesKey}`}
-              tabIndex={-1}
-              aria-live="polite"
+          return (
+            <section
+              key={speciesKey}
+              className="species-row"
+              aria-labelledby={`label-${speciesKey}`}
+              role="listitem"
             >
-              {displayName} (Gene length: {seq.length} nucleotides)
-            </h2>
+              {/* Species label with aria-live for accessibility */}
+              <h2
+                className="species-label"
+                id={`label-${speciesKey}`}
+                tabIndex={-1}
+                aria-live="polite"
+              >
+                {displayName} (Gene length: {seq.length} nucleotides)
+              </h2>
 
-            {/* Sequence row container with list role */}
-            <div className="sequence-row" role="list">
-              {renderNucleotides(segment, start)}
-            </div>
-          </section>
-        );
-      })}
+              {/* Nucleotide sequence container */}
+              <div className="sequence-row">{renderNucleotides(segment, start)}</div>
+            </section>
+          );
+        })}
+      </div>
 
-      {/* Styled JSX for component-scoped styles */}
+      {/* Scoped styling for layout and UI */}
       <style>{`
-        /* Container styles for each species row */
+        /* Container that holds all species rows with fixed height and column flex layout */
+        .species-container {
+          display: flex;
+          flex-direction: column;
+          height: 600px; /* Tall vertical height for demonstration, adjust as needed */
+          gap: 16px; /* Spacing between species rows */
+          border: 1px solid #ccc;
+          padding: 12px;
+          box-sizing: border-box;
+          overflow-y: auto; /* Scroll if content exceeds height */
+          background: #fefefe;
+          border-radius: 8px;
+        }
+
+        /* Each species-row grows equally to fill vertical space */
         .species-row {
-          margin-bottom: 24px;
+          flex: 1 1 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          border: 1px solid #e0e0e0;
+          border-radius: 6px;
+          padding: 12px;
+          background: #f9faff;
+          box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
           outline-offset: 4px;
         }
-        /* Species label heading style */
+
+        /* Header label for each species */
         .species-label {
           font-weight: 700;
           margin-bottom: 12px;
-          font-size: 1.1rem;
+          font-size: 1.2rem;
           color: #123c7c;
           user-select: text;
         }
-        /* Sequence displayed in monospace, horizontally aligned and scroll disabled */
+
+        /* Nucleotide sequence displayed in a horizontal flex row */
         .sequence-row {
           display: flex;
           flex-direction: row;
-          white-space: nowrap; /* prevent wrapping */
+          white-space: nowrap; /* Prevent wrapping nucleotide bases */
           font-family: monospace;
           font-size: 1.15rem;
           line-height: 1.3;
-          overflow-x: hidden; /* overflow prevented by dynamic pagination */
+          overflow-x: auto; /* Enable horizontal scroll if needed */
           padding-bottom: 4px;
           border-bottom: 1px solid #ccc;
           cursor: default;
           user-select: none;
         }
-        /* Nucleotide base blocks consistently sized and styled */
+
+        /* Styling nucleotide base blocks */
         .nucleotide {
           display: inline-block;
-          width: 18px; /* fixed width used for layout calculation */
+          width: 18px; /* Fixed width for consistent alignment */
           text-align: center;
           padding: 3px 0;
           border-radius: 4px;
           margin-right: 1px;
           transition: background-color 0.15s ease, color 0.15s ease;
           user-select: none;
+          flex-shrink: 0; /* Prevent shrinking in flex container */
         }
-        /* Highlight on hover for clarity */
+
+        /* Hover highlight for nucleotide bases */
         .nucleotide:hover {
           background-color: #ffef87;
           color: #333;
           font-weight: 700;
           cursor: help;
         }
-        /* Conserved nucleotides: blue background & dark blue text */
+
+        /* Conserved nucleotides styling */
         .conserved {
           background: #d9ebff;
           color: #003f87;
         }
-        /* Divergent nucleotides: light red background & dark red text */
+
+        /* Divergent nucleotides styling */
         .divergent {
           background: #ffdad9;
           color: #a10000;
