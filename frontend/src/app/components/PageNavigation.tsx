@@ -1,13 +1,34 @@
+// PageNavigation.tsx
+// Pagination component with direct input and download functionality,
+// fully typed with TypeScript, enhanced accessibility, and modern styling.
+
 import React, { useState, useEffect } from "react";
 
 interface PageNavigationProps {
+  // Current zero-based page index
   pageIndex: number;
+  // Total number of pages
   totalPages: number;
+  // Setter to update current page index
   setPageIndex: React.Dispatch<React.SetStateAction<number>>;
+  // Sequences by species, used for FASTA download
   sequences: Record<string, string>;
-  selectedGene: string; // Added selectedGene prop to customize FASTA output
+  // Selected gene symbol for FASTA headers and filename
+  selectedGene: string;
 }
 
+/**
+ * PageNavigation Component provides:
+ * - Previous/Next buttons (with disabled states)
+ * - Input box for direct page number entry (validated and clamped)
+ * - Download button to export sequences as multi-FASTA file
+ *
+ * Features:
+ * - Accessible labels and roles for screen readers
+ * - Keyboard-friendly: Enter key submits input
+ * - Dynamic input width based on content length
+ * - Modern, consistent styling with smooth hover/focus effects
+ */
 export default function PageNavigation({
   pageIndex,
   totalPages,
@@ -15,15 +36,15 @@ export default function PageNavigation({
   sequences,
   selectedGene,
 }: PageNavigationProps) {
-  // State to control page number input box (1-based for user friendliness)
+  // Local input state (1-based page display for user)
   const [inputPage, setInputPage] = useState<string>((pageIndex + 1).toString());
 
-  // Keep input box synced with external programmatic page changes
+  // Sync input box state whenever pageIndex prop changes externally
   useEffect(() => {
     setInputPage((pageIndex + 1).toString());
   }, [pageIndex]);
 
-  // Allow only digits or empty string in input box
+  // Allow only digits or empty string for smooth typing experience
   function handlePageInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     if (/^\d*$/.test(val)) {
@@ -31,136 +52,186 @@ export default function PageNavigation({
     }
   }
 
-  // Validate and navigate when input loses focus or enter key pressed
+  // Validate and update pageIndex based on inputPage
   function navigateToPage() {
-    const num = parseInt(inputPage);
+    const num = parseInt(inputPage, 10);
     if (!isNaN(num)) {
-      // Clamp page number within valid range
+      // Clamp input page within bounds [1, totalPages]
       const clamped = Math.min(Math.max(num, 1), totalPages);
       setPageIndex(clamped - 1);
-      setInputPage(clamped.toString());
+      setInputPage(clamped.toString()); // Reset input to clamped to keep consistent
     } else {
-      // Reset input if invalid
+      // Invalid input: reset to current page
       setInputPage((pageIndex + 1).toString());
     }
   }
 
+  // Called when input loses focus
   function handleInputBlur() {
     navigateToPage();
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  // Submit input on Enter key press
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       navigateToPage();
+      // Remove focus to trigger blur validation
       (e.target as HTMLInputElement).blur();
     }
   }
 
-  // Input width dynamically adjusts per number length (+4 chars extra for comfort)
+  // Dynamically adjust input width based on input length (+ padding chars)
   const inputWidth = Math.max(inputPage.length, 1) + 4;
 
-  // Handles download of sequences as FASTA file with gene and species in header
+  // Compose and trigger download of sequences as multi-FASTA file
   function handleDownload() {
-    // Compose FASTA formatted content, header = >{gene}|{species}
+    // Compose FASTA content string
     const content = Object.entries(sequences)
       .map(([species, seq]) => `>${selectedGene}|${species}\n${seq}`)
       .join("\n");
 
-    // Filename includes gene name
     const fileName = `sequences-${selectedGene}.fasta`;
 
-    // Create blob and simulate anchor click to download file
+    // Create blob link and simulate click for file download
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = fileName;
+    document.body.appendChild(a); // Append for Firefox support
     a.click();
+    a.remove(); // Clean up
     URL.revokeObjectURL(url);
   }
 
   return (
-    <div className="page-nav">
-      {/* Prev button disables on first page */}
+    <nav className="page-nav" aria-label="Pagination navigation">
+      {/* Previous Page Button */}
       <button
-        onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
+        type="button"
         disabled={pageIndex === 0}
+        aria-disabled={pageIndex === 0}
+        aria-label="Go to previous page"
+        onClick={() => setPageIndex((i) => Math.max(0, i - 1))}
       >
         ← Prev
       </button>
 
-      {/* Page input for direct page number navigation */}
-      <span>
-        Page{" "}
-        <input
-          type="number"
-          min={1}
-          max={totalPages}
-          value={inputPage}
-          onChange={handlePageInputChange}
-          onBlur={handleInputBlur}
-          onKeyDown={handleKeyDown}
-          aria-label="Page number input"
-          style={{
-            width: `${inputWidth}ch`,
-            textAlign: "center",
-            fontWeight: "600",
-            fontSize: "1rem",
-            color: "#123c7c",
-            borderRadius: "6px",
-            border: "1px solid #123c7c",
-            padding: "6px 8px",
-            fontFamily: "monospace",
-            transition: "width 0.2s",
-          }}
-        />{" "}
+      {/* Page Input Control */}
+      <label htmlFor="page-number-input" className="sr-only">
+        Page number input
+      </label>
+      <input
+        id="page-number-input"
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={inputPage}
+        onChange={handlePageInputChange}
+        onBlur={handleInputBlur}
+        onKeyDown={handleKeyDown}
+        aria-label="Current page number"
+        aria-describedby="page-total"
+        style={{ width: `${inputWidth}ch` }}
+      />
+      <span id="page-total" aria-live="polite" aria-atomic="true">
+        {" "}
         of {totalPages}
       </span>
 
-      {/* Next button disables on last page */}
+      {/* Next Page Button */}
       <button
-        onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
+        type="button"
         disabled={pageIndex === totalPages - 1}
+        aria-disabled={pageIndex === totalPages - 1}
+        aria-label="Go to next page"
+        onClick={() => setPageIndex((i) => Math.min(totalPages - 1, i + 1))}
       >
         Next →
       </button>
 
-      {/* Download button triggers FASTA download */}
-      <button onClick={handleDownload}>Download Sequences</button>
+      {/* Download FASTA Button */}
+      <button
+        type="button"
+        aria-label="Download sequences as FASTA file"
+        onClick={handleDownload}
+      >
+        Download Sequences
+      </button>
 
-      {/* Inline CSS for styling the navigation */}
+      {/* Styles */}
       <style>{`
+        /* Visually hidden label for screen readers */
+        .sr-only {
+          border: 0 !important;
+          clip: rect(1px, 1px, 1px, 1px) !important;
+          -webkit-clip-path: inset(50%) !important;
+                  clip-path: inset(50%) !important;
+          height: 1px !important;
+          margin: -1px !important;
+          overflow: hidden !important;
+          padding: 0 !important;
+          position: absolute !important;
+          width: 1px !important;
+          white-space: nowrap !important;
+        }
+
         .page-nav {
-          margin: 20px 0;
           display: flex;
           gap: 20px;
-          justify-content: center;
           align-items: center;
+          justify-content: center;
           font-weight: 600;
           font-size: 1rem;
           color: #123c7c;
+          user-select: none;
+          flex-wrap: wrap;
         }
 
         .page-nav button {
           padding: 10px 16px;
           border-radius: 6px;
           border: 1px solid #123c7c;
-          background: #123c7c;
+          background-color: #123c7c;
           color: white;
           cursor: pointer;
-          transition: 0.2s;
-          font-weight: 600;
+          transition: background-color 0.2s ease, box-shadow 0.2s ease;
+          min-width: 90px;
+          user-select: none;
         }
 
         .page-nav button:hover:not(:disabled) {
-          background: #0d2a55;
+          background-color: #0d2a55;
+          box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
         }
 
-        .page-nav button:disabled {
+        .page-nav button:disabled,
+        .page-nav button[aria-disabled="true"] {
           opacity: 0.5;
           cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        .page-nav input[type="text"] {
+          padding: 8px 12px;
+          text-align: center;
+          font-weight: 600;
+          font-size: 1rem;
+          color: #123c7c;
+          border-radius: 6px;
+          border: 1px solid #123c7c;
+          font-family: monospace;
+          outline-offset: 2px;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          min-width: 50px;
+          user-select: text;
+        }
+
+        .page-nav input[type="text"]:focus {
+          border-color: #0d2a55;
+          box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
         }
       `}</style>
-    </div>
+    </nav>
   );
 }
