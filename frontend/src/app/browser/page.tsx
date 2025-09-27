@@ -262,7 +262,6 @@ export default function Page() {
         /* Container width fills 90% of viewport width for responsive bases count */
         .container-box {
           width: 90vw;
-          max-width: 900px;
           background: white;
           border-radius: 8px;
           box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
