@@ -30,7 +30,7 @@ app = FastAPI()
 # Set CORS origins allowed to communicate with backend
 origins = [
     "http://localhost:5432",  # Assuming backend origin for development
-    "http://localhost:3000"   # Frontend React or other app
+    "http://localhost:3030"   # Frontend React or other app
 ]
 
 # Add CORS middleware to handle cross-origin requests properly
