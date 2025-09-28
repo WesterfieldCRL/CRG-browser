@@ -11,7 +11,7 @@ export default () => {
     const[value, setValue] = useState<Array<number>>([0, 0]);
     
     // Example colored segments
-    const colorSegments = [
+    const colorSegments1 = [
         { color: '#ffdad9', width: 20 },
         { color: '#d9ebff', width: 10 },
         { color: '#ffdad9', width: 5 },
@@ -21,9 +21,28 @@ export default () => {
         { color: '#ffdad9', width: 25 }
     ];
 
+    const colorSegments2 = [
+        { color: '#d9ebff', width: 10 },
+        { color: '#ffdad9', width: 10 },
+        { color: '#d9ebff', width: 30 },
+        { color: '#ffdad9', width: 10 },
+        { color: '#d9ebff', width: 20 },
+        { color: '#ffdad9', width: 20 }
+    ];
+
+    const colorSegments3 = [
+        { color: '#ffdad9', width: 10 },
+        { color: '#d9ebff', width: 20 },
+        { color: '#ffdad9', width: 15 },
+        { color: '#d9ebff', width: 15 },
+        { color: '#ffdad9', width: 20 },
+        { color: '#d9ebff', width: 20 }
+    ];
+
     function handleChange(newValue: Array<number>) {
-        setValue(newValue);
-        console.log(newValue);
+        if (newValue[1] - newValue[0] <= 1000) {
+            setValue(newValue);    
+        }
     }
 
     return (
@@ -35,15 +54,18 @@ export default () => {
                         <span>End: {value[1]}</span>
                     </div>
                     <Slider
-                        range
+                        range={{ draggableTrack: true }}
                         min={0}
                         max={10000}
-                        onChangeComplete={handleChange}
+                        value={value}
+                        onChange={handleChange}
+                        step={100}
+                        allowCross={false}
                         styles={{
                             handle: {
                                 width: '2px',
-                                height: '200px',
-                                marginTop: '-8px',
+                                height: '230px',
+                                marginTop: '-10px',
                                 backgroundColor: '#1890ff',
                                 borderRadius: '0'
                             },
@@ -51,15 +73,17 @@ export default () => {
                                 backgroundColor: 'transparent'
                             },
                             track: {
-                                height: '200px',
-                                marginTop: '-8px',
-                                backgroundColor: 'rgba(24, 144, 255, 0.2)'
+                                height: '210px',
+                                marginTop: '0px',
+                                backgroundColor: 'rgba(24, 144, 255, 0.2)',
+                                borderRadius: '0'
                             }
                         }}
                     />
                     <div style={{display: "flex", flexDirection: "column", gap: "50px"}}>
-                        <ColorBar segments={colorSegments} />
-                        <ColorBar segments={colorSegments} />
+                        <ColorBar segments={colorSegments1} />
+                        <ColorBar segments={colorSegments2} />
+                        <ColorBar segments={colorSegments3} />
                     </div>
 
                 </div>
