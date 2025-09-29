@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 
 
 
-export default () => {
+export default function ZoomDemo() {
     const router = useRouter();
     const[value, setValue] = useState<Array<number>>([0, 0]);
     const[oldValue, setOldValue] = useState<Array<number>>([0, 0]);
