@@ -7,7 +7,7 @@ export default function HomePage() {
   const router = useRouter();
 
   const handleClick = () => {
-    router.push("/browser");
+    router.push("/zoom_demo");
   };
 
   return (
