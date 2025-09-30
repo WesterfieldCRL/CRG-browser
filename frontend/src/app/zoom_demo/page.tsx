@@ -18,7 +18,7 @@ export default function ZoomDemo() {
     async function loadData() {
         try {
             const data = (await fetchCondensedSequences("DRD4"))
-            setRange([0, data.sequences[Object.keys(data.sequences)[0]].length-1]);
+            setRange([data.start, data.end]);
             
             // Convert the sequences object to an array of sequences with names
             const sequenceArray = Object.entries(data.sequences).map(([key, segments]) => ({
@@ -64,8 +64,8 @@ export default function ZoomDemo() {
                     </div>
                     <Slider
                         range={{ draggableTrack: true }}
-                        min={0}
-                        max={100}
+                        min={range[0]}
+                        max={range[1]}
                         value={value}
                         onChange={handleChange}
                         allowCross={true}
