@@ -93,9 +93,12 @@ export default function ZoomDemo() {
                             }
                         }}
                     />
-                    <div style={{display: "flex", flexDirection: "column", gap: "50px"}}>
+                    <div style={{display: "flex", flexDirection: "column", gap: "5px"}}>
+                        <div style={{color: 'black'}}>Homo sapiens</div>
                         <ColorBar segments={colorSegments1} />
+                        <div style={{color: 'black'}}>Mus musculus</div>
                         <ColorBar segments={colorSegments2} />
+                        <div style={{color: 'black'}}>Macaca mulatta</div>
                         <ColorBar segments={colorSegments3} />
                     </div>
                     <button 
