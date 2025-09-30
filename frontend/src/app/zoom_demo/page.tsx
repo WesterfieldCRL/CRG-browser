@@ -5,7 +5,7 @@ import "rc-slider/assets/index.css";
 import React, { useEffect, useState } from 'react';
 import ColorBar from '../components/ColorBar';
 import { useRouter } from 'next/navigation';
-import { fetchCondensedSequences } from '../utils/services';
+import { fetchCondensedSequences, fetchCondensedSequencesInRange } from '../utils/services';
 
 
 
@@ -13,9 +13,12 @@ export default function ZoomDemo() {
     const router = useRouter();
     const[value, setValue] = useState<Array<number>>([0, 0]);
     const[range, setRange] = useState<Array<number>>([0, 0]);
+    const[update, setUpdate] = useState<boolean>(false);
     const[sequences, setSequences] = useState<Array<{name: string, segments: Array<{color: string, width: number}>}>>([]);
+    const[loading, setLoading] = useState<boolean>(true);
 
     async function loadData() {
+        setLoading(true);
         try {
             const data = (await fetchCondensedSequences("DRD4"))
             setRange([data.start, data.end]);
@@ -27,36 +30,58 @@ export default function ZoomDemo() {
             }));
             
             setSequences(sequenceArray);
+            setLoading(false);
         } catch (error) {
+            setLoading(false);
             console.error("Error fetching condensed sequences:", error);
         }
     }
 
+    async function loadRangeData(start: number, end: number) {
+        setLoading(true);
+        try {
+            const data = (await fetchCondensedSequencesInRange("DRD4", start, end))
+            setRange([data.start, data.end]);
+            
+            // Convert the sequences object to an array of sequences with names
+            const sequenceArray = Object.entries(data.sequences).map(([key, segments]) => ({
+                name: key,
+                segments: segments as Array<{color: string, width: number}>
+            }));
+
+            setSequences(sequenceArray);
+            setLoading(false);
+        } catch (error) {
+            setLoading(false);
+            console.error("Error fetching condensed sequences in range:", error);
+        }
+    }
+
+    // Initial load
     useEffect(() => {
         loadData();
     }, []);
 
+    // On button press
     useEffect(() => {
-    }, [range]);
+        loadRangeData(value[0], value[1]);
+    }, [update]);
 
-    function handleChange(newValue: Array<number>) {
-/*         if (newValue[1] - newValue[0] > 1000) {
-            // Determine which handle was moved
-            if (newValue[0] !== oldValue[0]) {
-                // Left handle was moved
-                newValue[0] = newValue[1] - 1000;
-            } else {
-                // Right handle was moved
-                newValue[1] = newValue[0] + 1000;
-            }
-        } */
+    function handleSliderChange(newValue: Array<number>) {
         setValue(newValue);
+    }
 
+    function handleButtonPress() {
+        if (value[1] - value[0] < 100) {
+            router.push('/browser');
+        }
+        else {setUpdate(!update)}
     }
 
     return (
         <main style={{height: "100vh", padding: "20px", backgroundColor: "#f0f2f5"}}>
             <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
+                {loading ? (<h2 style={{textAlign: "center", color: "black"}}>Loading Data...</h2>) : 
                 <div style={{width: "75%", marginTop: "5%"}}>
                     <div style={{display: "flex", justifyContent: "space-between", marginBottom: "20px", color: "black"}}>
                         <span>Start: {value[0]}</span>
@@ -67,7 +92,7 @@ export default function ZoomDemo() {
                         min={range[0]}
                         max={range[1]}
                         value={value}
-                        onChange={handleChange}
+                        onChange={handleSliderChange}
                         allowCross={true}
                         styles={{
                             handle: {
@@ -97,7 +122,7 @@ export default function ZoomDemo() {
                         ))}
                     </div>
                     <button 
-                        onClick={() => router.push('/browser')}
+                        onClick={() => handleButtonPress()}
                         style={{
                             padding: '10px 16px',
                             borderRadius: '6px',
@@ -121,7 +146,7 @@ export default function ZoomDemo() {
                     >
                         Enlarge Data
                     </button>
-                </div>
+                </div>}
             </div>
         </main>
     )

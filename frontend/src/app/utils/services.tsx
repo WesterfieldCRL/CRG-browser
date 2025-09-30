@@ -148,3 +148,12 @@ export async function fetchCondensedSequences(geneName: string) {
   if (!res.ok) throw new Error(`Failed to fetch sequences: ${res.statusText}`);
   return res.json();
 }
+
+/**
+ * Fetch condensed sequences for a specific range
+ */
+export async function fetchCondensedSequencesInRange(geneName: string, start: number, end: number) {
+  const res = await fetch(`${API_BASE_URL}/condensed_sequences_range?gene_name=${encodeURIComponent(geneName)}&start=${start}&end=${end}`);
+  if (!res.ok) throw new Error(`Failed to fetch sequences in range: ${res.statusText}`);
+  return res.json();
+}
