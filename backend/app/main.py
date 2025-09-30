@@ -338,7 +338,11 @@ def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_se
 
 
         # Convert widths to percentages
+        total_width = len(sequence)
+        for segment in color_map[species_name]:
+            segment.width = int((segment.width / total_width) * 100)
         
+
 
     return color_map
     
