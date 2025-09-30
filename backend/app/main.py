@@ -287,27 +287,7 @@ def compare_sequences(sequences: List[str]) -> List[bool]:
     
     return comparison
 
-
-class ColorSegment(BaseModel):
-    color: str = Field(..., description="Hex color code representing similarity")
-    width: int = Field(..., ge=0, le=100, description="Width percentage (0-100)")
-
-class CondensedSequences(BaseModel):
-    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
-
-### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
-@app.get("/condensed_sequences/", response_model=CondensedSequences)
-def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_session)):
-    # Get the sequences from the database based on the gene name and put in array
-    species = get_species(session)
-    
-    # Create a dictionary to store species -> sequence mapping
-    sequence_map = {}
-    
-    # For each species, get its sequence for the given gene
-    for species_name in species:
-        sequence_map[species_name] = get_sequences(gene_name, species_name, session)[0]
-    
+def populate_color_map(sequence_map):
     comparison = compare_sequences(list(sequence_map.values()))
 
     # Condense the sequences based on similarity
@@ -341,13 +321,47 @@ def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_se
         total_width = len(sequence)
         for segment in color_map[species_name]:
             segment.width = int((segment.width / total_width) * 100)
-        
+
+    return color_map
+
+class ColorSegment(BaseModel):
+    color: str = Field(..., description="Hex color code representing similarity")
+    width: int = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+class CondensedSequences(BaseModel):
+    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
+
+### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
+@app.get("/condensed_sequences/", response_model=CondensedSequences)
+def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_session)):
+    # Get the sequences from the database based on the gene name and put in array
+    species = get_species(session)
+    
+    # Create a dictionary to store species -> sequence mapping
+    sequence_map = {}
+    
+    # For each species, get its sequence for the given gene
+    for species_name in species:
+        sequence_map[species_name] = get_sequences(gene_name, species_name, session)[0]
+    
+    
+    color_map = populate_color_map(sequence_map)
 
 
     return color_map
     
-
-@app.get("/condensed_sequences/selection", response_model=CondensedSequences)
-def get_condensed_sequence(gene_name: str, start: int, end: int, session: OrmSession = Depends(get_session)):
+### Same as condensed_sequences but only for a specific range of the sequence
+@app.get("/condensed_sequences_range", response_model=CondensedSequences)
+def get_condensed_sequences_range(gene_name: str, start: int, end: int, session: OrmSession = Depends(get_session)):
     
-    return "method 2"
+    species = get_species(session)
+
+    sequence_map = {}
+
+    for species_name in species:
+        full_sequence = get_sequences(gene_name, species_name, session)[0]
+        sequence_map[species_name] = full_sequence[start:end]
+
+    color_map = populate_color_map(sequence_map)
+
+    return color_map
