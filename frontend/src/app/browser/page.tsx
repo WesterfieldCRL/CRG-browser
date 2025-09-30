@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { fetchGenes } from "./services";
+import { fetchGenes } from "../utils/services";
 import PageNavigation from "../components/PageNavigation";
 import SequenceViewer from "../components/SequenceViewer";
 import Tooltip from "../components/Tooltip";

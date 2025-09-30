@@ -287,13 +287,20 @@ def compare_sequences(sequences: List[str]) -> List[bool]:
     
     return comparison
 
+class ColorSegment(BaseModel):
+    color: str = Field(..., description="Hex color code representing similarity")
+    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+class CondensedSequences(BaseModel):
+    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
+
 def populate_color_map(sequence_map):
     comparison = compare_sequences(list(sequence_map.values()))
 
     # Condense the sequences based on similarity
     color_map = {}
     for species_name, sequence in sequence_map.items():
-        color_map[species_name] = List[ColorSegment]
+        color_map[species_name] = []  # Initialize an empty list that will hold ColorSegment objects
 
         # populate color map
         for i in range(len(sequence)):
@@ -320,16 +327,9 @@ def populate_color_map(sequence_map):
         # Convert widths to percentages
         total_width = len(sequence)
         for segment in color_map[species_name]:
-            segment.width = int((segment.width / total_width) * 100)
+            segment.width = (segment.width / total_width) * 100
 
     return color_map
-
-class ColorSegment(BaseModel):
-    color: str = Field(..., description="Hex color code representing similarity")
-    width: int = Field(..., ge=0, le=100, description="Width percentage (0-100)")
-
-class CondensedSequences(BaseModel):
-    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
 
 ### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
 @app.get("/condensed_sequences/", response_model=CondensedSequences)
@@ -347,8 +347,8 @@ def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_se
     
     color_map = populate_color_map(sequence_map)
 
-
-    return color_map
+    # Wrap the color_map in the expected response format
+    return {"sequences": color_map}
     
 ### Same as condensed_sequences but only for a specific range of the sequence
 @app.get("/condensed_sequences_range", response_model=CondensedSequences)
@@ -364,4 +364,5 @@ def get_condensed_sequences_range(gene_name: str, start: int, end: int, session:
 
     color_map = populate_color_map(sequence_map)
 
-    return color_map
+    # Wrap the color_map in the expected response format
+    return {"sequences": color_map}

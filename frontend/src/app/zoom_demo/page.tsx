@@ -2,48 +2,45 @@
 
 import Slider from 'rc-slider';
 import "rc-slider/assets/index.css";
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ColorBar from '../components/ColorBar';
 import { useRouter } from 'next/navigation';
+import { fetchCondensedSequences } from '../utils/services';
 
 
 
 export default function ZoomDemo() {
     const router = useRouter();
     const[value, setValue] = useState<Array<number>>([0, 0]);
-    const[oldValue, setOldValue] = useState<Array<number>>([0, 0]);
-    
-    // Example colored segments
-    const colorSegments1 = [
-        { color: '#ffdad9', width: 20 },
-        { color: '#d9ebff', width: 10 },
-        { color: '#ffdad9', width: 5 },
-        { color: '#d9ebff', width: 5 },
-        { color: '#ffdad9', width: 10 },
-        { color: '#d9ebff', width: 25 },
-        { color: '#ffdad9', width: 25 }
-    ];
+    const[range, setRange] = useState<Array<number>>([0, 0]);
+    const[sequences, setSequences] = useState<Array<{name: string, segments: Array<{color: string, width: number}>}>>([]);
 
-    const colorSegments2 = [
-        { color: '#d9ebff', width: 10 },
-        { color: '#ffdad9', width: 10 },
-        { color: '#d9ebff', width: 30 },
-        { color: '#ffdad9', width: 10 },
-        { color: '#d9ebff', width: 20 },
-        { color: '#ffdad9', width: 20 }
-    ];
+    async function loadData() {
+        try {
+            const data = (await fetchCondensedSequences("DRD4"))
+            setRange([0, data.sequences[Object.keys(data.sequences)[0]].length-1]);
+            
+            // Convert the sequences object to an array of sequences with names
+            const sequenceArray = Object.entries(data.sequences).map(([key, segments]) => ({
+                name: key,
+                segments: segments as Array<{color: string, width: number}>
+            }));
+            
+            setSequences(sequenceArray);
+        } catch (error) {
+            console.error("Error fetching condensed sequences:", error);
+        }
+    }
 
-    const colorSegments3 = [
-        { color: '#ffdad9', width: 10 },
-        { color: '#d9ebff', width: 20 },
-        { color: '#ffdad9', width: 15 },
-        { color: '#d9ebff', width: 15 },
-        { color: '#ffdad9', width: 20 },
-        { color: '#d9ebff', width: 20 }
-    ];
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    useEffect(() => {
+    }, [range]);
 
     function handleChange(newValue: Array<number>) {
-        if (newValue[1] - newValue[0] > 1000) {
+/*         if (newValue[1] - newValue[0] > 1000) {
             // Determine which handle was moved
             if (newValue[0] !== oldValue[0]) {
                 // Left handle was moved
@@ -52,9 +49,9 @@ export default function ZoomDemo() {
                 // Right handle was moved
                 newValue[1] = newValue[0] + 1000;
             }
-        }
+        } */
         setValue(newValue);
-        setOldValue(value);
+
     }
 
     return (
@@ -68,11 +65,9 @@ export default function ZoomDemo() {
                     <Slider
                         range={{ draggableTrack: true }}
                         min={0}
-                        max={10000}
+                        max={100}
                         value={value}
                         onChange={handleChange}
-                        step={100}
-                        pushable={100}
                         allowCross={true}
                         styles={{
                             handle: {
@@ -94,12 +89,12 @@ export default function ZoomDemo() {
                         }}
                     />
                     <div style={{display: "flex", flexDirection: "column", gap: "5px"}}>
-                        <div style={{color: 'black'}}>Homo sapiens</div>
-                        <ColorBar segments={colorSegments1} />
-                        <div style={{color: 'black'}}>Mus musculus</div>
-                        <ColorBar segments={colorSegments2} />
-                        <div style={{color: 'black'}}>Macaca mulatta</div>
-                        <ColorBar segments={colorSegments3} />
+                        {sequences.map((sequence, index) => (
+                            <React.Fragment key={sequence.name}>
+                                <div style={{color: 'black', userSelect: 'none'}}>{sequence.name}</div>
+                                <ColorBar segments={sequence.segments} />
+                            </React.Fragment>
+                        ))}
                     </div>
                     <button 
                         onClick={() => router.push('/browser')}
