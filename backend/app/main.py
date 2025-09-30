@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query, Body
 from pydantic import BaseModel, Field
-from typing import Optional, List, Annotated
+from typing import Optional, List, Annotated, Dict
 from sqlalchemy import create_engine, Table, MetaData, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker, Session as OrmSession
 from fastapi.middleware.cors import CORSMiddleware
@@ -272,16 +272,31 @@ def get_sequences(gene_name: str, species_name: str, session: OrmSession = Depen
     return [row.aligned_sequence for row in results if row.aligned_sequence is not None]
 
 
-class CondensedSequence:
+def compare_sequences(sequences: List[str]) -> List[bool]:
+    # Compare sequences character by character and return a list indicating if all characters at each position are identical
+    if not sequences:
+        return []
+    
+    length = len(sequences[0])
+    comparison = []
+    
+    for i in range(length):
+        chars_at_pos_i = [seq[i] for seq in sequences]
+        all_same = len(set(chars_at_pos_i)) == 1
+        comparison.append(all_same)
+    
+    return comparison
+
+
+class ColorSegment(BaseModel):
     color: str = Field(..., description="Hex color code representing similarity")
     width: int = Field(..., ge=0, le=100, description="Width percentage (0-100)")
 
-class CondensedSequencesResponse(BaseModel):
-    species: str = Field(..., description="Species name")
-    condensed_sequence: List['CondensedSequence'] = Field(..., description="Array of condensed sequence segments")
+class CondensedSequences(BaseModel):
+    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
 
 ### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
-@app.get("/condensed_sequences/", response_model=CondensedSequencesResponse)
+@app.get("/condensed_sequences/", response_model=CondensedSequences)
 def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_session)):
     # Get the sequences from the database based on the gene name and put in array
     species = get_species(session)
@@ -293,15 +308,42 @@ def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_se
     for species_name in species:
         sequence_map[species_name] = get_sequences(gene_name, species_name, session)[0]
     
+    comparison = compare_sequences(list(sequence_map.values()))
+
     # Condense the sequences based on similarity
+    color_map = {}
+    for species_name, sequence in sequence_map.items():
+        color_map[species_name] = List[ColorSegment]
+
+        # populate color map
+        for i in range(len(sequence)):
+
+            # check if all characters at this position are identical
+            color = "#ffdad9"  # Default color for different characters
+            
+            if sequence[i] == '-':
+                color = "#7a7a7a"  # Color for gaps
+            else:
+                if comparison[i]:
+                    color = "#d9ebff"  # Color for identical characters
+
+            # apply color #d9ebff if the same, #ffdad9 if different, #7A7A7A if gap
+            if i > 0:
+                if color_map[species_name][-1].color == color:
+                    color_map[species_name][-1].width += 1
+                else:
+                    color_map[species_name].append(ColorSegment(color=color, width=1))
+            else:
+                color_map[species_name].append(ColorSegment(color=color, width=1))
+
+
+        # Convert widths to percentages
+        
+
+    return color_map
     
 
-    
-
-    return sequence_map
-    
-
-@app.get("/condensed_sequences/selection", response_model=CondensedSequencesResponse)
+@app.get("/condensed_sequences/selection", response_model=CondensedSequences)
 def get_condensed_sequence(gene_name: str, start: int, end: int, session: OrmSession = Depends(get_session)):
     
     return "method 2"
