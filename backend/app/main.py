@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Body
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Annotated
 from sqlalchemy import create_engine, Table, MetaData, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker, Session as OrmSession
 from fastapi.middleware.cors import CORSMiddleware
@@ -236,3 +236,72 @@ def delete_snp(snp_id: str, session: OrmSession = Depends(get_session)):
     if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="SNP not found")
     return {"status": "SNP deleted"}
+
+
+
+
+@app.get("/species/", response_model=List[str])
+def get_species(session: OrmSession = Depends(get_session)):
+    """
+    Get a list of all unique species from the genes table.
+    """
+    stmt = select(genes_table.c.species).distinct()
+    results = session.execute(stmt).fetchall()
+    return [row.species for row in results]
+
+@app.get("/gene_names/", response_model=List[str])
+def get_gene_names(session: OrmSession = Depends(get_session)):
+    """
+    Get a list of all unique human gene names from the genes table.
+    """
+    stmt = select(genes_table.c.human_gene_name).distinct()
+    results = session.execute(stmt).fetchall()
+    return [row.human_gene_name for row in results]
+
+# as of the current schema there is only one aligned sequence per gene, so this will return an array of one sequence
+@app.get("/sequences/", response_model=List[str])
+def get_sequences(gene_name: str, species_name: str, session: OrmSession = Depends(get_session)):
+    """
+    Get all aligned sequences for a given human gene name and species.
+    """
+    stmt = select(genes_table.c.aligned_sequence).where(
+        (genes_table.c.human_gene_name == gene_name) &
+        (genes_table.c.species == species_name)
+    )
+    results = session.execute(stmt).fetchall()
+    return [row.aligned_sequence for row in results if row.aligned_sequence is not None]
+
+
+class CondensedSequence:
+    color: str = Field(..., description="Hex color code representing similarity")
+    width: int = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+class CondensedSequencesResponse(BaseModel):
+    species: str = Field(..., description="Species name")
+    condensed_sequence: List['CondensedSequence'] = Field(..., description="Array of condensed sequence segments")
+
+### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
+@app.get("/condensed_sequences/", response_model=CondensedSequencesResponse)
+def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_session)):
+    # Get the sequences from the database based on the gene name and put in array
+    species = get_species(session)
+    
+    # Create a dictionary to store species -> sequence mapping
+    sequence_map = {}
+    
+    # For each species, get its sequence for the given gene
+    for species_name in species:
+        sequence_map[species_name] = get_sequences(gene_name, species_name, session)[0]
+    
+    # Condense the sequences based on similarity
+    
+
+    
+
+    return sequence_map
+    
+
+@app.get("/condensed_sequences/selection", response_model=CondensedSequencesResponse)
+def get_condensed_sequence(gene_name: str, start: int, end: int, session: OrmSession = Depends(get_session)):
+    
+    return "method 2"
