@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { fetchGenes } from "./services";
+import { fetchGenes } from "../utils/services";
 import PageNavigation from "../components/PageNavigation";
 import SequenceViewer from "../components/SequenceViewer";
 import Tooltip from "../components/Tooltip";
+import Zoom from "../components/IterativeZoom";
 
 const speciesList = ["Homo sapiens", "Mus musculus", "Macaca mulatta"];
 
@@ -38,25 +39,26 @@ export default function GenomeBrowserPage() {
   const [selectedGene, setSelectedGene] = useState<string | null>(null);
   const [sequences, setSequences] = useState<Record<string, string>>({});
   const [allGenes, setAllGenes] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(100);
   const [nucleotideWidth, setNucleotideWidth] = useState<number>(MIN_NUCLEOTIDE_WIDTH_PX);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [iterativeZoom, setIterativeZoom] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     async function loadGenes(): Promise<void> {
+      setLoading(true);
       try {
-        setLoading(true);
         const geneList = (await fetchGenes("Homo sapiens")) as GeneListItem[];
         const geneNames = Array.from(new Set(geneList.map((g) => g.human_gene_name))).sort();
         setAllGenes(geneNames);
         if (geneNames.length > 0) setSelectedGene(geneNames[0]);
-        setLoading(false);
       } catch {
         setError("Failed to load gene list");
+      } finally {
         setLoading(false);
       }
     }
@@ -66,7 +68,6 @@ export default function GenomeBrowserPage() {
   useEffect(() => {
     async function loadSequences(): Promise<void> {
       if (!selectedGene) return;
-      
       setLoading(true);
       setError(null);
       try {
@@ -78,9 +79,9 @@ export default function GenomeBrowserPage() {
         }
         setSequences(seqMap);
         setPageIndex(0);
-        setLoading(false);
       } catch {
         setError("Failed to load sequences");
+      } finally {
         setLoading(false);
       }
     }
@@ -106,7 +107,7 @@ export default function GenomeBrowserPage() {
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
-  }, [updateDimensions]);
+  }, [updateDimensions, iterativeZoom]);
 
   const maxLength = Math.max(...Object.values(sequences).map((seq) => seq.length), 0);
   const totalPages = Math.max(1, Math.ceil(maxLength / pageSize));
@@ -151,6 +152,17 @@ export default function GenomeBrowserPage() {
         {loading && <div className="info">Loading data...</div>}
         {error && <div className="error">{error}</div>}
 
+        {!loading && !error && iterativeZoom &&
+
+        <div className="container-box">
+          <Zoom 
+            gene_name={selectedGene}
+            onValueChange={setIterativeZoom}
+          />
+        </div> }
+
+        {!loading && !error && !iterativeZoom &&
+
         <div className="container-box" ref={containerRef} aria-live="polite" aria-atomic="true">
           {Object.keys(sequences).length === 0 && !loading && (
             <p>Select a gene to view aligned DNA sequences.</p>
@@ -172,8 +184,9 @@ export default function GenomeBrowserPage() {
             setPageIndex={setPageIndex}
             sequences={sequences}
             selectedGene={selectedGene ?? ""}
+            onValueChange={setIterativeZoom}
           />
-        </div>
+        </div>}
 
         {tooltip && <Tooltip tooltip={tooltip} />}
       </main>

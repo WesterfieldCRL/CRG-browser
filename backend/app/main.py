@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Body
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Annotated, Dict
 from sqlalchemy import create_engine, Table, MetaData, select, insert, update, delete
 from sqlalchemy.orm import sessionmaker, Session as OrmSession
 from fastapi.middleware.cors import CORSMiddleware
@@ -236,3 +236,137 @@ def delete_snp(snp_id: str, session: OrmSession = Depends(get_session)):
     if result.rowcount == 0:
         raise HTTPException(status_code=404, detail="SNP not found")
     return {"status": "SNP deleted"}
+
+
+
+
+@app.get("/species/", response_model=List[str])
+def get_species(session: OrmSession = Depends(get_session)):
+    """
+    Get a list of all unique species from the genes table.
+    """
+    stmt = select(genes_table.c.species).distinct()
+    results = session.execute(stmt).fetchall()
+    return [row.species for row in results]
+
+@app.get("/gene_names/", response_model=List[str])
+def get_gene_names(session: OrmSession = Depends(get_session)):
+    """
+    Get a list of all unique human gene names from the genes table.
+    """
+    stmt = select(genes_table.c.human_gene_name).distinct()
+    results = session.execute(stmt).fetchall()
+    return [row.human_gene_name for row in results]
+
+# as of the current schema there is only one aligned sequence per gene, so this will return an array of one sequence
+@app.get("/sequences/", response_model=List[str])
+def get_sequences(gene_name: str, species_name: str, session: OrmSession = Depends(get_session)):
+    """
+    Get all aligned sequences for a given human gene name and species.
+    """
+    stmt = select(genes_table.c.aligned_sequence).where(
+        (genes_table.c.human_gene_name == gene_name) &
+        (genes_table.c.species == species_name)
+    )
+    results = session.execute(stmt).fetchall()
+    return [row.aligned_sequence for row in results if row.aligned_sequence is not None]
+
+
+def compare_sequences(sequences: List[str]) -> List[bool]:
+    # Compare sequences character by character and return a list indicating if all characters at each position are identical
+    if not sequences:
+        return []
+    
+    length = len(sequences[0])
+    comparison = []
+    
+    for i in range(length):
+        chars_at_pos_i = [seq[i] for seq in sequences]
+        all_same = len(set(chars_at_pos_i)) == 1
+        comparison.append(all_same)
+    
+    return comparison
+
+class ColorSegment(BaseModel):
+    color: str = Field(..., description="Hex color code representing similarity")
+    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+class CondensedSequences(BaseModel):
+    sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
+    start: int = Field(..., description="Start position of the sequence range")
+    end: int = Field(..., description="End position of the sequence range")
+
+def populate_color_map(sequence_map):
+    comparison = compare_sequences(list(sequence_map.values()))
+
+    # Condense the sequences based on similarity
+    color_map = {}
+    for species_name, sequence in sequence_map.items():
+        color_map[species_name] = []  # Initialize an empty list that will hold ColorSegment objects
+
+        # populate color map
+        for i in range(len(sequence)):
+
+            # check if all characters at this position are identical
+            color = "#ffdad9"  # Default color for different characters
+            
+            if sequence[i] == '-':
+                color = "#7a7a7a"  # Color for gaps
+            else:
+                if comparison[i]:
+                    color = "#d9ebff"  # Color for identical characters
+
+            # apply color #d9ebff if the same, #ffdad9 if different, #7A7A7A if gap
+            if i > 0:
+                if color_map[species_name][-1].color == color:
+                    color_map[species_name][-1].width += 1
+                else:
+                    color_map[species_name].append(ColorSegment(color=color, width=1))
+            else:
+                color_map[species_name].append(ColorSegment(color=color, width=1))
+
+
+        # Convert widths to percentages
+        total_width = len(sequence)
+        for segment in color_map[species_name]:
+            segment.width = (segment.width / total_width) * 100
+
+    return color_map
+
+### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
+@app.get("/condensed_sequences/", response_model=CondensedSequences)
+def get_condensed_sequences(gene_name: str, session: OrmSession = Depends(get_session)):
+    # Get the sequences from the database based on the gene name and put in array
+    species = get_species(session)
+    
+    # Create a dictionary to store species -> sequence mapping
+    sequence_map = {}
+    
+    # For each species, get its sequence for the given gene
+    for species_name in species:
+        sequence_map[species_name] = get_sequences(gene_name, species_name, session)[0]
+    
+    
+    color_map = populate_color_map(sequence_map)
+
+
+
+    # Wrap the color_map in the expected response format
+    return {"sequences": color_map, "start": 0, "end": len(sequence_map[species[0]])}
+    
+### Same as condensed_sequences but only for a specific range of the sequence
+@app.get("/condensed_sequences_range", response_model=CondensedSequences)
+def get_condensed_sequences_range(gene_name: str, start: int, end: int, session: OrmSession = Depends(get_session)):
+    
+    species = get_species(session)
+
+    sequence_map = {}
+
+    for species_name in species:
+        full_sequence = get_sequences(gene_name, species_name, session)[0]
+        sequence_map[species_name] = full_sequence[start:end]
+
+    color_map = populate_color_map(sequence_map)
+
+    # Wrap the color_map in the expected response format
+    return {"sequences": color_map, "start": start, "end": end}
