@@ -13,9 +13,9 @@ interface ZoomProps {
 }
 
 export default function Zoom({gene_name, onValueChange}: ZoomProps) {
-    const router = useRouter();
     const[value, setValue] = useState<Array<number>>([0, 0]);
     const[range, setRange] = useState<Array<number>>([0, 0]);
+    const[prevRange, setPrevRange] = useState<Array<Array<number>>>([]);
     const[update, setUpdate] = useState<boolean>(false);
     const[sequences, setSequences] = useState<Array<{name: string, segments: Array<{color: string, width: number}>}>>([]);
     const[loading, setLoading] = useState<boolean>(true);
@@ -53,6 +53,7 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
             }));
 
             setSequences(sequenceArray);
+            setValue([0,0]);
         } catch (error) {
             console.error("Error fetching condensed sequences in range:", error);
         } finally {
@@ -67,7 +68,9 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
 
     // On button press
     useEffect(() => {
-        loadRangeData(value[0], value[1]);
+        if (!loading)   {
+            loadRangeData(value[0], value[1]);
+        }
     }, [update]);
 
     function handleSliderChange(newValue: Array<number>) {
@@ -78,7 +81,15 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
         if (value[1] - value[0] < 100) {
             onValueChange(false);
         }
-        else {setUpdate(!update)}
+        else {
+            prevRange.push(range);
+            setUpdate(!update)
+        }
+    }
+
+    function handleBackButtonPress() {
+        setValue(prevRange.pop());
+        setUpdate(!update);
     }
 
     return (
@@ -150,6 +161,58 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                     >
                         Enlarge Data
                     </button>
+                    <button 
+                        onClick={() => handleButtonPress()}
+                        style={{
+                            padding: '10px 16px',
+                            borderRadius: '6px',
+                            marginLeft: '20px',
+                            border: '1px solid #123c7c',
+                            backgroundColor: '#123c7c',
+                            color: 'white',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+                            minWidth: '90px',
+                            userSelect: 'none',
+                            marginTop: '40px'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0d2a55';
+                            e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#123c7c';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}
+                    >
+                        View Individual Letters
+                    </button>
+                    {prevRange.length > 0 && 
+                    <button 
+                        onClick={() => handleBackButtonPress()}
+                        style={{
+                            padding: '10px 16px',
+                            marginLeft: '20px',
+                            borderRadius: '6px',
+                            border: '1px solid #123c7c',
+                            backgroundColor: '#123c7c',
+                            color: 'white',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
+                            minWidth: '90px',
+                            userSelect: 'none',
+                            marginTop: '40px'
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.backgroundColor = '#0d2a55';
+                            e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.backgroundColor = '#123c7c';
+                            e.currentTarget.style.boxShadow = 'none';
+                        }}>
+                            Back
+                    </button>}
                 </div>}
             </div>
     )
