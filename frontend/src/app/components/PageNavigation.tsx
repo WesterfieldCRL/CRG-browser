@@ -15,6 +15,8 @@ interface PageNavigationProps {
   sequences: Record<string, string>;
   // Selected gene symbol for FASTA headers and filename
   selectedGene: string;
+  // Callback to toggle iterative zoom mode
+  onValueChange: (value: boolean) => void;
 }
 
 /**
@@ -35,6 +37,7 @@ export default function PageNavigation({
   setPageIndex,
   sequences,
   selectedGene,
+  onValueChange,
 }: PageNavigationProps) {
   // Local input state (1-based page display for user)
   const [inputPage, setInputPage] = useState<string>((pageIndex + 1).toString());
@@ -104,6 +107,10 @@ export default function PageNavigation({
     URL.revokeObjectURL(url);
   }
 
+  function handleIterativeZoom() {
+    onValueChange(true);
+  }
+
   return (
     <nav className="page-nav" aria-label="Pagination navigation">
       {/* Previous Page Button */}
@@ -157,6 +164,15 @@ export default function PageNavigation({
         onClick={handleDownload}
       >
         Download Sequences
+      </button>
+
+      {/* Iterative Zoom Button */}
+      <button
+        type="button"
+        aria-label="Enter iterative zoom mode"
+        onClick={handleIterativeZoom}
+      >
+        Iterative Zoom
       </button>
 
       {/* Styles */}

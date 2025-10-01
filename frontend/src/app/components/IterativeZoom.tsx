@@ -3,13 +3,16 @@
 import Slider from 'rc-slider';
 import "rc-slider/assets/index.css";
 import React, { useEffect, useState } from 'react';
-import ColorBar from '../components/ColorBar';
+import ColorBar from './ColorBar';
 import { useRouter } from 'next/navigation';
 import { fetchCondensedSequences, fetchCondensedSequencesInRange } from '../utils/services';
 
+interface ZoomProps {
+    gene_name: string;
+    onValueChange: (value: boolean) => void;
+}
 
-
-export default function ZoomDemo() {
+export default function Zoom({gene_name, onValueChange}: ZoomProps) {
     const router = useRouter();
     const[value, setValue] = useState<Array<number>>([0, 0]);
     const[range, setRange] = useState<Array<number>>([0, 0]);
@@ -20,7 +23,7 @@ export default function ZoomDemo() {
     async function loadData() {
         setLoading(true);
         try {
-            const data = (await fetchCondensedSequences("DRD4"))
+            const data = (await fetchCondensedSequences(gene_name))
             setRange([data.start, data.end]);
             
             // Convert the sequences object to an array of sequences with names
@@ -30,17 +33,17 @@ export default function ZoomDemo() {
             }));
             
             setSequences(sequenceArray);
-            setLoading(false);
         } catch (error) {
-            setLoading(false);
             console.error("Error fetching condensed sequences:", error);
+        } finally {
+            setLoading(false);
         }
     }
 
     async function loadRangeData(start: number, end: number) {
         setLoading(true);
         try {
-            const data = (await fetchCondensedSequencesInRange("DRD4", start, end))
+            const data = (await fetchCondensedSequencesInRange(gene_name, start, end))
             setRange([data.start, data.end]);
             
             // Convert the sequences object to an array of sequences with names
@@ -50,17 +53,17 @@ export default function ZoomDemo() {
             }));
 
             setSequences(sequenceArray);
-            setLoading(false);
         } catch (error) {
-            setLoading(false);
             console.error("Error fetching condensed sequences in range:", error);
+        } finally {
+            setLoading(false);
         }
     }
 
     // Initial load
     useEffect(() => {
         loadData();
-    }, []);
+    }, [gene_name]);
 
     // On button press
     useEffect(() => {
@@ -73,15 +76,16 @@ export default function ZoomDemo() {
 
     function handleButtonPress() {
         if (value[1] - value[0] < 100) {
-            router.push('/browser');
+            onValueChange(false);
         }
         else {setUpdate(!update)}
     }
 
     return (
-        <main style={{height: "100vh", padding: "20px", backgroundColor: "#f0f2f5"}}>
             <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
-                {loading ? (<h2 style={{textAlign: "center", color: "black"}}>Loading Data...</h2>) : 
+                {loading && <h2 style={{textAlign: "center", color: "black"}}>Loading Data...</h2>}
+
+                {!loading &&
                 <div style={{width: "75%", marginTop: "5%"}}>
                     <div style={{display: "flex", justifyContent: "space-between", marginBottom: "20px", color: "black"}}>
                         <span>Start: {value[0]}</span>
@@ -148,6 +152,5 @@ export default function ZoomDemo() {
                     </button>
                 </div>}
             </div>
-        </main>
     )
 };
