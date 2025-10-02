@@ -2,6 +2,7 @@
 
 import React, {useEffect, useState} from "react";
 import Link from "next/link";
+import InteractiveLine from "../components/InteractiveLine";
 
 enum Genes {
     NONE,
@@ -10,9 +11,51 @@ enum Genes {
     GENE3 = 'gene3',
 }
 
+
+
 export default function RegComp() {
     const[selectedGene, setSelectedGene] = useState<Genes>(Genes.NONE);
 
+    const dummyShapes = [
+        {
+            start: 0,
+            end: 20,
+            info: "Initialization phase",
+            color: "#4CAF50", // green
+        },
+        {
+            start: 15,
+            end: 35,
+            info: "Loading data",
+            color: "#2196F3", // blue
+        },
+        {
+            start: 40,
+            end: 60,
+            info: "Processing",
+            color: "#FFC107", // amber
+        },
+        {
+            start: 55,
+            end: 80,
+            info: "Finalizing",
+            // no color → will use default in component
+        },
+        {
+            start: 85,
+            end: 100,
+            info: "Completed",
+            color: "#9C27B0", // purple
+        },
+    ];
+
+    const dummyProps = {
+        start: 0,
+        end: 100,
+        shapes: dummyShapes,
+        height: 40,
+        width: "80%",
+    };
 
     function handleGene1Press() {
         setSelectedGene(Genes.GENE1);
@@ -89,8 +132,8 @@ export default function RegComp() {
                     </div>
                 }
                 {selectedGene != Genes.NONE &&
-                    <div>
-
+                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
+                        <InteractiveLine {...dummyProps} />
                     </div>
                 }
             </main>        
