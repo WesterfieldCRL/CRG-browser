@@ -296,6 +296,8 @@ class CondensedSequences(BaseModel):
     start: int = Field(..., description="Start position of the sequence range")
     end: int = Field(..., description="End position of the sequence range")
 
+THRESHOLD = 0.009  # Threshold for merging segments
+
 def populate_color_map(sequence_map):
     comparison = compare_sequences(list(sequence_map.values()))
 
@@ -330,6 +332,28 @@ def populate_color_map(sequence_map):
         total_width = len(sequence)
         for segment in color_map[species_name]:
             segment.width = (segment.width / total_width) * 100
+
+        # normalization (for each percantage calculate the sum and divide each by the sum)
+
+        # Merge segments that are below the threshold
+        length = len(color_map[species_name])
+        i = 0
+        while i < length:
+            
+            if color_map[species_name][i].width < THRESHOLD:
+                if i > 0:
+                    color_map[species_name][i - 1].width += color_map[species_name][i].width
+                    del color_map[species_name][i]
+                    i -= 1
+                    length -= 1
+                else:
+                    color_map[species_name][i + 1].width += color_map[species_name][i].width
+                    del color_map[species_name][i]
+                    i -= 1
+                    length -= 1
+
+            i += 1
+                
 
     return color_map
 

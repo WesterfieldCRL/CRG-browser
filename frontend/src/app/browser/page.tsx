@@ -120,16 +120,6 @@ export default function GenomeBrowserPage() {
 
   return (
     <>
-      <header className="header">
-        <nav className="nav-container">
-          <Link href="/" className="logo">GenomeHub</Link>
-          <ul className="nav-links">
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/browser">Genome Browser</Link></li>
-            <li><Link href="/comparison">Genome Comparison</Link></li>
-          </ul>
-        </nav>
-      </header>
 
       <main>
         <h1>Genome Browser</h1>
@@ -190,121 +180,6 @@ export default function GenomeBrowserPage() {
 
         {tooltip && <Tooltip tooltip={tooltip} />}
       </main>
-
-      <style jsx>{`
-        .header {
-          background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-          color: white;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-
-        .nav-container {
-          max-width: 1400px;
-          margin: 0 auto;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 2rem;
-        }
-
-        .logo {
-          font-size: 1.8rem;
-          font-weight: bold;
-          color: white;
-          text-decoration: none;
-        }
-
-        .nav-links {
-          display: flex;
-          list-style: none;
-          gap: 2rem;
-          margin: 0;
-          padding: 0;
-        }
-
-        .nav-links a {
-          color: white;
-          text-decoration: none;
-          font-weight: 500;
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          transition: background-color 0.3s ease;
-        }
-
-        .nav-links a:hover {
-          background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        main {
-          margin: 0;
-          padding: 20px;
-          font-family: "Helvetica Neue", Arial, sans-serif;
-          background-color: #f6f9fc;
-          color: #1c1c1c;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          min-height: 100vh;
-        }
-
-        h1 {
-          font-weight: 700;
-          font-size: 2rem;
-          color: #123c7c;
-          margin-bottom: 20px;
-        }
-
-        .controls {
-          margin-bottom: 20px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 12px;
-          align-items: center;
-        }
-
-        label {
-          font-weight: 600;
-          color: #123c7c;
-        }
-
-        select {
-          padding: 10px 16px;
-          border-radius: 6px;
-          border: 1px solid #123c7c;
-          font-size: 16px;
-          cursor: pointer;
-          min-width: 220px;
-        }
-
-        select:disabled {
-          cursor: not-allowed;
-          opacity: 0.6;
-        }
-
-        .container-box {
-          width: 90vw;
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
-          padding: 20px;
-          box-sizing: border-box;
-        }
-
-        .info {
-          font-style: italic;
-          color: #555;
-          margin-bottom: 20px;
-        }
-
-        .error {
-          color: red;
-          font-weight: 600;
-          margin-bottom: 20px;
-        }
-      `}</style>
     </>
   );
 }
