@@ -22,9 +22,9 @@ export default function HomePage() {
   }
 
   return (
-    <div>
+    <>
       {isDesktopOrLaptop && <HomePageDesktop/>}
       {isMobile && <p>Mobile view</p>}
-    </div>
+    </>
   );
 }
