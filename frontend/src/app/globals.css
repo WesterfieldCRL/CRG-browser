@@ -86,3 +86,27 @@ select:disabled {
   font-weight: 600;
   margin-bottom: 20px;
 }
+
+button {
+  padding: 10px 16px;
+  border-radius: 6px;
+  border: 1px solid #123c7c;
+  background-color: #123c7c;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 90px;
+  user-select: none;
+  }
+
+  button:hover:not(:disabled) {
+  background-color: #0d2a55;
+  box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
+  }
+
+  button:disabled,
+  button[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  }

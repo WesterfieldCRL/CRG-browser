@@ -138,7 +138,7 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                     </div>
                     <button 
                         onClick={() => handleButtonPress()}
-                        className='select'
+                        className='button'
                         onMouseOver={(e) => {
                             e.currentTarget.style.backgroundColor = '#0d2a55';
                             e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
@@ -152,19 +152,7 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                     </button>
                     <button 
                         onClick={() => handleButtonPress()}
-                        style={{
-                            padding: '10px 16px',
-                            borderRadius: '6px',
-                            marginLeft: '20px',
-                            border: '1px solid #123c7c',
-                            backgroundColor: '#123c7c',
-                            color: 'white',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
-                            minWidth: '90px',
-                            userSelect: 'none',
-                            marginTop: '40px'
-                        }}
+                        className='button'
                         onMouseOver={(e) => {
                             e.currentTarget.style.backgroundColor = '#0d2a55';
                             e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
@@ -179,19 +167,7 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                     {prevRange.length > 0 && 
                     <button 
                         onClick={() => handleBackButtonPress()}
-                        style={{
-                            padding: '10px 16px',
-                            marginLeft: '20px',
-                            borderRadius: '6px',
-                            border: '1px solid #123c7c',
-                            backgroundColor: '#123c7c',
-                            color: 'white',
-                            cursor: 'pointer',
-                            transition: 'background-color 0.2s ease, box-shadow 0.2s ease',
-                            minWidth: '90px',
-                            userSelect: 'none',
-                            marginTop: '40px'
-                        }}
+                        className='button'
                         onMouseOver={(e) => {
                             e.currentTarget.style.backgroundColor = '#0d2a55';
                             e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
