@@ -2,7 +2,7 @@
 
 import React from "react";
 
-export default function HomePageDesktop() {
+export default function HomePage() {
   return (
     <>
       
