@@ -75,55 +75,13 @@ export default function RegComp() {
         }
     }, [selectedGene]);
 
+    function handleBackButton() {
+        setSelectedGene(Genes.NONE);
+    }
+
     return (
         <>
-            <header style={{
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-                color: 'white',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                position: 'sticky',
-                top: 0,
-                zIndex: 100
-            }}>
-                <nav style={{
-                    maxWidth: '1400px',
-                    margin: '0 auto',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '1rem 2rem'
-                }}>
-                <Link href="/" style={{
-                    fontSize: '1.8rem',
-                    fontWeight: 'bold',
-                    color: 'white',
-                    textDecoration: 'none'
-                }}>GenomeHub</Link>
-                <ul style={{
-                    display: 'flex',
-                    listStyle: 'none',
-                    gap: '2rem',
-                    margin: 0,
-                    padding: 0,
-                }}>
-                    <li><Link href="/">Home</Link></li>
-                    <li><Link href="/browser">Genome Browser</Link></li>
-                    <li><Link href="/comparison">Genome Comparison</Link></li>
-                </ul>
-                </nav>
-            </header>
-
-            <main style={{
-                margin: 0,
-                padding: '20px',
-                fontFamily: 'Helvetica Neue", Arial, sans-serif',
-                backgroundColor: '#f6f9fc',
-                color: '#1c1c1c',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                minHeight: '100vh',
-            }}>
+            <main>
                 {selectedGene == Genes.NONE &&
                     <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
                         <button color="black" onClick={handleGene1Press}>{Genes.GENE1}</button>
@@ -132,8 +90,18 @@ export default function RegComp() {
                     </div>
                 }
                 {selectedGene != Genes.NONE &&
-                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
+                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: '100%'}}>
+                        <h1>
+                            Some Title goes here
+                        </h1>
                         <InteractiveLine {...dummyProps} />
+                        <InteractiveLine {...dummyProps} />
+                        <InteractiveLine {...dummyProps} />
+                        <div style={{display: "flex", flexDirection: 'row'}}>
+                            <button onClick={handleBackButton}>
+                                Back
+                            </button>
+                        </div>
                     </div>
                 }
             </main>        

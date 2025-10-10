@@ -12,6 +12,7 @@ export default function Header() {
                 <li><Link href="/">Home</Link></li>
                 <li><Link href="/browser">Genome Browser</Link></li>
                 <li><Link href="/comparison">Genome Comparison</Link></li>
+                <li><Link href="/reg_comparison">Regulatory Comparison</Link></li>
             </ul>
             </nav>
         </header>

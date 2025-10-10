@@ -180,6 +180,73 @@ export default function GenomeBrowserPage() {
 
         {tooltip && <Tooltip tooltip={tooltip} />}
       </main>
+      <style>
+        {` main {
+          margin: 0;
+          padding: 20px;
+          font-family: "Helvetica Neue", Arial, sans-serif;
+          background-color: #f6f9fc;
+          color: #1c1c1c;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        h1 {
+          font-weight: 700;
+          font-size: 2rem;
+          color: #123c7c;
+          margin-bottom: 20px;
+        }
+
+        .controls {
+          margin-bottom: 20px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+        }
+
+        label {
+          font-weight: 600;
+          color: #123c7c;
+        }
+
+        select {
+          padding: 10px 16px;
+          border-radius: 6px;
+          border: 1px solid #123c7c;
+          font-size: 16px;
+          cursor: pointer;
+          min-width: 220px;
+        }
+
+        select:disabled {
+          cursor: not-allowed;
+          opacity: 0.6;
+        }
+
+        .container-box {
+          width: 90vw;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+          padding: 20px;
+          box-sizing: border-box;
+        }
+
+        .info {
+          font-style: italic;
+          color: #555;
+          margin-bottom: 20px;
+        }
+
+        .error {
+          color: red;
+          font-weight: 600;
+          margin-bottom: 20px;
+        }`}
+      </style>
     </>
   );
 }

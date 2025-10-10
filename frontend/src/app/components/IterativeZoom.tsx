@@ -92,6 +92,10 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
         setUpdate(!update);
     }
 
+    function handleSuperZoomButton() {
+        onValueChange(false);
+    }
+
     return (
             <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
                 {loading && <h2 style={{textAlign: "center", color: "black"}}>Loading Data...</h2>}
@@ -136,48 +140,50 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                             </React.Fragment>
                         ))}
                     </div>
-                    <button 
-                        onClick={() => handleButtonPress()}
-                        className='button'
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#0d2a55';
-                            e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = '#123c7c';
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}
-                    >
-                        Enlarge Data
-                    </button>
-                    <button 
-                        onClick={() => handleButtonPress()}
-                        className='button'
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#0d2a55';
-                            e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = '#123c7c';
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}
-                    >
-                        View Individual Letters
-                    </button>
-                    {prevRange.length > 0 && 
-                    <button 
-                        onClick={() => handleBackButtonPress()}
-                        className='button'
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.backgroundColor = '#0d2a55';
-                            e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.backgroundColor = '#123c7c';
-                            e.currentTarget.style.boxShadow = 'none';
-                        }}>
-                            Back
-                    </button>}
+                    <div style={{marginTop: '30px', display: "flex", flexDirection: "row", gap: "5px"}}>
+                        <button 
+                            onClick={() => handleButtonPress()}
+                            className='button'
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#0d2a55';
+                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#123c7c';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
+                            Enlarge Data
+                        </button>
+                        <button 
+                            onClick={() => handleSuperZoomButton()}
+                            className='button'
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#0d2a55';
+                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#123c7c';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}
+                        >
+                            View Individual Letters
+                        </button>
+                        {prevRange.length > 0 && 
+                        <button 
+                            onClick={() => handleBackButtonPress()}
+                            className='button'
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor = '#0d2a55';
+                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor = '#123c7c';
+                                e.currentTarget.style.boxShadow = 'none';
+                            }}>
+                                Back
+                        </button>}
+                    </div>
                 </div>}
             </div>
     )
