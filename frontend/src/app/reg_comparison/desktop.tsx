@@ -1,111 +1,142 @@
-'use client'
+"use client";
 
-import React, {useEffect, useState} from "react";
-import Link from "next/link";
-import InteractiveLine from "../components/InteractiveLine";
+import React, { useEffect, useState } from "react";
+import InteractiveLine from "./InteractiveLine";
+import {
+  fetchRegulatoryGenes,
+  fetchRegulatoryELementLines,
+} from "../utils/services";
 
-enum Genes {
-    NONE,
-    GENE1 = 'gene1',
-    GENE2 = 'gene2',
-    GENE3 = 'gene3',
+class LineShapes {
+  start: number;
+  end: number;
+  info: string;
+  color: string;
+
+  constructor(start: number, end: number, info: string, color: string) {
+    this.start = start;
+    this.end = end;
+    this.info = info;
+    this.color = color;
+  }
 }
 
+class RegulatoryLine {
+  relative_start: number;
+  relative_end: number;
+  real_start: number;
+  real_end: number;
+  shapes: Array<LineShapes>;
 
+  constructor(
+    relative_start: number,
+    relative_end: number,
+    real_start: number,
+    real_end: number,
+    shapes: Array<LineShapes>
+  ) {
+    this.relative_start = relative_start;
+    this.relative_end = relative_end;
+    this.real_start = real_start;
+    this.real_end = real_end;
+    this.shapes = shapes;
+  }
+}
 
 export default function RegComp() {
-    const[selectedGene, setSelectedGene] = useState<Genes>(Genes.NONE);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [genes, setGenes] = useState<Array<string>>([]);
+  const [selected_gene, setSelectedGene] = useState<string>("none");
+  const [reg_lines, setRegLines] = useState<Record<string, RegulatoryLine>>();
 
-    const dummyShapes = [
-        {
-            start: 0,
-            end: 20,
-            info: "Initialization phase",
-            color: "#4CAF50", // green
-        },
-        {
-            start: 15,
-            end: 35,
-            info: "Loading data",
-            color: "#2196F3", // blue
-        },
-        {
-            start: 40,
-            end: 60,
-            info: "Processing",
-            color: "#FFC107", // amber
-        },
-        {
-            start: 55,
-            end: 80,
-            info: "Finalizing",
-            // no color → will use default in component
-        },
-        {
-            start: 85,
-            end: 100,
-            info: "Completed",
-            color: "#9C27B0", // purple
-        },
-    ];
-
-    const dummyProps = {
-        start: 0,
-        end: 100,
-        shapes: dummyShapes,
-        height: 40,
-        width: "80%",
-    };
-
-    function handleGene1Press() {
-        setSelectedGene(Genes.GENE1);
+  async function loadGenes() {
+    setLoading(true);
+    try {
+      const data = await fetchRegulatoryGenes();
+      setGenes(data);
+    } catch (error) {
+      console.error("Error fetching condensed sequences:", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    function handleGene2Press() {
-        setSelectedGene(Genes.GENE2);
+  async function loadLines(geneName: string) {
+    setLoading(true);
+    try {
+      const data = await fetchRegulatoryELementLines(geneName);
+
+      setRegLines(data);
+    } catch (error) {
+      console.error("Error fetching condensed sequences:", error);
+    } finally {
+      setLoading(false);
     }
+  }
 
-    function handleGene3Press() {
-        setSelectedGene(Genes.GENE3);
-    }
+  function handleButtonPress(gene: string) {
+    loadLines(gene);
+    setSelectedGene(gene);
+  }
 
-    useEffect(() => {
-        if (selectedGene != Genes.NONE) {
-            // Load graph data from endpoint
-        }
-    }, [selectedGene]);
+  // Initial load
+  useEffect(() => {
+    loadGenes();
+  }, []);
 
-    function handleBackButton() {
-        setSelectedGene(Genes.NONE);
-    }
-
-    return (
-        <>
-            <main>
-                {selectedGene == Genes.NONE &&
-                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
-                        <button color="black" onClick={handleGene1Press}>{Genes.GENE1}</button>
-                        <button color="black" onClick={handleGene2Press}>{Genes.GENE2}</button>
-                        <button color="black" onClick={handleGene3Press}>{Genes.GENE3}</button>
+  return (
+    <>
+      <main>
+        {!loading && (
+          <>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+            >
+              {genes.map((gene) => (
+                <React.Fragment key={gene}>
+                  <button onClick={() => handleButtonPress(gene)}>
+                    {gene}
+                  </button>
+                </React.Fragment>
+              ))}
+            </div>
+            {!(selected_gene === "none") && (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "left",
+                  width: "100%",
+                  padding: "100px",
+                  fontSize: "25px",
+                  gap: "20px",
+                }}
+              >
+                {Object.entries(reg_lines).map(([key, value]) => (
+                  <React.Fragment key={key}>
+                    <div
+                      style={{
+                        backgroundColor: "#ddeaffff",
+                        borderRadius: "15px",
+                        padding: "10px",
+                      }}
+                    >
+                      {key}
+                      <InteractiveLine
+                        start={value.relative_start}
+                        end={value.relative_end}
+                        start_label={value.real_start}
+                        end_label={value.real_end}
+                        shapes={value.shapes}
+                      />
                     </div>
-                }
-                {selectedGene != Genes.NONE &&
-                    <div style={{display: "flex", flexDirection: "column", alignItems: "center", width: '100%'}}>
-                        <h1>
-                            Some Title goes here
-                        </h1>
-                        <InteractiveLine {...dummyProps} />
-                        <InteractiveLine {...dummyProps} />
-                        <InteractiveLine {...dummyProps} />
-                        <div style={{display: "flex", flexDirection: 'row'}}>
-                            <button onClick={handleBackButton}>
-                                Back
-                            </button>
-                        </div>
-                    </div>
-                }
-            </main>        
-        </>
-    )
+                  </React.Fragment>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    </>
+  );
 }
-
