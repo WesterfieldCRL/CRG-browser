@@ -6,6 +6,7 @@ WORKDIR /code
 
 
 COPY ./requirements.txt /code/requirements.txt
+COPY ./Enh_Prom_Location_Data.csv /code/Enh_Prom_Location_Data.csv
 
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt

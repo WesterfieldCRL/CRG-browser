@@ -4,7 +4,6 @@ import Slider from 'rc-slider';
 import "rc-slider/assets/index.css";
 import React, { useEffect, useState } from 'react';
 import ColorBar from './ColorBar';
-import { useRouter } from 'next/navigation';
 import { fetchCondensedSequences, fetchCondensedSequencesInRange } from '../utils/services';
 
 interface ZoomProps {

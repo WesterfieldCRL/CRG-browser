@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { fetchGenes } from "../utils/services";
-import PageNavigation from "../components/PageNavigation";
-import SequenceViewer from "../components/SequenceViewer";
+import PageNavigation from "./PageNavigation";
+import SequenceViewer from "./SequenceViewer";
 import Tooltip from "../components/Tooltip";
-import Zoom from "../components/IterativeZoom";
+import Zoom from "./IterativeZoom";
 
 const speciesList = ["Homo sapiens", "Mus musculus", "Macaca mulatta"];
 

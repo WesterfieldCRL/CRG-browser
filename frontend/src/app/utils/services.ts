@@ -157,3 +157,23 @@ export async function fetchCondensedSequencesInRange(geneName: string, start: nu
   if (!res.ok) throw new Error(`Failed to fetch sequences in range: ${res.statusText}`);
   return res.json();
 }
+
+
+/**
+ * Fetch genes for the regulatory element lines
+ * Will be removed later in favor of a unified function
+ */
+export async function fetchRegulatoryGenes() {
+  const res = await fetch(`${API_BASE_URL}/get_regulatory_genes`);
+  if (!res.ok) throw new Error(`Failed to fetch regulatory element genes: ${res.statusText}`);
+  return res.json();
+}
+
+/**
+ * Fetch lines for selected gene
+ */
+export async function fetchRegulatoryELementLines(geneName: string) {
+  const res = await fetch(`${API_BASE_URL}/regulatory_line_elements/?gene_name=${encodeURIComponent(geneName)}`);
+  if (!res.ok) throw new Error(`Failed to fetch regulatory element lines: ${res.statusText}`);
+  return res.json();
+}
