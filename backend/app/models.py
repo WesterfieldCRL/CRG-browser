@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import String, Integer, ForeignKey, BigInteger, CheckConstraint, CHAR, Text
+from sqlalchemy import String, Integer, ForeignKey, BigInteger, CheckConstraint, CHAR, Text, DECIMAL
 from sqlalchemy.orm import Mapped, declarative_base, relationship, mapped_column
 
 Base = declarative_base()
@@ -8,20 +8,23 @@ Base = declarative_base()
 class Genes(Base):
     __tablename__ = "Genes"
 
-    name: Mapped[str] = mapped_column(String(50), primary_key=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
 
     # Relationships
-    aligned_sequences_fk: Mapped[List["AllignedSequences"]] = relationship(back_populates="gene_fk")
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="gene_fk")
+    conservation_analysis_fk: Mapped[List["ConservationAnalysis"]] = relationship(back_populates="gene_fk")
 
 class Species(Base):
     __tablename__ = "Species"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True)
+    assembly: Mapped[str] = mapped_column(String, unique=True)
 
     # Relationships
-    aligned_sequences_fk: Mapped[List["AllignedSequences"]] = relationship(back_populates="species_fk")
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="species_fk")
+    conservation_analysis_fk: Mapped[List["ConservationAnalysis"]] = relationship(back_populates="species_fk")
 
 class RegulatorySequences(Base):
     __tablename__ = "RegulatorySequences"
@@ -32,10 +35,11 @@ class RegulatorySequences(Base):
 
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    gene = mapped_column(ForeignKey("Genes.name"))
-    species = mapped_column(ForeignKey("Species.name"))
+    gene_id = mapped_column(ForeignKey("Genes.id"))
+    species_id = mapped_column(ForeignKey("Species.id"))
     start: Mapped[int] = mapped_column(BigInteger)
     end: Mapped[int] = mapped_column(BigInteger)
+    sequence: Mapped[str] = mapped_column(Text)
 
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="regulatory_sequences_fk")
@@ -51,7 +55,7 @@ class RegulatoryElements(Base):
     geneType: Mapped[str] = mapped_column(String(4))
     start: Mapped[int]
     end: Mapped[int]
-    regulatorySequence = mapped_column(ForeignKey("RegulatorySequences.id"))
+    regulatory_sequence_id = mapped_column(ForeignKey("RegulatorySequences.id"))
 
     __table_args__ = (
         CheckConstraint("typeStart >= 0", name="check_typeStart_nonnegative"),
@@ -61,14 +65,16 @@ class RegulatoryElements(Base):
     # Relationships
     regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="regulatoryElements_fk")
 
-class AllignedSequences(Base):
-    __tablename__ = "AllignedSequences"
+class ConservationAnalysis(Base):
+    __tablename___ = "ConservationAnalysis"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    sequence: Mapped[str] = mapped_column(Text, )
-    gene = mapped_column(ForeignKey("Genes.name"))
-    species = mapped_column(ForeignKey("Species.name"))
+    gene_id = mapped_column(ForeignKey("Genes.id"))
+    species_id = mapped_column(ForeignKey("Species.id"))
+    phylop_score: Mapped[float] = mapped_column(DECIMAL)
+    phastcon_score: Mapped[float] = mapped_column(DECIMAL)
+    nucleotide: Mapped[str] = mapped_column(CHAR)
 
     # Relationships
-    gene_fk: Mapped[Genes] = relationship(back_populates="aligned_sequences_fk")
-    species_fk: Mapped[Species] = relationship(back_populates="aligned_sequences_fk")
+    gene_fk: Mapped[Genes] = relationship(back_populates="regulatory_sequences_fk")
+    species_fk: Mapped[Species] = relationship(back_populates="regulatory_sequences_fk")
