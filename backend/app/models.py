@@ -1,8 +1,10 @@
 from typing import List
 from sqlalchemy import String, Integer, ForeignKey, BigInteger, CheckConstraint, CHAR, Text, DECIMAL
-from sqlalchemy.orm import Mapped, declarative_base, relationship, mapped_column
+from sqlalchemy.orm import Mapped, DeclarativeBase, relationship, mapped_column
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
-Base = declarative_base()
+class Base(AsyncAttrs, DeclarativeBase):
+     pass
 
 
 class Genes(Base):
@@ -66,7 +68,7 @@ class RegulatoryElements(Base):
     regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="regulatoryElements_fk")
 
 class ConservationAnalysis(Base):
-    __tablename___ = "ConservationAnalysis"
+    __tablename__ = "ConservationAnalysis"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     gene_id = mapped_column(ForeignKey("Genes.id"))
@@ -76,5 +78,5 @@ class ConservationAnalysis(Base):
     nucleotide: Mapped[str] = mapped_column(CHAR)
 
     # Relationships
-    gene_fk: Mapped[Genes] = relationship(back_populates="regulatory_sequences_fk")
-    species_fk: Mapped[Species] = relationship(back_populates="regulatory_sequences_fk")
+    gene_fk: Mapped[Genes] = relationship(back_populates="conservation_analysis_fk")
+    species_fk: Mapped[Species] = relationship(back_populates="conservation_analysis_fk")
