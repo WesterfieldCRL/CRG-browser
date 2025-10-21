@@ -1,4 +1,4 @@
-chromosome,strand,element_type,start,end,gene_id,species_id 
+chromosome,strand,element_type,start,end,gene_name,species_name
 11,+,Prom,637042,637385,DRD4,Homo sapiens
 11,+,Enh,637540,637693,DRD4,Homo sapiens
 11,+,Enh,637801,638096,DRD4,Homo sapiens

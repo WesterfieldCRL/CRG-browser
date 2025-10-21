@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query, Body, Depends
+from fastapi import FastAPI, HTTPException, Query, Body, Depends, APIRouter
 from pydantic import BaseModel, Field
 from typing import List, AsyncGenerator
 from sqlalchemy import create_engine, MetaData, select, insert, update, delete
@@ -11,10 +11,14 @@ import asyncio
 
 # Importing all of the sqlalchemy classes
 from app.models import load_ConservationAnalysis, load_Genes, load_RegulatorySequences, load_RegulatroyElements, load_Species
+from routers import genes, species
 
 
 
 app = FastAPI()
+
+app.include_router(genes.router)
+app.include_router(species.router)
 
 origins = [
     "http://localhost:5432",  # Database

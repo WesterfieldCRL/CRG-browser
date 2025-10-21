@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -7,10 +8,20 @@ from app.dependencies import get_session
 from fastapi import APIRouter
 
 
-router = APIRouter(prefix="/genes")
+router = APIRouter(prefix="/species")
 
-@router.get("/get/species_id/", response_model=int)
-async def get_species_id(name: str, session: AsyncSession = Depends(get_session)) -> int:
+@router.get("/names", response_model=List[str])
+async def get_names(session: AsyncSession = Depends(get_session)) -> List[str]:
+    
+    
+    stmt = select(Species.name)
+    result = (await session.execute(stmt)).fetchall()
+
+
+    return [row.name for row in result]
+
+@router.get("/id", response_model=int)
+async def get_id(name: str, session: AsyncSession = Depends(get_session)) -> int:
 
     
     stmt = select(Species.id).where(Species.name == name)

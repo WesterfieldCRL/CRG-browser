@@ -7,8 +7,8 @@ from app.dependencies import get_session
 
 router = APIRouter(prefix="/genes")
 
-@router.get("/names/", response_model=List[str])
-async def get_all_genes(session: AsyncSession = Depends(get_session)) -> List[str]:
+@router.get("/names", response_model=List[str])
+async def get_names(session: AsyncSession = Depends(get_session)) -> List[str]:
     
     
     stmt = select(Genes.name)
@@ -17,8 +17,8 @@ async def get_all_genes(session: AsyncSession = Depends(get_session)) -> List[st
 
     return [row.name for row in result]
 
-@router.get("/id/", response_model=int)
-async def get_gene_id(name: str, session: AsyncSession = Depends(get_session)) -> int:
+@router.get("/id", response_model=int)
+async def get_id(name: str, session: AsyncSession = Depends(get_session)) -> int:
 
     
     stmt = select(Genes.id).where(Genes.name == name)
