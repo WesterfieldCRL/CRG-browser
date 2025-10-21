@@ -1,12 +1,7 @@
 from typing import List
 from sqlalchemy import String, Integer, ForeignKey, BigInteger, CheckConstraint, CHAR, Text, DECIMAL
 from sqlalchemy.orm import Mapped, DeclarativeBase, relationship, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession
-from sqlalchemy import select, insert
-from dependencies import get_session
-from fastapi import Depends
-from csv import DictReader
-from routers import species, genes, regulatory_sequences
+from sqlalchemy.ext.asyncio import AsyncAttrs
 
 class Base(AsyncAttrs, DeclarativeBase):
      pass
@@ -31,7 +26,7 @@ class Species(Base):
 
     # Relationships
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="species_fk")
-    conservation_analysis_fk: Mapped[List["ConservationAnalysis"]] = relationship(back_populates="species_fk")
+    conservation_sequences_fk: Mapped[List["ConservationSequences"]] = relationship(back_populates="species_fk")
 
 class RegulatorySequences(Base):
     __tablename__ = "RegulatorySequences"
@@ -77,103 +72,28 @@ class ConservationAnalysis(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     gene_id = mapped_column(ForeignKey("Genes.id"))
-    species_id = mapped_column(ForeignKey("Species.id"))
     phylop_score: Mapped[float] = mapped_column(DECIMAL)
     phastcon_score: Mapped[float] = mapped_column(DECIMAL)
-    nucleotide: Mapped[str] = mapped_column(CHAR)
+    header: Mapped[str] = mapped_column(String(255))
 
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="conservation_analysis_fk")
-    species_fk: Mapped[Species] = relationship(back_populates="conservation_analysis_fk")
+    conservation_sequences_fk: Mapped[List["ConservationSequences"]] = relationship(back_populates="conservation_analysis_fk")
+    
 
+class ConservationSequences(Base):
+    __tablename__ = "ConservationSequences"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    species_id = mapped_column(ForeignKey("Species.id"))
+    conservation_id = mapped_column(ForeignKey("ConservationAnalysis.id"))
+    nucleotide: Mapped[str] = mapped_column(CHAR)
 
-# Functions for loading the data from files into the database
-
-async def load_Genes(session: AsyncSession = Depends(get_session)) -> None:
-    print("loading genes table")
-
-    with open("app/data/Genes.csv", "r") as file:
-
-        reader = DictReader(file)
-        rows = [dict(row) for row in reader]
-        
-        stmt = insert(Genes).values(rows)
-
-        await session.execute(stmt)
-        await session.commit()
-
-async def load_Species(session: AsyncSession = Depends(get_session)) -> None:
-    print("loading species table")
-
-    with open("app/data/Species.csv", "r") as file:
-
-        
-        reader = DictReader(file)
-        rows = [dict(row) for row in reader]
-        
-        stmt = insert(Species).values(rows)
-
-        await session.execute(stmt)
-        await session.commit()
-
-async def load_RegulatorySequences(session: AsyncSession = Depends(get_session)) -> None:
-    print("loading regulatory sequences table")
-
-    with open("app/data/RegulatorySequences.csv", "r") as file:
-
-        
-        reader = DictReader(file)
-        
-        # Since this table depends on Genes and Species we need to get the correct id's for the given values
-
-        for row in reader:
-            gene_id = genes.get_id(row.pop("fk_gene"))
-            row["gene_id"] = id
-
-            species_id = species.get_id(row.pop("fk_species"))
-            row["species_id"] = id
-
-
-            # convert the strings to integers
-            row["start"] = int(row["start"])
-
-            row["end"] = int(row["end"])
-
-        rows = [dict(row) for row in reader]
-        stmt = insert(Species).values(rows)
-
-        await session.execute(stmt)
-        await session.commit()
-
-async def load_RegulatroyElements(session: AsyncSession = Depends(get_session)) -> None:
-    print("loading regulatory elements table")
-
-    with open("app/data/RegualtoryElements.csv", "r") as file:
-
-        reader = DictReader(file)
-        
-        # Since this table depends on Genes and Species we need to get the correct id's for the given values
-
-        for row in reader:
-            # convert the strings to integers
-            row["chromosome"] = int(row["chromosome"])
-            row["start"] = int(row["start"])
-            row["end"] = int(row["end"])
-
-            # Get the gene and species names, remove those items in the dict and add the id to the sequence we belong to
-            row["regulatory_sequence_id"] = regulatory_sequences.get_id(row.pop("gene_name"), row.pop("species_name"))
+    # Relationships
+    species_fk: Mapped[Species] = relationship(back_populates="conservation_sequences_fk")
+    conservation_analysis_fk: Mapped[ConservationAnalysis] = relationship(back_populates="conservation_sequences_fk")
             
 
 
-        rows = [dict(row) for row in reader]
-        stmt = insert(RegulatoryElements).values(rows)
 
-        await session.execute(stmt)
-        await session.commit()
-
-async def load_ConservationAnalysis() -> None:
-    print("loading conservation analysis table")
-
-    with open("app/data/ConservationAnalysis.csv", "r") as file:
-        
+            
