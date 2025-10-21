@@ -1,7 +1,13 @@
 from typing import List
 from sqlalchemy import String, Integer, ForeignKey, BigInteger, CheckConstraint, CHAR, Text, DECIMAL
 from sqlalchemy.orm import Mapped, DeclarativeBase, relationship, mapped_column
-from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.ext.asyncio import AsyncAttrs, AsyncSession
+from sqlalchemy import select, insert
+from dependencies import get_session
+from fastapi import Depends
+from csv import DictReader
+from routers.genes import get_all_genes, get_gene_id
+from routers.species import get_species_id
 
 class Base(AsyncAttrs, DeclarativeBase):
      pass
@@ -80,3 +86,91 @@ class ConservationAnalysis(Base):
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="conservation_analysis_fk")
     species_fk: Mapped[Species] = relationship(back_populates="conservation_analysis_fk")
+
+
+
+# Functions for loading the data from files into the database
+
+async def load_Genes(session: AsyncSession = Depends(get_session)) -> None:
+    print("loading genes table")
+
+    with open("app/data/Genes.csv", "r") as genes_file:
+
+        reader = DictReader(genes_file)
+        rows = [dict(row) for row in reader]
+        
+        stmt = insert(Genes).values(rows)
+
+        await session.execute(stmt)
+        await session.commit()
+
+async def load_Species(session: AsyncSession = Depends(get_session)) -> None:
+    print("loading species table")
+
+    with open("app/data/Species.csv", "r") as genes_file:
+
+        
+        reader = DictReader(genes_file)
+        rows = [dict(row) for row in reader]
+        
+        stmt = insert(Species).values(rows)
+
+        await session.execute(stmt)
+        await session.commit()
+
+async def load_RegulatorySequences(session: AsyncSession = Depends(get_session)) -> None:
+    print("loading regulatory sequences table")
+
+    with open("app/data/RegulatorySequences.csv", "r") as genes_file:
+
+        
+        reader = DictReader(genes_file)
+        
+        # Since this table depends on Genes and Species we need to get the correct id's for the given values
+
+        for row in reader:
+            gene_id = get_gene_id(row["fk_gene"])
+            row["gene_id"] = id
+
+            species_id = get_species_id(row["fk_species"])
+            row["species_id"] = id
+
+
+            # convert the strings to integers
+            row["start"] = int(row["start"])
+
+            row["end"] = int(row["end"])
+
+        rows = [dict(row) for row in reader]
+        stmt = insert(Species).values(rows)
+
+        await session.execute(stmt)
+        await session.commit()
+
+async def load_RegulatroyElements(session: AsyncSession = Depends(get_session)) -> None:
+    print("loading regulatory elements table")
+
+    with open("app/data/RegualtoryElements.csv", "r") as genes_file:
+
+        reader = DictReader(genes_file)
+        
+        # Since this table depends on Genes and Species we need to get the correct id's for the given values
+
+        for row in reader:
+            # convert the strings to integers
+            row["chromosome"] = int(row["chromosome"])
+            row["start"] = int(row["start"])
+            row["end"] = int(row["end"])
+
+            # This one is a little tricky and the reason why I am loading the data manually instead of having a script that works for every table. :'‑(
+            # To find the sequence that this belongs too, we need to match the genes and species
+
+
+        rows = [dict(row) for row in reader]
+        stmt = insert(Species).values(rows)
+
+        await session.execute(stmt)
+        await session.commit()
+
+async def load_ConservationAnalysis() -> None:
+    print("loading conservation analysis table")
