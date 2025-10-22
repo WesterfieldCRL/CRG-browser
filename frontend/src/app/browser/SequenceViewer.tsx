@@ -9,7 +9,6 @@ interface TooltipState {
 interface SequenceViewerProps {
   sequences: Record<string, string>;
   speciesList: string[];
-  speciesDisplay: Record<string, string>;
   pageIndex: number;
   pageSize: number;
   setTooltip: (tip: TooltipState | null) => void;
@@ -19,7 +18,6 @@ interface SequenceViewerProps {
 export default function SequenceViewer({
   sequences,
   speciesList,
-  speciesDisplay,
   pageIndex,
   pageSize,
   setTooltip,
@@ -63,7 +61,6 @@ export default function SequenceViewer({
     <>
       <div className="species-container" role="list" aria-label="Species sequences">
         {speciesList.map((speciesKey) => {
-          const displayName = speciesDisplay[speciesKey] ?? speciesKey;
           const seq = sequences[speciesKey] || "";
           const start = pageIndex * pageSize;
           const end = Math.min(seq.length, start + pageSize);
@@ -81,7 +78,7 @@ export default function SequenceViewer({
                 tabIndex={-1}
                 aria-live="polite"
               >
-                {displayName} (Gene length: {seq.length} nucleotides)
+                {speciesKey} (Gene length: {seq.length} nucleotides)
               </h2>
               <div className="sequence-row">{renderNucleotides(segment, start)}</div>
             </section>
