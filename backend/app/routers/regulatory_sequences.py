@@ -132,10 +132,10 @@ async def get_condensed_sequences(gene_name: str):
     
     # For each species, get its sequence for the given gene
     for species_name in species_list:
-        sequence_map[species_name] = get_sequences(gene_name, species_name)
+        sequence_map[species_name] = await get_sequences(gene_name, species_name)
     
     
-    color_map = populate_color_map(sequence_map)
+    color_map = await populate_color_map(sequence_map)
 
 
 
@@ -154,7 +154,7 @@ async def get_condensed_sequences_range(gene_name: str, start: int, end: int):
             full_sequence = await get_sequences(gene_name, species_name)
             sequence_map[species_name] = full_sequence[start:end]
 
-        color_map = populate_color_map(sequence_map)
+        color_map = await populate_color_map(sequence_map)
 
         # Wrap the color_map in the expected response format
         return {"sequences": color_map, "start": start, "end": end}
