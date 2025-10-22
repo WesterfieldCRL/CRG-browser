@@ -44,11 +44,12 @@ async def get_species_regulatory_line(given_species: str, given_gene: str) -> Re
         
         reg_elems = (await session.execute(stmt)).scalars().all()
 
+        print(len(reg_elems))
 
         shapes = []
         for element in reg_elems:
-            shapes.append(LineShapes(start = element.start, 
-                                    end = element.end, 
+            shapes.append(LineShapes(start = element.start - reg_elem_endpoints[1], 
+                                    end = element.end - reg_elem_endpoints[1], 
                                     info = f"Chromosome: {element.chromosome} | {element.strand} | {element.element_type}",
                                     color = "#ad463e"))
         
