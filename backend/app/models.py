@@ -54,7 +54,7 @@ class RegulatoryElements(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     chromosome: Mapped[int]
     strand: Mapped[str] = mapped_column(CHAR)
-    geneType: Mapped[str] = mapped_column(String(4))
+    element_type: Mapped[str] = mapped_column(String(4))
     start: Mapped[int]
     end: Mapped[int]
     regulatory_sequence_id = mapped_column(ForeignKey("RegulatorySequences.id"))

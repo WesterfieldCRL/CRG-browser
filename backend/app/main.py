@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,26 +13,6 @@ from app.routers import genes, species, regulatory_sequences
 from app.dependencies import async_session
 
 
-
-app = FastAPI()
-
-app.include_router(genes.router)
-app.include_router(species.router)
-
-origins = [
-    "http://localhost:5432",  # Database
-    "http://localhost:3030"   # Frontend
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.post("/load_genes")
 async def load_Genes() -> None:
     async with async_session() as session:
         print("loading genes table")
@@ -47,7 +27,6 @@ async def load_Genes() -> None:
             await session.execute(stmt)
             await session.commit()
 
-@app.post("/load_species")
 async def load_Species() -> None:
     async with async_session() as session:
         print("loading species table")
@@ -63,7 +42,7 @@ async def load_Species() -> None:
             await session.execute(stmt)
             await session.commit()
 
-@app.post("/load_regulatory_sequences")
+# TODO: handle loading more asyncronously
 async def load_RegulatorySequences() -> None:
     async with async_session() as session:
         print("loading regulatory sequences table")
@@ -76,64 +55,70 @@ async def load_RegulatorySequences() -> None:
             # Since this table depends on Genes and Species we need to get the correct id's for the given values
 
             for row in reader:
-                gene_id = genes.get_id(row.pop("fk_gene"))
-                row["gene_id"] = gene_id
 
-                species_id = species.get_id(row.pop("fk_species"))
-                row["species_id"] = species_id
+                stmt = select(Genes).where(Genes.name == row["fk_gene"])
+                local_gene = (await session.execute(stmt)).scalar()
 
+                if local_gene is None:
+                    raise ValueError("Unable to get gene")
+                
+                stmt = select(Species).where(Species.name == row["fk_species"])
+                local_species = (await session.execute(stmt)).scalar()
 
-                # convert the strings to integers
-                row["start"] = int(row["start"])
+                if local_species is None:
+                    raise ValueError("Unable to get species")
 
-                row["end"] = int(row["end"])
+                regulatory_sequences_object = RegulatorySequences(
+                    gene_id = local_gene.id,
+                    species_id = local_species.id,
+                    start = int(row["start"]),
+                    end = int(row["end"]),
+                    sequence = row["sequence"])
+                session.add(regulatory_sequences_object)
 
-            rows = [dict(row) for row in reader]
-            stmt = insert(RegulatorySequences).values(rows)
-
-            await session.execute(stmt)
             await session.commit()
 
-@app.post("/load_regulatory_elements")
+
 async def load_RegulatoryElements() -> None:
     async with async_session() as session:
         print("loading regulatory elements table")
 
-        with open("app/data/RegualtoryElements.csv", "r") as file:
+        with open("app/data/RegulatoryElements.csv", "r") as file:
 
-            reader = DictReader(file)
             
-            # Since this table depends on Genes and Species we need to get the correct id's for the given values
+            reader = DictReader(file)        
 
             for row in reader:
-                # convert the strings to integers
-                row["chromosome"] = int(row["chromosome"])
-                row["start"] = int(row["start"])
-                row["end"] = int(row["end"])
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
 
-                # Get the gene and species names, remove those items in the dict and add the id to the sequence we belong to
-                row["regulatory_sequence_id"] = regulatory_sequences.get_id(row.pop("gene_name"), row.pop("species_name"))
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError("Unable to find regulatory sequence")
+
+                regulatory_elements_object = RegulatoryElements(
+                    chromosome = int(row["chromosome"]),
+                    strand = row["strand"],
+                    element_type = row["element_type"],
+                    start = int(row["start"]),
+                    end = int(row["end"]),
+                    regulatory_sequence_id = reg_seq.id)
                 
+                session.add(regulatory_elements_object)
+        await session.commit()
 
-
-            rows = [dict(row) for row in reader]
-            stmt = insert(RegulatoryElements).values(rows)
-
-            await session.execute(stmt)
-            await session.commit()
-
-@app.post("/load_conservation_analysis")
 async def load_ConservationAnalysis() -> None:
     async with async_session() as session:
         print("loading conservation analysis and sequences tables")
 
-        human_id = species.get_id("Homo sapiens")
-        mouse_id = species.get_id("Mus musculus")
-        monkey_id = species.get_id("Macaca mulatta")
+        results = await asyncio.gather(
+            species.get_id("Homo sapiens"),
+            species.get_id("Mus musculus"),
+            species.get_id("Macaca mulatta"))
 
-        species_list = [[human_id, "hg38"],
-                        [mouse_id, "mm10"],
-                        [monkey_id, "rheMac3"]]
+        species_list = [[results[0], "hg38"],
+                        [results[1], "mm10"],
+                        [results[2], "rheMac3"]]
 
         genes_list = ["DRD4", "ALDH1A3", "CHRNA6"]
 
@@ -141,7 +126,7 @@ async def load_ConservationAnalysis() -> None:
         for gene_name in genes_list:
             with open(f"app/data/ConservationAnalysis{gene_name}.csv", "r") as file:
                 reader = DictReader(file)
-                gene_id = genes.get_id(gene_name)
+                gene_id = await genes.get_id(gene_name)
                 for row in reader:
 
                     # add an item to the conservation anaysis table and get its id for use in the conservation sequences table
@@ -175,9 +160,7 @@ async def lifespan(app: FastAPI):
     
 
     await regulatory_sequences_future
-    # This table depends on RegulatorySequences so we we can run that now
     await load_RegulatoryElements()
-
     # Make sure all tasks have finished
     await conservation_analysis_future
 
@@ -185,4 +168,22 @@ async def lifespan(app: FastAPI):
     yield
     # Runs after application ends
 
+
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost:5432",  # Database
+    "http://localhost:3030"   # Frontend
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(genes.router)
+app.include_router(species.router)
+app.include_router(regulatory_sequences.router)

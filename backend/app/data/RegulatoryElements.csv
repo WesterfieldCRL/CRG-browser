@@ -1,5 +1,5 @@
 chromosome,strand,element_type,start,end,gene_name,species_name
-11,+,Prom,637042,637385,DRD4,Homo sapiens
+11,+,Prom,637269,637385,DRD4,Homo sapiens
 11,+,Enh,637540,637693,DRD4,Homo sapiens
 11,+,Enh,637801,638096,DRD4,Homo sapiens
 11,+,Enh,638261,638530,DRD4,Homo sapiens
@@ -8,8 +8,6 @@ chromosome,strand,element_type,start,end,gene_name,species_name
 11,+,Enh,639360,639578,DRD4,Homo sapiens
 11,+,Enh,639652,639979,DRD4,Homo sapiens
 11,+,Enh,640361,640698,DRD4,Homo sapiens
-7,+,N/A,N/A,N/A,DRD4,Mus musculus
-14,+,N/A,N/A,N/A,DRD4,Macaca mulatta
 8,-,Enh,42753690,42754040,CHRNA6,Homo sapiens
 8,-,Enh,42754614,42754960,CHRNA6,Homo sapiens
 8,-,Enh,42760845,42761129,CHRNA6,Homo sapiens
@@ -28,8 +26,6 @@ chromosome,strand,element_type,start,end,gene_name,species_name
 8,-,Enh,42789607,42789889,CHRNA6,Homo sapiens
 8,-,Enh,42789891,42790179,CHRNA6,Homo sapiens
 8,-,Enh,42790298,42790645,CHRNA6,Homo sapiens
-8,-,N/A,N/A,N/A,CHRNA6,Mus musculus
-8,-,N/A,N/A,N/A,CHRNA6,Macaca mulatta
 15,-,Enh,100897803,100898151,ALDH1A3,Homo sapiens
 15,-,Enh,100898200,100898450,ALDH1A3,Homo sapiens
 15,-,Enh,100900386,100900695,ALDH1A3,Homo sapiens
