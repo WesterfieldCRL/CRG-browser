@@ -13,10 +13,10 @@ from app.routers import species
 router = APIRouter(prefix="/sequences")
 
 @router.get("/id", response_model=int)
-async def get_id(species_name: str, genes_name: str) -> int:
+async def get_id(species_name: str, gene_name: str) -> int:
 
     async with async_session() as session:
-        stmt = select(RegulatorySequences.id).join(Genes).join(Species).where(Species.name == species_name).where(Genes.name == genes_name)
+        stmt = select(RegulatorySequences.id).join(Genes).join(Species).where(Species.name == species_name).where(Genes.name == gene_name)
         result = (await session.execute(stmt)).scalar() # We should never get more than one row from this query
 
         if result is not None:
@@ -24,7 +24,7 @@ async def get_id(species_name: str, genes_name: str) -> int:
         else:
             raise HTTPException(status_code=404, detail="Unable to find sequence")
         
-@router.get("/sequences", response_model=str)
+@router.get("/sequence", response_model=str)
 async def get_sequences(gene_name: str, species_name: str) -> str:
     async with async_session() as session:
         stmt = select(RegulatorySequences.sequence).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)

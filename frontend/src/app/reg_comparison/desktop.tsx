@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import InteractiveLine from "./InteractiveLine";
 import {
-  fetchRegulatoryGenes,
+  fetchGenes,
   fetchRegulatoryELementLines,
 } from "../utils/services";
 
@@ -52,7 +52,7 @@ export default function RegComp() {
   async function loadGenes() {
     setLoading(true);
     try {
-      const data = await fetchRegulatoryGenes();
+      const data = await fetchGenes();
       setGenes(data);
     } catch (error) {
       console.error("Error fetching condensed sequences:", error);
