@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from csv import DictReader
 import asyncio
+import shutil
 
 # Importing all of the sqlalchemy classes
 from app.models import *
@@ -165,6 +166,7 @@ async def lifespan(app: FastAPI):
     await conservation_analysis_future
 
     print("Finished loading tables")
+    shutil.rmtree("app/data")
     yield
     # Runs after application ends
 
