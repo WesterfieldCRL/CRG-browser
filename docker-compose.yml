@@ -20,7 +20,7 @@ services:
       - ./backend:/app
 
   db:
-    image: postgres
+    image: postgres:17
     restart: unless-stopped
     container_name: db
     environment:
