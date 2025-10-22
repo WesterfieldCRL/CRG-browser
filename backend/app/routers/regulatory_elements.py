@@ -30,25 +30,26 @@ async def get_species_regulatory_line(given_species: str, given_gene: str) -> Re
 
         stmt = select(RegulatorySequences.id, RegulatorySequences.start, RegulatorySequences.end).join(Genes).join(Species).where(Genes.name == given_gene).where(Species.name == given_species)
 
-        reg_elem_endpoints = (await session.execute(stmt)).scalar() # This should only give me one row I think
+        reg_elem_endpoints = (await session.execute(stmt)).first() # This should only give me one row I think
 
         if reg_elem_endpoints is None:
             raise HTTPException(status_code=404, detail = "Unable to find specifed sequence when getting regulatory line elements")
 
         relative_start = 0
-        relative_end = reg_elem_endpoints.end - reg_elem_endpoints.start
-        real_start = reg_elem_endpoints.start
-        real_end = reg_elem_endpoints.end
+        relative_end = reg_elem_endpoints[2] - reg_elem_endpoints[1]
+        real_start = reg_elem_endpoints[1]
+        real_end = reg_elem_endpoints[2]
 
-        stmt = select(RegulatoryElements).join(RegulatorySequences).where(RegulatorySequences.id == reg_elem_endpoints.id)
+        stmt = select(RegulatoryElements).join(RegulatorySequences).where(RegulatorySequences.id == reg_elem_endpoints[0])
         
-        reg_elems = (await session.execute(stmt)).all()
+        reg_elems = (await session.execute(stmt)).scalars().all()
+
 
         shapes = []
-        for row in reg_elems:
-            shapes.append(LineShapes(start = row.type_start_index, 
-                                    end = row.type_end_index, 
-                                    info = f"Chromosome: {row.chromosome} | {row.strand} | {row.gene_type}",
+        for element in reg_elems:
+            shapes.append(LineShapes(start = element.start, 
+                                    end = element.end, 
+                                    info = f"Chromosome: {element.chromosome} | {element.strand} | {element.element_type}",
                                     color = "#ad463e"))
         
         return RegulatoryLine(relative_start = relative_start, relative_end = relative_end, real_start = real_start, real_end = real_end, shapes = shapes)
