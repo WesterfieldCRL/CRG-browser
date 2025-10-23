@@ -35,8 +35,8 @@ CREATE TABLE IF NOT EXISTS "RegulatoryElements" (
 	"chromosome" INTEGER NOT NULL,
 	"strand" CHAR(1) NOT NULL,
 	"element_type" VARCHAR(4) NOT NULL,
-	"start" INTEGER NOT NULL CHECK("[object Object]" >= 0),
-	"end" INTEGER NOT NULL CHECK("[object Object]" >= "[object Object]"),
+	"start" INTEGER NOT NULL CHECK("start" >= 0), my
+	"end" INTEGER NOT NULL CHECK("end" >= "start"),
 	"regulatory_sequence_id" INTEGER NOT NULL,
 	PRIMARY KEY("id")
 );
