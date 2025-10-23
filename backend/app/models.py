@@ -15,7 +15,7 @@ class Genes(Base):
 
     # Relationships
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="gene_fk")
-    conservation_analysis_fk: Mapped[List["ConservationAnalysis"]] = relationship(back_populates="gene_fk")
+    conservation_analysis_fk: Mapped[List["ConservationScores"]] = relationship(back_populates="gene_fk")
 
 class Species(Base):
     __tablename__ = "Species"
@@ -26,7 +26,7 @@ class Species(Base):
 
     # Relationships
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="species_fk")
-    conservation_sequences_fk: Mapped[List["ConservationSequences"]] = relationship(back_populates="species_fk")
+    conservation_sequences_fk: Mapped[List["ConservationNucleotides"]] = relationship(back_populates="species_fk")
 
 class RegulatorySequences(Base):
     __tablename__ = "RegulatorySequences"
@@ -67,22 +67,22 @@ class RegulatoryElements(Base):
     # Relationships
     regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="regulatoryElements_fk")
 
-class ConservationAnalysis(Base):
-    __tablename__ = "ConservationAnalysis"
+class ConservationScores(Base):
+    __tablename__ = "ConservationScores"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     gene_id = mapped_column(ForeignKey("Genes.id"))
     phylop_score: Mapped[float] = mapped_column(DECIMAL)
     phastcon_score: Mapped[float] = mapped_column(DECIMAL)
-    header: Mapped[str] = mapped_column(String(255))
+    position: Mapped[str] = mapped_column(String(255))
 
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="conservation_analysis_fk")
-    conservation_sequences_fk: Mapped[List["ConservationSequences"]] = relationship(back_populates="conservation_analysis_fk")
+    conservation_sequences_fk: Mapped[List["ConservationNucleotides"]] = relationship(back_populates="conservation_analysis_fk")
     
 
-class ConservationSequences(Base):
-    __tablename__ = "ConservationSequences"
+class ConservationNucleotides(Base):
+    __tablename__ = "ConservationNucleotides"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     species_id = mapped_column(ForeignKey("Species.id"))
@@ -91,7 +91,7 @@ class ConservationSequences(Base):
 
     # Relationships
     species_fk: Mapped[Species] = relationship(back_populates="conservation_sequences_fk")
-    conservation_analysis_fk: Mapped[ConservationAnalysis] = relationship(back_populates="conservation_sequences_fk")
+    conservation_analysis_fk: Mapped[ConservationScores] = relationship(back_populates="conservation_sequences_fk")
             
 
 
