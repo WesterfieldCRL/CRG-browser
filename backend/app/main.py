@@ -131,7 +131,7 @@ async def load_ConservationAnalysis() -> None:
                 for row in reader:
 
                     # add an item to the conservation anaysis table and get its id for use in the conservation sequences table
-                    conservation_analysis_object = ConservationScores(gene_id = gene_id, phylop_score = float(row["phylop_score"]), phastcon_score = float(row["phastcon_score"]), header = row["header"])
+                    conservation_analysis_object = ConservationScores(gene_id = gene_id, phylop_score = float(row["phylop_score"]), phastcon_score = float(row["phastcon_score"]), position = row["header"])
                     
                     session.add(conservation_analysis_object)
                     await session.flush()
