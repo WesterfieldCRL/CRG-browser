@@ -86,7 +86,7 @@ class ConservationNucleotides(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     species_id = mapped_column(ForeignKey("Species.id"))
-    conservation_id = mapped_column(ForeignKey("ConservationAnalysis.id"))
+    conservation_id = mapped_column(ForeignKey("ConservationScores.id"))
     nucleotide: Mapped[str] = mapped_column(CHAR)
 
     # Relationships
