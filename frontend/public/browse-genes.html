@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0b7285" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#074d52" media="(prefers-color-scheme: dark)" />
+  <meta name="description" content="Browse and explore aligned genomic sequences across species" />
+  
+  <title>CoRGi - Browse Genes</title>
+  
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  
+  <link rel="preload" href="styles.css" as="style" />
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Additional styles for browse-genes page -->
+  <style>
+    /* Gene Selection Styles */
+    .gene-search-container {
+      margin-bottom: var(--space-5);
+    }
+    
+    .search-input {
+      width: 100%;
+      padding: var(--space-4);
+      font-size: 1rem;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--panel-bg);
+      color: var(--text);
+      transition: all var(--transition-fast);
+    }
+    
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(45,180,182,0.1);
+    }
+    
+    .search-input::placeholder {
+      color: var(--muted);
+    }
+    
+    .gene-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: var(--space-3);
+      max-height: 400px;
+      overflow-y: auto;
+      padding: var(--space-2);
+      background: var(--panel-bg);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      /* Smooth scrolling */
+      -webkit-overflow-scrolling: touch;
+      scroll-behavior: smooth;
+    }
+    
+    .gene-button {
+      min-height: var(--touch-target);
+      padding: var(--space-3) var(--space-4);
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 0.9375rem;
+      color: var(--primary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      text-align: center;
+      /* Improve tap area */
+      position: relative;
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .gene-button {
+        background: var(--bg);
+        border-color: var(--border-strong);
+      }
+    }
+    
+    @media (hover: hover) {
+      .gene-button:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+        box-shadow: var(--shadow);
+      }
+    }
+    
+    .gene-button:active {
+      transform: scale(0.98);
+      transition-duration: 50ms;
+    }
+    
+    .gene-button.selected {
+      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+      color: white;
+      border-color: transparent;
+      box-shadow: var(--shadow);
+    }
+    
+    .gene-button.hidden {
+      display: none;
+    }
+    
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    
+    .gene-count {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: var(--space-3);
+      font-weight: 600;
+    }
+    
+    /* Overview and Details sections */
+    #overview-section,
+    #details-section {
+      margin-top: var(--space-6);
+    }
+    
+    .overview-instruction {
+      text-align: center;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: var(--space-4);
+      font-size: 1rem;
+    }
+    
+    .overview-instruction strong {
+      color: var(--accent);
+    }
+    
+    .overview-row {
+      display: flex;
+      gap: 2px;
+      align-items: center;
+      min-height: 56px;
+      margin-bottom: var(--space-3);
+      border-radius: var(--radius-md);
+      background: var(--panel-bg);
+      padding: var(--space-2);
+      overflow: hidden;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+      border: 2px solid var(--border);
+    }
+    
+    .overview-bar {
+      height: 100%;
+      min-width: 3px;
+      border-radius: 3px;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+      touch-action: none;
+      position: relative;
+    }
+    
+    .overview-bar:active,
+    .overview-bar.highlight {
+      outline: 3px solid var(--accent);
+      outline-offset: -3px;
+      opacity: 0.9;
+      z-index: 10;
+    }
+    
+    .overview-info {
+      font-size: 0.9375rem;
+      color: var(--muted);
+      text-align: center;
+      padding: var(--space-3);
+      background: var(--panel-bg);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    
+    .overview-info strong {
+      color: var(--primary);
+    }
+    
+    /* Sequence tracks */
+    .tracks-container {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+    
+    .track {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+    
+    .species-label {
+      font-weight: 800;
+      color: var(--primary);
+      font-size: 1rem;
+      padding: var(--space-3) var(--space-4);
+      background: var(--panel-bg);
+      border-radius: var(--radius-md);
+      border-left: 4px solid var(--accent);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    
+    .sequence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      padding: var(--space-4);
+      background: var(--panel-bg);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      min-height: 80px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      align-items: flex-start;
+    }
+    
+    .nucleotide-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: inherit;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+      font-family: var(--font-mono);
+    }
+    
+    @media (min-width: 768px) {
+      .nucleotide-box {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+      }
+    }
+    
+    @media (hover: hover) {
+      .nucleotide-box:hover {
+        transform: scale(1.15);
+        z-index: 10;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+    }
+    
+    .nucleotide-box:active {
+      transform: scale(1.05);
+    }
+    
+    /* Color categories */
+    .nucleotide-box.color-all-same,
+    .overview-bar.color-all-same {
+      background: var(--accent);
+      color: white;
+      box-shadow: 0 2px 4px rgba(45,180,182,0.3);
+    }
+    
+    .nucleotide-box.color-two-same,
+    .overview-bar.color-two-same {
+      background: #f6b63c;
+      color: #0b1720;
+      box-shadow: 0 2px 4px rgba(246,182,60,0.3);
+    }
+    
+    .nucleotide-box.color-all-different,
+    .overview-bar.color-all-different {
+      background: #eef2f4;
+      color: #0b1720;
+      border: 1px solid rgba(11,17,18,0.08);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .nucleotide-box.color-all-different,
+      .overview-bar.color-all-different {
+        background: #2a3542;
+        color: #e2e8f0;
+        border-color: rgba(226,232,240,0.1);
+      }
+    }
+    
+    /* Pagination controls */
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      margin: var(--space-5) 0;
+      flex-wrap: wrap;
+      padding: var(--space-4);
+      background: var(--panel-bg);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+    }
+    
+    .pagination-controls button {
+      min-width: var(--touch-target);
+      min-height: var(--touch-target);
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      background: white;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1.125rem;
+      transition: all var(--transition-fast);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .pagination-controls button {
+        background: var(--bg);
+      }
+    }
+    
+    @media (hover: hover) {
+      .pagination-controls button:not([disabled]):hover {
+        background: var(--panel-bg);
+        border-color: var(--accent);
+      }
+    }
+    
+    .pagination-controls button:not([disabled]):active {
+      transform: scale(0.95);
+    }
+    
+    .pagination-controls button[disabled] {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    
+    #input-page {
+      width: 80px;
+      padding: var(--space-3);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      background: white;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 700;
+      min-height: var(--touch-target);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      #input-page {
+        background: var(--bg);
+        color: var(--text);
+      }
+    }
+    
+    #page-count-label {
+      font-size: 0.9375rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    
+    /* Action buttons */
+    .action-buttons {
+      display: flex;
+      gap: var(--space-3);
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: var(--space-5);
+    }
+    
+    .action-buttons button {
+      flex: 1 1 auto;
+      min-width: 140px;
+      min-height: var(--touch-target-large);
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      background: white;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 1rem;
+      transition: all var(--transition-fast);
+    }
+    
+    @media (prefers-color-scheme: dark) {
+      .action-buttons button {
+        background: var(--bg);
+      }
+    }
+    
+    @media (hover: hover) {
+      .action-buttons button:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+      }
+    }
+    
+    .action-buttons button:active {
+      transform: scale(0.98);
+    }
+    
+    #btn-download {
+      background: linear-gradient(180deg, var(--accent), var(--accent-dark));
+      color: white;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(11,114,133,0.2);
+    }
+    
+    @media (hover: hover) {
+      #btn-download:hover {
+        box-shadow: 0 8px 20px rgba(11,114,133,0.3);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <div id="navbar-placeholder"></div>
+  
+  <script>
+    (function() {
+      const navbarCache = sessionStorage.getItem('navbar-html');
+      const navbarPlaceholder = document.getElementById('navbar-placeholder');
+      
+      if (navbarCache) {
+        navbarPlaceholder.innerHTML = navbarCache;
+        updateActiveNav();
+      }
+      
+      fetch('navbar.html')
+        .then(response => response.text())
+        .then(data => {
+          navbarPlaceholder.innerHTML = data;
+          sessionStorage.setItem('navbar-html', data);
+          updateActiveNav();
+        })
+        .catch(error => {
+          console.error('Error loading navbar:', error);
+        });
+      
+      function updateActiveNav() {
+        const currentPage = 'browse-genes.html';
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+          if (tab.getAttribute('href') === currentPage) {
+            tab.classList.add('active');
+            tab.setAttribute('aria-current', 'page');
+          }
+        });
+      }
+    })();
+  </script>
+
+  <main class="container">
+    <!-- Gene selection section -->
+    <section id="gene-selection-section" aria-labelledby="gene-selection-title">
+      <h2 id="gene-selection-title" style="font-size: 1.5rem; color: var(--primary); margin-bottom: 1rem; text-align: center;">Select a Gene</h2>
+      
+      <div class="gene-search-container">
+        <input 
+          type="search" 
+          id="gene-search" 
+          class="search-input"
+          placeholder="🔍 Search genes..."
+          aria-label="Search for genes"
+          autocomplete="off"
+        />
+      </div>
+      
+      <div class="gene-grid" id="gene-grid" role="listbox" aria-label="Available genes">
+        <div class="no-results" id="loading-genes">Loading genes...</div>
+      </div>
+      
+      <div class="gene-count" id="gene-count" aria-live="polite"></div>
+    </section>
+
+    <!-- Overview section with zoom capability -->
+    <section id="overview-section" class="hidden" aria-labelledby="overview-title">
+      <h2 id="overview-title" class="sr-only">Sequence Overview</h2>
+      <div class="overview-instruction">
+        <strong>👆 Tap and drag</strong> on the sequence below to zoom in
+      </div>
+      <div class="overview-row" 
+           id="overview-summary" 
+           role="slider"
+           aria-label="Sequence overview - drag to select region"
+           tabindex="0">
+      </div>
+      <div class="overview-info">
+        Viewing: <strong id="zoom-range-display">Loading...</strong>
+      </div>
+    </section>
+
+    <!-- Detailed sequence view -->
+    <section id="details-section" class="hidden" aria-labelledby="details-title">
+      <h2 id="details-title" class="sr-only">Detailed Sequence View</h2>
+      
+      <div class="tracks-container">
+        <div class="track">
+          <div class="species-label">
+            <span role="img" aria-label="Human">👤</span>
+            <span>Homo sapiens</span>
+          </div>
+          <div class="sequence" id="seq-human" aria-live="polite" aria-atomic="true"></div>
+        </div>
+
+        <div class="track">
+          <div class="species-label">
+            <span role="img" aria-label="Mouse">🐭</span>
+            <span>Mus musculus</span>
+          </div>
+          <div class="sequence" id="seq-mouse" aria-live="polite" aria-atomic="true"></div>
+        </div>
+
+        <div class="track">
+          <div class="species-label">
+            <span role="img" aria-label="Macaque">🐵</span>
+            <span>Macaca mulatta</span>
+          </div>
+          <div class="sequence" id="seq-macaque" aria-live="polite" aria-atomic="true"></div>
+        </div>
+      </div>
+
+      <!-- Pagination controls -->
+      <div class="pagination-controls">
+        <button id="btn-prev-page" aria-label="Previous page">&lt;</button>
+        <label for="input-page" class="sr-only">Page number</label>
+        <input id="input-page" 
+               type="number" 
+               min="1" 
+               value="1" 
+               aria-label="Current page number"
+               inputmode="numeric" />
+        <span id="page-count-label">of 1</span>
+        <button id="btn-next-page" aria-label="Next page">&gt;</button>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="action-buttons">
+        <button id="btn-reset" aria-label="Reset view">🔄 Reset</button>
+        <button id="btn-download" aria-label="Download sequences">⬇️ Download</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="browse-genes.js"></script>
+
+  <script>
+    // Haptic feedback
+    function vibrate(duration = 10) {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(duration);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Add haptic feedback to interactive elements
+      document.querySelectorAll('button, .gene-button').forEach(btn => {
+        btn.addEventListener('touchstart', () => vibrate(10), { passive: true });
+      });
+    });
+
+    // Prevent double-tap zoom on nucleotide boxes
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e) => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300 && e.target.classList.contains('nucleotide-box')) {
+        e.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // Handle orientation changes
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if (window.renderDetailedSequences && typeof window.renderDetailedSequences === 'function') {
+          window.renderDetailedSequences();
+        }
+      }, 200);
+    });
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .catch(err => console.log('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+</body>
+</html>

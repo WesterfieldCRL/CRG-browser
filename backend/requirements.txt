@@ -1,0 +1,6 @@
+fastapi[standard]>=0.116.1
+sqlalchemy>=2.0.43
+psycopg>=3.2.1.1
+matplotlib>=3.7.0
+pandas>=2.0.0
+openpyxl>=3.1.0

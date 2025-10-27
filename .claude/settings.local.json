@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/src/app/comparison/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/backend/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/backend/app/routers/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/**)",
+      "Bash(cat:*)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/src/app/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/src/app/browser/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/src/app/reg_comparison/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/backend/app/**)",
+      "Read(//c/Users/wlnec/Downloads/CRG-browser-main (2)/CRG-browser-main/frontend/src/app/components/**)",
+      "Bash(docker exec:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(curl:*)",
+      "Bash(docker logs projectb-updated-keep-ui-backend-1)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(git remote add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
