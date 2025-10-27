@@ -10,7 +10,7 @@ import shutil
 
 # Importing all of the sqlalchemy classes
 from app.models import *
-from app.routers import genes, species, regulatory_sequences, regulatory_elements
+from app.routers import genes, species, regulatory_sequences, regulatory_elements, conservation_scores
 from app.dependencies import async_session
 
 
@@ -190,3 +190,4 @@ app.include_router(genes.router)
 app.include_router(species.router)
 app.include_router(regulatory_sequences.router)
 app.include_router(regulatory_elements.router)
+app.include_router(conservation_scores.router)
