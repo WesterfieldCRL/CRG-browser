@@ -18,11 +18,17 @@ class HistogramData(BaseModel):
 async def get_histogram_data(species_name: str, gene_name: str) -> List[HistogramData]:
 
     async with async_session() as session:
-        stmt = select(ConservationScores.phastcon_score, ConservationScores.phylop_score, ConservationNucleotides.nucleotide).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name).order_by(ConservationScores.position)
+        stmt = (select(ConservationScores.phastcon_score, ConservationScores.phylop_score, ConservationNucleotides.nucleotide)
+                .select_from(ConservationScores)
+                .join(ConservationNucleotides)
+                .join(Genes)
+                .join(Species).where(Genes.name == gene_name)
+                .where(Species.name == species_name)
+                .order_by(ConservationScores.position))
 
         result = (await session.execute(stmt)).tuples().all()
 
-        if result is None:
+        if len(result) == 0:
             raise HTTPException(status_code=404, detail="Unable to find scores for given gene and species")
         
         data: list[HistogramData] = []
