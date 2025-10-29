@@ -53,9 +53,9 @@ export async function fetchSequence(geneName: string, speciesName: string) {
 
 /** Fetch condensed sequences by gene (used by IterativeZoom) */
 export async function fetchCondensedSequences(geneName: string) {
-  // GET /sequences/condensed_sequences?gene_name=...
+  // GET /sequences/condensed_sequences/?gene_name=...
   const qs = `gene_name=${encodeURIComponent(geneName)}`;
-  return fetchJSON(`/sequences/condensed_sequences?${qs}`);
+  return fetchJSON(`/sequences/condensed_sequences/?${qs}`);
 }
 
 /** Fetch condensed sequences for a specific range (used by IterativeZoom) */
