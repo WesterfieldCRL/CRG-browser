@@ -20,7 +20,8 @@
       "Bash(docker-compose up:*)",
       "Bash(docker-compose ps:*)",
       "Bash(git remote add:*)",
-      "Bash(column -t -s $'\\t':*)"
+      "Bash(column -t -s $'\\t':*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []

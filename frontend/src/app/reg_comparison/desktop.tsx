@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import InteractiveLine from "./InteractiveLine";
+import ConservationHistogram from "./ConservationHistogram";
 import {
   fetchGenes,
   fetchRegulatoryElementLines,
@@ -144,16 +145,10 @@ export default function RegComp() {
                     <tr key={gene}>
                       <td className="gene-name-cell">{gene}</td>
                       <td className="data-cell">
-                        {/* TODO: Render histogram using histogram_data endpoint */}
-                        <div className="histogram-placeholder">
-                          PhastCons histogram (render client-side)
-                        </div>
+                        <ConservationHistogram geneName={gene} scoreType="phastcons" />
                       </td>
                       <td className="data-cell">
-                        {/* TODO: Render histogram using histogram_data endpoint */}
-                        <div className="histogram-placeholder">
-                          PhyloP histogram (render client-side)
-                        </div>
+                        <ConservationHistogram geneName={gene} scoreType="phylop" />
                       </td>
                     </tr>
                   ))}
@@ -338,25 +333,7 @@ export default function RegComp() {
 
         .data-cell {
           padding: 10px;
-        }
-
-        .histogram-placeholder {
-          padding: 60px 20px;
-          background: var(--main-bg);
-          border-radius: 8px;
-          color: var(--info-color);
-          font-style: italic;
-          border: 2px dashed var(--border-color);
-          transition: all 0.3s ease;
-          min-height: 200px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .histogram-placeholder:hover {
-          background: var(--container-bg);
-          border-color: var(--accent, #2db4b6);
+          vertical-align: middle;
         }
       `}</style>
     </>
