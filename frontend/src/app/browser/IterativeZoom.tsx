@@ -129,10 +129,10 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                             track: {
                                 height: '210px',
                                 marginTop: '0px',
-                                backgroundColor: 'rgba(45, 180, 182, 0.15)',
+                                backgroundColor: 'rgba(45, 180, 182, 0.35)',
                                 borderRadius: '0',
-                                border: '2px solid var(--accent, #2db4b6)',
-                                boxShadow: 'inset 0 0 10px rgba(45, 180, 182, 0.2)'
+                                border: '3px solid var(--accent, #2db4b6)',
+                                boxShadow: 'inset 0 0 15px rgba(45, 180, 182, 0.4)'
                             }
                         }}
                     />
@@ -169,25 +169,30 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
 
                 <style jsx>{`
                     .zoom-button {
-                        padding: 10px 16px;
-                        border-radius: 6px;
-                        border: 1px solid var(--border-color);
-                        background-color: var(--button-bg);
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        border: 2px solid var(--button-bg, #2db4b6);
+                        background: linear-gradient(135deg, var(--button-bg, #2db4b6) 0%, var(--button-hover, #25a0a2) 100%);
                         color: white;
                         cursor: pointer;
-                        font-weight: 600;
-                        transition: background-color 0.3s ease, box-shadow 0.2s ease, transform 0.15s ease;
-                        min-width: 120px;
+                        font-weight: 700;
+                        font-size: 0.95rem;
+                        transition: all 0.2s ease;
+                        min-width: 140px;
+                        box-shadow: 0 3px 8px rgba(45, 180, 182, 0.3);
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
                     }
 
                     .zoom-button:hover {
-                        background-color: var(--button-hover);
-                        box-shadow: 0 0 8px rgba(45, 180, 182, 0.6);
-                        transform: translateY(-1px);
+                        background: linear-gradient(135deg, var(--button-hover, #25a0a2) 0%, var(--button-bg, #2db4b6) 100%);
+                        box-shadow: 0 5px 15px rgba(45, 180, 182, 0.5);
+                        transform: translateY(-2px);
+                        border-color: var(--button-hover, #25a0a2);
                     }
 
                     .zoom-button:active {
                         transform: translateY(0);
+                        box-shadow: 0 2px 5px rgba(45, 180, 182, 0.4);
                     }
                 `}</style>
             </div>

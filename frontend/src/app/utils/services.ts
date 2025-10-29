@@ -49,7 +49,7 @@ export async function fetchSpecies() {
 export async function fetchSequence(geneName: string, speciesName: string) {
   const qs = `gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`;
   // Adjust endpoint if your backend differs
-  return fetchJSON(`/sequences/sequence/?${qs}`);
+  return fetchJSON(`/sequences/sequence?${qs}`);
 }
 
 /** Fetch condensed sequences by gene (used by IterativeZoom) */
