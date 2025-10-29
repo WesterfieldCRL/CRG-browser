@@ -143,19 +143,17 @@ export default function RegComp() {
                   {genes.map((gene) => (
                     <tr key={gene}>
                       <td className="gene-name-cell">{gene}</td>
-                      <td className="image-cell">
-                        <img
-                          src={`http://localhost:8000/conservation_scores/histogram/phastcons/${gene}`}
-                          alt={`PhastCons Histogram - ${gene}`}
-                          className="conservation-image"
-                        />
+                      <td className="data-cell">
+                        {/* TODO: Render histogram using histogram_data endpoint */}
+                        <div className="histogram-placeholder">
+                          PhastCons histogram (render client-side)
+                        </div>
                       </td>
-                      <td className="image-cell">
-                        <img
-                          src={`http://localhost:8000/conservation_scores/histogram/phylop/${gene}`}
-                          alt={`PhyloP Histogram - ${gene}`}
-                          className="conservation-image"
-                        />
+                      <td className="data-cell">
+                        {/* TODO: Render histogram using histogram_data endpoint */}
+                        <div className="histogram-placeholder">
+                          PhyloP histogram (render client-side)
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -338,22 +336,27 @@ export default function RegComp() {
           transition: color 0.3s ease;
         }
 
-        .image-cell {
+        .data-cell {
           padding: 10px;
         }
 
-        .conservation-image {
-          width: 100%;
-          max-width: 600px;
-          height: auto;
+        .histogram-placeholder {
+          padding: 60px 20px;
+          background: var(--main-bg);
           border-radius: 8px;
-          border: 1px solid var(--border-color);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          color: var(--info-color);
+          font-style: italic;
+          border: 2px dashed var(--border-color);
+          transition: all 0.3s ease;
+          min-height: 200px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
-        .conservation-image:hover {
-          transform: scale(1.02);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        .histogram-placeholder:hover {
+          background: var(--container-bg);
+          border-color: var(--accent, #2db4b6);
         }
       `}</style>
     </>
