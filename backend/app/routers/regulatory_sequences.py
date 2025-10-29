@@ -74,15 +74,15 @@ async def populate_color_map(sequence_map):
         for i in range(len(sequence)):
 
             # check if all characters at this position are identical
-            color = "#ff5722"  # Distinct orange for divergent characters
-
+            color = "#ffdad9"  # Default color for different characters
+            
             if sequence[i] == '-':
-                color = "#9e9e9e"  # Gray for gaps
+                color = "#7a7a7a"  # Color for gaps
             else:
                 if comparison[i]:
-                    color = "#00bcd4"  # Distinct cyan for conserved characters
+                    color = "#d9ebff"  # Color for identical characters
 
-            # Balanced colors: #00bcd4 (cyan) for conserved, #ff5722 (deep orange) for divergent, #9e9e9e (gray) for gaps
+            # apply color #d9ebff if the same, #ffdad9 if different, #7A7A7A if gap
             if i > 0:
                 if color_map[species_name][-1].color == color:
                     color_map[species_name][-1].width += 1
@@ -122,7 +122,7 @@ async def populate_color_map(sequence_map):
     return color_map
 
 ### Gets the sequences for all species based on gene name and condenses them into an array based on the similarity between sequences
-@router.get("/condensed_sequences", response_model=CondensedSequences)
+@router.get("/condensed_sequences/", response_model=CondensedSequences)
 async def get_condensed_sequences(gene_name: str):
     # Get the sequences from the database based on the gene name and put in array
     species_list = await species.get_names()

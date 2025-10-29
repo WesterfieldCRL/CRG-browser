@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Depends
 from sqlalchemy import insert, select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,8 +22,8 @@ async def load_Genes() -> None:
 
             reader = DictReader(file)
             rows = [dict(row) for row in reader]
-
-            stmt = pg_insert(Genes).values(rows).on_conflict_do_nothing()
+            
+            stmt = insert(Genes).values(rows)
 
             await session.execute(stmt)
             await session.commit()
@@ -35,11 +34,11 @@ async def load_Species() -> None:
 
         with open("app/data/Species.csv", "r") as file:
 
-
+            
             reader = DictReader(file)
             rows = [dict(row) for row in reader]
-
-            stmt = pg_insert(Species).values(rows).on_conflict_do_nothing()
+            
+            stmt = insert(Species).values(rows)
 
             await session.execute(stmt)
             await session.commit()
