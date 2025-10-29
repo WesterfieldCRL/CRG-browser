@@ -2,7 +2,8 @@
 // Canonical, client-safe service layer with one set of exports.
 // Make sure there are NO duplicate exports in this file.
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api').replace(/\/$/, '');
+// Always use /api to go through Next.js proxy (not direct to backend:8000)
+const API_BASE = '/api';
 
 // Small JSON fetch with timeout + retry
 async function fetchJSON(
