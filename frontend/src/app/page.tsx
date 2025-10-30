@@ -110,11 +110,11 @@ export default function Page() {
         </article>
 
         <article className="feature-card" role="listitem">
-          <Link href="/contact" className="feature-link">
-            <span className="feature-icon" role="img" aria-label="Contact">📧</span>
-            <h2 className="feature-title">Get In Touch</h2>
+          <Link href="/reg_comparison" className="feature-link">
+            <span className="feature-icon" role="img" aria-label="Regulatory">🔬</span>
+            <h2 className="feature-title">Regulatory Elements</h2>
             <p className="feature-description">
-              Questions or collaboration opportunities? We&apos;d love to hear from you. All data is publicly available.
+              Explore regulatory elements and their conservation across species. Visualize conservation scores with interactive histograms.
             </p>
           </Link>
         </article>
