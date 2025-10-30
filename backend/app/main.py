@@ -164,9 +164,9 @@ async def load_GenomicCoordinates() -> None:
         
 
         for gene in genomic_coordiantes:
-            gene_id = genes.get_id(gene)
+            gene_id = await genes.get_id(gene)
             for local_species in genomic_coordiantes[gene]:
-                species_id = species.get_id(local_species)
+                species_id = await species.get_id(local_species)
                 for coordinates in genomic_coordiantes[gene][local_species]:
                     coordinates_object = GenomicCoordinates(gene_id = gene_id, species_id = species_id, start = genomic_coordiantes[gene][local_species]["start"], end = genomic_coordiantes[gene][local_species]["end"])
 
@@ -181,7 +181,7 @@ async def lifespan(app: FastAPI):
     
     print("Started loading tables")
 
-    # These tables don't depend on anything but everything depends on them so we are running them both at the same time
+    # These tables don't depend on anything but everything depends on them so we are running them both at the same time before everything else
     await asyncio.gather(
         load_Genes(),
         load_Species()
@@ -190,14 +190,21 @@ async def lifespan(app: FastAPI):
     # These tables both depend on genes and species so we can load these now
     conservation_analysis_future = load_ConservationAnalysis()
     regulatory_sequences_future = load_RegulatorySequences()
-    
+    genomic_coordinates_future = load_GenomicCoordinates()
 
+    # Regulatory elements depends on regulatory sequences so that must be done before we load reg elements
     await regulatory_sequences_future
-    await load_RegulatoryElements()
+    regulatory_elements_future = load_RegulatoryElements()
+
     # Make sure all tasks have finished
-    await conservation_analysis_future
+    await asyncio.gather(
+        conservation_analysis_future,
+        genomic_coordinates_future,
+        regulatory_elements_future
+    )
 
     print("Finished loading tables")
+    # removing data files since all data is now in database
     shutil.rmtree("app/data")
     yield
     # Runs after application ends
