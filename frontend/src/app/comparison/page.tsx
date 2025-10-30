@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useMediaQuery } from 'react-responsive';
-import GenomeComparisonPage from './desktop';
+import RegComp from './desktop';
 
 export default function HomePage() {
   const isDesktopOrLaptop = useMediaQuery({ query: "(min-width: 768px)", });//These values will probally change later, the ones here rn are for testing
@@ -23,7 +23,7 @@ export default function HomePage() {
 
   return (
     <>
-      {isDesktopOrLaptop && <GenomeComparisonPage/>}
+      {isDesktopOrLaptop && <RegComp/>}
       {isMobile && 
         <main>
           <h1>

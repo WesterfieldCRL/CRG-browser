@@ -69,11 +69,11 @@ export default function InteractiveLine({
     >
       {/* Base line */}
       <div
+        className="base-line"
         style={{
           position: "relative",
           width: "100%",
           height: "2px",
-          backgroundColor: "#000",
         }}
       >
         {/* Shapes */}
@@ -84,6 +84,7 @@ export default function InteractiveLine({
           return (
             <div
               key={index}
+              className="shape-bar"
               style={{
                 position: "absolute",
                 left: `${leftPos}%`,
@@ -111,12 +112,14 @@ export default function InteractiveLine({
 
       {/* Start and end labels */}
       <div
+        className="labels"
         style={{
           position: "relative",
           display: "flex",
           justifyContent: "space-between",
           fontSize: "25px",
           marginTop: "10px",
+          color: "var(--main-text)",
         }}
       >
         <span>Start: {start_label}</span>
@@ -145,6 +148,52 @@ export default function InteractiveLine({
           {tooltipInfo.info}
         </div>
       )} */}
+
+      <style jsx>{`
+        .base-line {
+          background-color: var(--main-text, #000);
+          transition: background-color 0.3s ease;
+        }
+
+        .labels {
+          color: var(--main-text);
+          transition: color 0.3s ease;
+        }
+
+        .shape-bar {
+          border: 2px solid rgba(0, 0, 0, 0.3);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+          transition: all 0.3s ease;
+        }
+
+        .shape-bar:hover {
+          border-color: rgba(0, 0, 0, 0.5);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          transform: translateY(-50%) scale(1.05);
+        }
+
+        @media (prefers-color-scheme: dark) {
+          :root:not([data-theme]) .shape-bar {
+            border: 3px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.3);
+          }
+
+          :root:not([data-theme]) .shape-bar:hover {
+            border-color: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.5);
+          }
+        }
+
+        [data-theme="dark"] .shape-bar {
+          border: 3px solid rgba(255, 255, 255, 0.8);
+          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.3);
+        }
+
+        [data-theme="dark"] .shape-bar:hover {
+          border-color: rgba(255, 255, 255, 1);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+      `}</style>
     </div>
   );
 }

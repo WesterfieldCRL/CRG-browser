@@ -176,7 +176,7 @@ export default function PageNavigation({
       </button>
 
       {/* Styles */}
-      <style>{`
+      <style jsx>{`
         /* Visually hidden label for screen readers */
         .sr-only {
           border: 0 !important;
@@ -199,26 +199,34 @@ export default function PageNavigation({
           justify-content: center;
           font-weight: 600;
           font-size: 1rem;
-          color: #123c7c;
+          color: var(--label-color);
           user-select: none;
           flex-wrap: wrap;
+          margin-top: 20px;
+          transition: color 0.3s ease;
         }
 
         .page-nav button {
           padding: 10px 16px;
           border-radius: 6px;
-          border: 1px solid #123c7c;
-          background-color: #123c7c;
+          border: 1px solid var(--border-color);
+          background-color: var(--button-bg);
           color: white;
           cursor: pointer;
-          transition: background-color 0.2s ease, box-shadow 0.2s ease;
+          font-weight: 600;
+          transition: background-color 0.3s ease, box-shadow 0.2s ease, border-color 0.3s ease, transform 0.15s ease;
           min-width: 90px;
           user-select: none;
         }
 
         .page-nav button:hover:not(:disabled) {
-          background-color: #0d2a55;
-          box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
+          background-color: var(--button-hover);
+          box-shadow: 0 0 8px rgba(45, 180, 182, 0.6);
+          transform: translateY(-1px);
+        }
+
+        .page-nav button:active:not(:disabled) {
+          transform: translateY(0);
         }
 
         .page-nav button:disabled,
@@ -233,19 +241,20 @@ export default function PageNavigation({
           text-align: center;
           font-weight: 600;
           font-size: 1rem;
-          color: #123c7c;
+          color: var(--main-text);
+          background-color: var(--select-bg);
           border-radius: 6px;
-          border: 1px solid #123c7c;
+          border: 1px solid var(--border-color);
           font-family: monospace;
           outline-offset: 2px;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          transition: border-color 0.3s ease, box-shadow 0.2s ease, background-color 0.3s ease, color 0.3s ease;
           min-width: 50px;
           user-select: text;
         }
 
         .page-nav input[type="text"]:focus {
-          border-color: #0d2a55;
-          box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
+          border-color: var(--accent, #2db4b6);
+          box-shadow: 0 0 8px rgba(45, 180, 182, 0.4);
         }
       `}</style>
     </nav>

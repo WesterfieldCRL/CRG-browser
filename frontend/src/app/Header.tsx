@@ -11,7 +11,7 @@ export default function Header() {
     <>
       <header className="header">
         <nav className="nav-container">
-          <Link href="/" className="logo">GenomeHub</Link>
+          <Link href="/" className="logo">CoRGi</Link>
           <ul className="nav-links">
             <li>
               <Link href="/" aria-label="Home">
@@ -28,23 +28,19 @@ export default function Header() {
                 {isMobile ? <GitCompare size={22} /> : 'Genome Comparison'}
               </Link>
             </li>
-            <li>
-              <Link href="/reg_comparison" aria-label="Regulatory Comparison">
-                {isMobile ? <Activity size={22} /> : 'Regulatory Comparison'}
-              </Link>
-            </li>
           </ul>
         </nav>
       </header>
 
       <style jsx>{`
         .header {
-          background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+          background: linear-gradient(135deg, var(--primary, #0b7285) 0%, var(--accent, #2db4b6) 100%);
           color: white;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           position: sticky;
           top: 0;
           z-index: 100;
+          transition: background 0.3s ease, box-shadow 0.3s ease;
         }
 
         .nav-container {
@@ -61,6 +57,11 @@ export default function Header() {
           font-weight: bold;
           color: white;
           text-decoration: none;
+          transition: transform 0.2s ease;
+        }
+
+        .logo:hover {
+          transform: scale(1.05);
         }
 
         .nav-links {
@@ -77,14 +78,19 @@ export default function Header() {
           font-weight: 500;
           padding: 0.5rem 1rem;
           border-radius: 6px;
-          transition: background-color 0.3s ease;
+          transition: background-color 0.3s ease, transform 0.2s ease;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
         .nav-links a:hover {
-          background-color: rgba(255, 255, 255, 0.1);
+          background-color: rgba(255, 255, 255, 0.15);
+          transform: translateY(-1px);
+        }
+
+        .nav-links a:active {
+          transform: translateY(0);
         }
       `}</style>
     </>

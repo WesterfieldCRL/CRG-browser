@@ -97,11 +97,11 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
 
     return (
             <div style={{display: "flex", flexDirection: "column", alignItems: "center", gap: "10px"}}>
-                {loading && <h2 style={{textAlign: "center", color: "black"}}>Loading Data...</h2>}
+                {loading && <h2 style={{textAlign: "center", color: "var(--main-text)"}}>Loading Data...</h2>}
 
                 {!loading &&
                 <div style={{width: "75%", marginTop: "5%"}}>
-                    <div style={{display: "flex", justifyContent: "space-between", marginBottom: "20px", color: "black"}}>
+                    <div style={{display: "flex", justifyContent: "space-between", marginBottom: "20px", color: "var(--main-text)", fontWeight: 600}}>
                         <span>Start: {value[0]}</span>
                         <span>End: {value[1]}</span>
                     </div>
@@ -114,11 +114,14 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                         allowCross={true}
                         styles={{
                             handle: {
-                                width: '2px',
+                                width: '4px',
                                 height: '230px',
                                 marginTop: '-10px',
-                                backgroundColor: '#1890ff',
-                                borderRadius: '0'
+                                backgroundColor: 'var(--accent, #2db4b6)',
+                                borderRadius: '2px',
+                                border: '1px solid rgba(255, 255, 255, 0.5)',
+                                boxShadow: '0 0 8px rgba(45, 180, 182, 0.6)',
+                                cursor: 'ew-resize'
                             },
                             rail: {
                                 backgroundColor: 'transparent'
@@ -126,64 +129,72 @@ export default function Zoom({gene_name, onValueChange}: ZoomProps) {
                             track: {
                                 height: '210px',
                                 marginTop: '0px',
-                                backgroundColor: 'rgba(24, 144, 255, 0.2)',
-                                borderRadius: '0'
+                                backgroundColor: 'rgba(45, 180, 182, 0.35)',
+                                borderRadius: '0',
+                                border: '3px solid var(--accent, #2db4b6)',
+                                boxShadow: 'inset 0 0 15px rgba(45, 180, 182, 0.4)'
                             }
                         }}
                     />
                     <div style={{display: "flex", flexDirection: "column", gap: "5px"}}>
                         {sequences.map((sequence, index) => (
                             <React.Fragment key={sequence.name}>
-                                <div style={{color: 'black', userSelect: 'none'}}>{sequence.name}</div>
+                                <div style={{color: 'var(--main-text)', userSelect: 'none', fontWeight: 600, fontSize: '1.1rem'}}>{sequence.name}</div>
                                 <ColorBar segments={sequence.segments} />
                             </React.Fragment>
                         ))}
                     </div>
                     <div style={{marginTop: '30px', display: "flex", flexDirection: "row", gap: "5px"}}>
-                        <button 
+                        <button
                             onClick={() => handleButtonPress()}
-                            className='button'
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = '#0d2a55';
-                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = '#123c7c';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
+                            className='zoom-button'
                         >
                             Enlarge Data
                         </button>
-                        <button 
+                        <button
                             onClick={() => handleSuperZoomButton()}
-                            className='button'
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = '#0d2a55';
-                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = '#123c7c';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}
+                            className='zoom-button'
                         >
                             View Individual Letters
                         </button>
-                        {prevRange.length > 0 && 
-                        <button 
+                        {prevRange.length > 0 &&
+                        <button
                             onClick={() => handleBackButtonPress()}
-                            className='button'
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.backgroundColor = '#0d2a55';
-                                e.currentTarget.style.boxShadow = '0 0 6px rgba(18, 60, 124, 0.6)';
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor = '#123c7c';
-                                e.currentTarget.style.boxShadow = 'none';
-                            }}>
-                                Back
+                            className='zoom-button'
+                        >
+                            Back
                         </button>}
                     </div>
                 </div>}
+
+                <style jsx>{`
+                    .zoom-button {
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        border: 2px solid var(--button-bg, #2db4b6);
+                        background: linear-gradient(135deg, var(--button-bg, #2db4b6) 0%, var(--button-hover, #25a0a2) 100%);
+                        color: white;
+                        cursor: pointer;
+                        font-weight: 700;
+                        font-size: 0.95rem;
+                        transition: all 0.2s ease;
+                        min-width: 140px;
+                        box-shadow: 0 3px 8px rgba(45, 180, 182, 0.3);
+                        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                    }
+
+                    .zoom-button:hover {
+                        background: linear-gradient(135deg, var(--button-hover, #25a0a2) 0%, var(--button-bg, #2db4b6) 100%);
+                        box-shadow: 0 5px 15px rgba(45, 180, 182, 0.5);
+                        transform: translateY(-2px);
+                        border-color: var(--button-hover, #25a0a2);
+                    }
+
+                    .zoom-button:active {
+                        transform: translateY(0);
+                        box-shadow: 0 2px 5px rgba(45, 180, 182, 0.4);
+                    }
+                `}</style>
             </div>
     )
 };
