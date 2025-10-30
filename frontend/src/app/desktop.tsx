@@ -37,16 +37,15 @@ export default function HomePage() {
         </section>
       </main>
 
-      <style jsx>{`
+      <style jsx>{
+      `
         .main-container {
           max-width: 1400px;
           margin: 0 auto;
           padding: 2rem;
           font-family: "Helvetica Neue", Arial, sans-serif;
-          background-color: var(--main-bg);
-          color: var(--main-text);
+          background-color: #f6f9fc;
           min-height: calc(100vh - 80px);
-          transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .hero {
@@ -58,26 +57,23 @@ export default function HomePage() {
         .hero-title {
           font-size: 3rem;
           font-weight: 700;
-          color: var(--heading-color);
+          color: #123c7c;
           margin-bottom: 1rem;
-          transition: color 0.3s ease;
         }
 
         .hero-subtitle {
           font-size: 1.5rem;
-          color: var(--accent, #2db4b6);
+          color: #3b82f6;
           font-weight: 500;
           margin-bottom: 1rem;
-          transition: color 0.3s ease;
         }
 
         .hero-description {
           font-size: 1.1rem;
-          color: var(--info-color);
+          color: #555;
           max-width: 800px;
           margin: 0 auto;
           line-height: 1.8;
-          transition: color 0.3s ease;
         }
 
         .features {
@@ -88,11 +84,10 @@ export default function HomePage() {
         }
 
         .feature-card {
-          background: var(--container-bg);
+          background: white;
           padding: 2rem;
           border-radius: 12px;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          border: 1px solid var(--border-color, rgba(11,17,18,0.08));
           transition: all 0.3s ease;
         }
 
@@ -107,16 +102,14 @@ export default function HomePage() {
         }
 
         .feature-card h3 {
-          color: var(--heading-color);
+          color: #123c7c;
           font-size: 1.5rem;
           margin-bottom: 1rem;
-          transition: color 0.3s ease;
         }
 
         .feature-card p {
-          color: var(--info-color);
+          color: #555;
           line-height: 1.6;
-          transition: color 0.3s ease;
         }
       `}</style>
     </>
