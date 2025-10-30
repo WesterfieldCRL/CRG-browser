@@ -11,7 +11,7 @@ export default function Header() {
     <>
       <header className="header">
         <nav className="nav-container">
-          <Link href="/" className="logo">GenomeHub</Link>
+          <Link href="/" className="logo">CoRGi</Link>
           <ul className="nav-links">
             <li>
               <Link href="/" aria-label="Home">
@@ -26,11 +26,6 @@ export default function Header() {
             <li>
               <Link href="/comparison" aria-label="Genome Comparison">
                 {isMobile ? <GitCompare size={22} /> : 'Genome Comparison'}
-              </Link>
-            </li>
-            <li>
-              <Link href="/reg_comparison" aria-label="Regulatory Comparison">
-                {isMobile ? <Activity size={22} /> : 'Regulatory Comparison'}
               </Link>
             </li>
           </ul>

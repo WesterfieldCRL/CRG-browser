@@ -102,19 +102,19 @@ export default function Page() {
         <article className="feature-card" role="listitem">
           <Link href="/comparison" className="feature-link">
             <span className="feature-icon" role="img" aria-label="Compare">📊</span>
-            <h2 className="feature-title">Compare Genomes</h2>
+            <h2 className="feature-title">Genome Comparison</h2>
             <p className="feature-description">
-              Side-by-side comparison of genomic sequences. Identify conserved regions and evolutionary differences.
+              Compare regulatory elements and conservation across species. View PhastCons and PhyloP conservation scores with interactive histograms.
             </p>
           </Link>
         </article>
 
         <article className="feature-card" role="listitem">
-          <Link href="/reg_comparison" className="feature-link">
-            <span className="feature-icon" role="img" aria-label="Regulatory">🔬</span>
-            <h2 className="feature-title">Regulatory Elements</h2>
+          <Link href="/contact" className="feature-link">
+            <span className="feature-icon" role="img" aria-label="Contact">📧</span>
+            <h2 className="feature-title">Get In Touch</h2>
             <p className="feature-description">
-              Explore regulatory elements and their conservation across species. Visualize conservation scores with interactive histograms.
+              Questions or collaboration opportunities? We&apos;d love to hear from you. All data is publicly available.
             </p>
           </Link>
         </article>
