@@ -167,10 +167,9 @@ async def load_GenomicCoordinates() -> None:
             gene_id = await genes.get_id(gene)
             for local_species in genomic_coordiantes[gene]:
                 species_id = await species.get_id(local_species)
-                for coordinates in genomic_coordiantes[gene][local_species]:
-                    coordinates_object = GenomicCoordinates(gene_id = gene_id, species_id = species_id, start = genomic_coordiantes[gene][local_species]["start"], end = genomic_coordiantes[gene][local_species]["end"])
-
-                    session.add(coordinates_object)
+                coordinates_object = GenomicCoordinates(gene_id = gene_id, species_id = species_id, start = genomic_coordiantes[gene][local_species]["start"], end = genomic_coordiantes[gene][local_species]["end"])
+                print(local_species)
+                session.add(coordinates_object)
 
 
         await session.commit()
