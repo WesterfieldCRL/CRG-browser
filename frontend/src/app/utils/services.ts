@@ -74,7 +74,7 @@ export async function fetchCondensedSequencesInRange(
 export async function fetchRegulatoryElementLines(geneName: string) {
   const qs = `gene_name=${encodeURIComponent(geneName)}`;
   // Adjust endpoint if needed
-  return fetchJSON(`/elements/regulatory_line_elements/?${qs}`);
+  return fetchJSON(`/elements/regulatory_line_elements?${qs}`);
 }
 
 /** ===== Optional newer wrappers (keep names different to avoid conflicts) ===== **/
