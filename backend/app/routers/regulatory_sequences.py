@@ -75,7 +75,7 @@ async def populate_color_map(sequence_map):
 
             # check if all characters at this position are identical
             color = "#ffdad9"  # Default color for different characters
-            
+
             if sequence[i] == '-':
                 color = "#7a7a7a"  # Color for gaps
             else:

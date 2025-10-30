@@ -3,14 +3,50 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --main-bg: #f6f9fc;
+  --main-text: #1c1c1c;
+  --heading-color: #123c7c;
+  --label-color: #123c7c;
+  --border-color: #123c7c;
+  --button-bg: #123c7c;
+  --button-hover: #0d2a55;
+  --container-bg: #ffffff;
+  --info-color: #555555;
+  --error-color: #dc2626;
+  --select-bg: #ffffff;
 }
 
-
+[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --main-bg: #0f1720;
+  --main-text: #e5e7eb;
+  --heading-color: #5ecbcd;
+  --label-color: #94a3b8;
+  --border-color: #5ecbcd;
+  --button-bg: #2db4b6;
+  --button-hover: #5ecbcd;
+  --container-bg: #1a2332;
+  --info-color: #94a3b8;
+  --error-color: #ef4444;
+  --select-bg: #0f1720;
+}
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --main-bg: #0f1720;
+    --main-text: #e5e7eb;
+    --heading-color: #5ecbcd;
+    --label-color: #94a3b8;
+    --border-color: #5ecbcd;
+    --button-bg: #2db4b6;
+    --button-hover: #5ecbcd;
+    --container-bg: #1a2332;
+    --info-color: #94a3b8;
+    --error-color: #ef4444;
+    --select-bg: #0f1720;
   }
 }
 
@@ -24,19 +60,21 @@ main {
   margin: 0;
   padding: 20px;
   font-family: "Helvetica Neue", Arial, sans-serif;
-  background-color: #f6f9fc;
-  color: #1c1c1c;
+  background-color: var(--main-bg);
+  color: var(--main-text);
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1 {
   font-weight: 700;
   font-size: 2rem;
-  color: #123c7c;
+  color: var(--heading-color);
   margin-bottom: 20px;
+  transition: color 0.3s ease;
 }
 
 .controls {
@@ -49,16 +87,20 @@ h1 {
 
 label {
   font-weight: 600;
-  color: #123c7c;
+  color: var(--label-color);
+  transition: color 0.3s ease;
 }
 
 select {
   padding: 10px 16px;
   border-radius: 6px;
-  border: 1px solid #123c7c;
+  border: 1px solid var(--border-color);
+  background-color: var(--select-bg);
+  color: var(--main-text);
   font-size: 16px;
   cursor: pointer;
   min-width: 220px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 select:disabled {
@@ -68,40 +110,43 @@ select:disabled {
 
 .container-box {
   width: 90vw;
-  background: white;
+  background: var(--container-bg);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
   padding: 20px;
   box-sizing: border-box;
+  transition: background-color 0.3s ease;
 }
 
 .info {
   font-style: italic;
-  color: #555;
+  color: var(--info-color);
   margin-bottom: 20px;
+  transition: color 0.3s ease;
 }
 
 .error {
-  color: red;
+  color: var(--error-color);
   font-weight: 600;
   margin-bottom: 20px;
+  transition: color 0.3s ease;
 }
 
 button {
   padding: 10px 16px;
   border-radius: 6px;
-  border: 1px solid #123c7c;
-  background-color: #123c7c;
+  border: 1px solid var(--border-color);
+  background-color: var(--button-bg);
   color: white;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.3s ease, box-shadow 0.2s ease, border-color 0.3s ease;
   min-width: 90px;
   user-select: none;
   }
 
   button:hover:not(:disabled) {
-  background-color: #0d2a55;
-  box-shadow: 0 0 6px rgba(18, 60, 124, 0.6);
+  background-color: var(--button-hover);
+  box-shadow: 0 0 6px rgba(45, 180, 182, 0.6);
   }
 
   button:disabled,

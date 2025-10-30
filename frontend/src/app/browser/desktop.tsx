@@ -184,23 +184,26 @@ export default function GenomeBrowserPage() {
 
         {tooltip && <Tooltip tooltip={tooltip} />}
       </main>
-      <style>
-        {` main {
+      <style jsx>{`
+        main {
           margin: 0;
           padding: 20px;
           font-family: "Helvetica Neue", Arial, sans-serif;
-          background-color: #f6f9fc;
-          color: #1c1c1c;
+          background-color: var(--main-bg);
+          color: var(--main-text);
           display: flex;
           flex-direction: column;
           align-items: center;
+          min-height: 100vh;
+          transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         h1 {
           font-weight: 700;
           font-size: 2rem;
-          color: #123c7c;
+          color: var(--heading-color);
           margin-bottom: 20px;
+          transition: color 0.3s ease;
         }
 
         .controls {
@@ -213,16 +216,20 @@ export default function GenomeBrowserPage() {
 
         label {
           font-weight: 600;
-          color: #123c7c;
+          color: var(--label-color);
+          transition: color 0.3s ease;
         }
 
         select {
           padding: 10px 16px;
           border-radius: 6px;
-          border: 1px solid #123c7c;
+          border: 1px solid var(--border-color);
+          background-color: var(--select-bg);
+          color: var(--main-text);
           font-size: 16px;
           cursor: pointer;
           min-width: 220px;
+          transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         select:disabled {
@@ -232,25 +239,29 @@ export default function GenomeBrowserPage() {
 
         .container-box {
           width: 90vw;
-          background: white;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+          background: var(--container-bg);
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
           padding: 20px;
           box-sizing: border-box;
+          transition: background-color 0.3s ease, box-shadow 0.3s ease;
+          border: 1px solid var(--border-color, rgba(11,17,18,0.08));
         }
 
         .info {
           font-style: italic;
-          color: #555;
+          color: var(--info-color);
           margin-bottom: 20px;
+          transition: color 0.3s ease;
         }
 
         .error {
-          color: red;
+          color: var(--error-color);
           font-weight: 600;
           margin-bottom: 20px;
-        }`}
-      </style>
+          transition: color 0.3s ease;
+        }
+      `}</style>
     </>
   );
 }
