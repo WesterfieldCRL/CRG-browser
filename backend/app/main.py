@@ -143,6 +143,38 @@ async def load_ConservationAnalysis() -> None:
 
         await session.commit()
 
+
+async def load_GenomicCoordinates() -> None:
+    async with async_session() as session:
+        print("Loading Genomic Coordinates")
+
+        genomic_coordiantes = {"DRD4" : {
+                                "Homo sapiens" : {"start" : 1, "end" : 1637269}, 
+                                "Macaca mulatta" : {"start" : 139871919, "end" : 141871919},
+                                "Mus musculus" : {"start" : 1, "end" : 1695156}},
+                                "CHRNA6" : {
+                                "Homo sapiens" : {"start" : 41752620, "end" : 43752620}, 
+                                "Macaca mulatta" : {"start" : 26893240, "end" : 28893240},
+                                "Mus musculus" : {"start" : 42367662, "end" : 44367662}},
+                                "ALDH1A3" : {
+                                "Homo sapiens" : {"start" : 99861924, "end" : 101861924}, 
+                                "Macaca mulatta" : {"start" : 19470079, "end" : 21470079},
+                                "Mus musculus" : {"start" : 79171220, "end" : 81171220}},
+                                }
+        
+
+        for gene in genomic_coordiantes:
+            gene_id = genes.get_id(gene)
+            for local_species in genomic_coordiantes[gene]:
+                species_id = species.get_id(local_species)
+                for coordinates in genomic_coordiantes[gene][local_species]:
+                    coordinates_object = GenomicCoordinates(gene_id = gene_id, species_id = species_id, start = genomic_coordiantes[gene][local_species]["start"], end = genomic_coordiantes[gene][local_species]["end"])
+
+                    session.add(coordinates_object)
+
+
+        await session.commit()
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Runs before application starts

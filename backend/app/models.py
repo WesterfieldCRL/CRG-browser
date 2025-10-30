@@ -16,6 +16,7 @@ class Genes(Base):
     # Relationships
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="gene_fk")
     conservation_analysis_fk: Mapped[List["ConservationScores"]] = relationship(back_populates="gene_fk")
+    genomic_coordinates_fk: Mapped[List["GenomicCoordinates"]] = relationship(back_populates="gene_fk")
 
 class Species(Base):
     __tablename__ = "Species"
@@ -27,6 +28,20 @@ class Species(Base):
     # Relationships
     regulatory_sequences_fk: Mapped[List["RegulatorySequences"]] = relationship(back_populates="species_fk")
     conservation_sequences_fk: Mapped[List["ConservationNucleotides"]] = relationship(back_populates="species_fk")
+    genomic_coordinates_fk: Mapped[List["GenomicCoordinates"]] = relationship(back_populates="species_fk")
+
+class GenomicCoordinates(Base):
+    __tablename__ = "GenomicCoordinates"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    gene_id = mapped_column(ForeignKey("Genes.id"))
+    species_id = mapped_column(ForeignKey("Species.id"))
+    start: Mapped[int] = mapped_column(BigInteger)
+    end: Mapped[int] = mapped_column(BigInteger)
+
+    # Relationships
+    gene_fk: Mapped[Genes] = relationship(back_populates="genomic_coordinates_fk")
+    species_fk: Mapped[Species] = relationship(back_populates="genomic_coordinates_fk")
 
 class RegulatorySequences(Base):
     __tablename__ = "RegulatorySequences"
