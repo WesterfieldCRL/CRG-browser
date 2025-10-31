@@ -43,7 +43,6 @@ async def load_Species() -> None:
             await session.execute(stmt)
             await session.commit()
 
-# TODO: handle loading more asyncronously
 async def load_RegulatorySequences() -> None:
     async with async_session() as session:
         print("loading regulatory sequences table")
@@ -108,8 +107,27 @@ async def load_RegulatoryElements() -> None:
                 session.add(regulatory_elements_object)
         await session.commit()
 
-async def load_ConservationAnalysis() -> None:
+async def ConservationAnalysisTask(gene_name: str, species_list: List[tuple[int, str]]) -> None:
     async with async_session() as session:
+        with open(f"app/data/ConservationAnalysis{gene_name}.csv", "r") as file:
+            reader = DictReader(file)
+            gene_id = await genes.get_id(gene_name)
+            for row in reader:
+
+                # add an item to the conservation anaysis table and get its id for use in the conservation sequences table
+                conservation_analysis_object = ConservationScores(gene_id = gene_id, phylop_score = float(row["phylop_score"]), phastcon_score = float(row["phastcon_score"]), position = row["header"])
+                
+                session.add(conservation_analysis_object)
+                await session.flush()
+
+                # add all 3 nucleotides to the conservaiton sequences table
+                for i in range(3):
+                    conservation_sequences_object = ConservationNucleotides(species_id = species_list[i][0], conservation_id = conservation_analysis_object.id, nucleotide = row[species_list[i][1]])
+                    session.add(conservation_sequences_object)
+            
+            await session.commit()
+async def load_ConservationAnalysis() -> None:
+    
         print("loading conservation analysis and sequences tables")
 
         results = await asyncio.gather(
@@ -117,31 +135,20 @@ async def load_ConservationAnalysis() -> None:
             species.get_id("Mus musculus"),
             species.get_id("Macaca mulatta"))
 
-        species_list = [[results[0], "hg38"],
-                        [results[1], "mm10"],
-                        [results[2], "rheMac3"]]
+        species_list = [(results[0], "hg38"),
+                        (results[1], "mm10"),
+                        (results[2], "rheMac3")]
 
         genes_list = ["DRD4", "ALDH1A3", "CHRNA6"]
 
+        tasks = set()
+
         # For each gene
         for gene_name in genes_list:
-            with open(f"app/data/ConservationAnalysis{gene_name}.csv", "r") as file:
-                reader = DictReader(file)
-                gene_id = await genes.get_id(gene_name)
-                for row in reader:
+            tasks.add(asyncio.create_task(ConservationAnalysisTask(gene_name, species_list)))
 
-                    # add an item to the conservation anaysis table and get its id for use in the conservation sequences table
-                    conservation_analysis_object = ConservationScores(gene_id = gene_id, phylop_score = float(row["phylop_score"]), phastcon_score = float(row["phastcon_score"]), position = row["header"])
-                    
-                    session.add(conservation_analysis_object)
-                    await session.flush()
-
-                    # add all 3 nucleotides to the conservaiton sequences table
-                    for i in range(3):
-                        conservation_sequences_object = ConservationNucleotides(species_id = species_list[i][0], conservation_id = conservation_analysis_object.id, nucleotide = row[species_list[i][1]])
-                        session.add(conservation_sequences_object)
-
-        await session.commit()
+        await asyncio.gather(*tasks)
+            
 
 
 async def load_GenomicCoordinates() -> None:
