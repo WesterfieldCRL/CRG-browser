@@ -48,7 +48,6 @@ async def load_RegulatorySequences() -> None:
         print("loading regulatory sequences table")
 
         with open("app/data/RegulatorySequences.csv", "r") as file:
-
             
             reader = DictReader(file)
             
@@ -67,14 +66,19 @@ async def load_RegulatorySequences() -> None:
 
                 if local_species is None:
                     raise ValueError("Unable to get species")
+                
+                with open(f"{local_species}-{local_gene}.txt", "r") as f:
+                    sequence = "".join(f.read().splitlines())
 
-                regulatory_sequences_object = RegulatorySequences(
-                    gene_id = local_gene.id,
-                    species_id = local_species.id,
-                    start = int(row["start"]),
-                    end = int(row["end"]),
-                    sequence = row["sequence"])
-                session.add(regulatory_sequences_object)
+                    regulatory_sequences_object = RegulatorySequences(
+                        gene_id = local_gene.id,
+                        species_id = local_species.id,
+                        gene_start = int(row["start"]),
+                        gene_end = int(row["end"]),
+                        sequence = sequence,
+                        total_start = int(row["total_start"]),
+                        total_end = int(row["total_end"]))
+                    session.add(regulatory_sequences_object)
 
             await session.commit()
 
@@ -126,8 +130,8 @@ async def ConservationAnalysisTask(gene_name: str, species_list: List[tuple[int,
                     session.add(conservation_sequences_object)
             
             await session.commit()
+
 async def load_ConservationAnalysis() -> None:
-    
         print("loading conservation analysis and sequences tables")
 
         results = await asyncio.gather(
@@ -148,38 +152,6 @@ async def load_ConservationAnalysis() -> None:
             tasks.add(asyncio.create_task(ConservationAnalysisTask(gene_name, species_list)))
 
         await asyncio.gather(*tasks)
-            
-
-
-async def load_GenomicCoordinates() -> None:
-    async with async_session() as session:
-        print("Loading Genomic Coordinates")
-
-        genomic_coordiantes = {"DRD4" : {
-                                "Homo sapiens" : {"start" : 1, "end" : 1637269}, 
-                                "Macaca mulatta" : {"start" : 139871919, "end" : 141871919},
-                                "Mus musculus" : {"start" : 1, "end" : 1695156}},
-                                "CHRNA6" : {
-                                "Homo sapiens" : {"start" : 41752620, "end" : 43752620}, 
-                                "Macaca mulatta" : {"start" : 26893240, "end" : 28893240},
-                                "Mus musculus" : {"start" : 42367662, "end" : 44367662}},
-                                "ALDH1A3" : {
-                                "Homo sapiens" : {"start" : 99861924, "end" : 101861924}, 
-                                "Macaca mulatta" : {"start" : 19470079, "end" : 21470079},
-                                "Mus musculus" : {"start" : 79171220, "end" : 81171220}},
-                                }
-        
-
-        for gene in genomic_coordiantes:
-            gene_id = await genes.get_id(gene)
-            for local_species in genomic_coordiantes[gene]:
-                species_id = await species.get_id(local_species)
-                coordinates_object = GenomicCoordinates(gene_id = gene_id, species_id = species_id, start = genomic_coordiantes[gene][local_species]["start"], end = genomic_coordiantes[gene][local_species]["end"])
-                print(local_species)
-                session.add(coordinates_object)
-
-
-        await session.commit()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -196,7 +168,6 @@ async def lifespan(app: FastAPI):
     # These tables both depend on genes and species so we can load these now
     conservation_analysis_future = load_ConservationAnalysis()
     regulatory_sequences_future = load_RegulatorySequences()
-    genomic_coordinates_future = load_GenomicCoordinates()
 
     # Regulatory elements depends on regulatory sequences so that must be done before we load reg elements
     await regulatory_sequences_future
@@ -205,7 +176,6 @@ async def lifespan(app: FastAPI):
     # Make sure all tasks have finished
     await asyncio.gather(
         conservation_analysis_future,
-        genomic_coordinates_future,
         regulatory_elements_future
     )
 

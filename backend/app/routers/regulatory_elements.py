@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -23,6 +23,7 @@ class RegulatoryLine(BaseModel):
     real_end: int = Field(..., description="Start position of the sequence based on the larger genome")
     shapes: List[LineShapes] = Field(..., description="list of regulatory elements represented by shapes")
 
+#TODO: remove get_species_regulatory_line and get_regulatory_line
 
 ### assembles a line for a specifc species's regulatory elements
 async def get_species_regulatory_line(given_species: str, given_gene: str) -> RegulatoryLine:
@@ -67,3 +68,24 @@ async def get_regulatory_line(gene_name: str) -> Dict[str, RegulatoryLine]:
             result[species_name] = await get_species_regulatory_line(species_name, gene_name)
 
         return result
+    
+
+class ColorSegment(BaseModel):
+    color: str = Field(..., description="Hex color code representing similarity")
+    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+class Sequence(BaseModel):
+    sequences: List[ColorSegment] = Field(..., description="Dictionary mapping species to their condensed sequences")
+    start: int = Field(..., description="Start position of the sequence range")
+    end: int = Field(..., description="End position of the sequence range")
+
+@router.get("/enhancers_and_promoters", response_model=Sequence)
+async def get_enh_prom_sequence(gene_name: str, start: Optional[int] = None, end: Optional[int] = None) -> Sequence:
+    
+    # Allign our sequences together
+    # TODO: use the actual data once I get it to allign the sequences
+    
+    
+    
+    
+    return None
