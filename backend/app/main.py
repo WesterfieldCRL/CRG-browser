@@ -67,14 +67,14 @@ async def load_RegulatorySequences() -> None:
                 if local_species is None:
                     raise ValueError("Unable to get species")
                 
-                with open(f"{local_species}-{local_gene}.txt", "r") as f:
+                with open(f"app/data/{local_species.name}-{local_gene.name}.txt", "r") as f:
                     sequence = "".join(f.read().splitlines())
 
                     regulatory_sequences_object = RegulatorySequences(
                         gene_id = local_gene.id,
                         species_id = local_species.id,
-                        gene_start = int(row["start"]),
-                        gene_end = int(row["end"]),
+                        gene_start = int(row["gene_start"]),
+                        gene_end = int(row["gene_end"]),
                         sequence = sequence,
                         total_start = int(row["total_start"]),
                         total_end = int(row["total_end"]))
