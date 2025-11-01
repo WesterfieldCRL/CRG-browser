@@ -87,28 +87,31 @@ async def load_RegulatoryElements() -> None:
     async with async_session() as session:
         print("loading regulatory elements table")
 
-        with open("app/data/RegulatoryElements.csv", "r") as file:
+        files = ["RegulatoryElements.csv", "TransformationBindingFactors.csv"]
 
-            
-            reader = DictReader(file)        
+        for file_name in files:
+            with open(f"app/data/{file_name}", "r") as file:
 
-            for row in reader:
-                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
-
-                reg_seq = (await session.execute(stmt)).scalar()
-
-                if reg_seq is None:
-                    raise ValueError("Unable to find regulatory sequence")
-
-                regulatory_elements_object = RegulatoryElements(
-                    chromosome = int(row["chromosome"]),
-                    strand = row["strand"],
-                    element_type = row["element_type"],
-                    start = int(row["start"]),
-                    end = int(row["end"]),
-                    regulatory_sequence_id = reg_seq.id)
                 
-                session.add(regulatory_elements_object)
+                reader = DictReader(file)        
+
+                for row in reader:
+                    stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
+
+                    reg_seq = (await session.execute(stmt)).scalar()
+
+                    if reg_seq is None:
+                        raise ValueError("Unable to find regulatory sequence")
+
+                    regulatory_elements_object = RegulatoryElements(
+                        chromosome = int(row["chromosome"]),
+                        strand = row["strand"],
+                        element_type = row["element_type"],
+                        start = int(row["start"]),
+                        end = int(row["end"]),
+                        regulatory_sequence_id = reg_seq.id)
+                    
+                    session.add(regulatory_elements_object)
         await session.commit()
 
 async def ConservationAnalysisTask(gene_name: str, species_list: List[tuple[int, str]]) -> None:
