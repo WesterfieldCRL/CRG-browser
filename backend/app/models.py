@@ -39,9 +39,12 @@ class RegulatorySequences(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     gene_id = mapped_column(ForeignKey("Genes.id"))
     species_id = mapped_column(ForeignKey("Species.id"))
-    start: Mapped[int] = mapped_column(BigInteger)
-    end: Mapped[int] = mapped_column(BigInteger)
+    gene_start: Mapped[int] = mapped_column(BigInteger)
+    gene_end: Mapped[int] = mapped_column(BigInteger)
     sequence: Mapped[str] = mapped_column(Text)
+    total_start: Mapped[int] = mapped_column(BigInteger)
+    total_end: Mapped[int] = mapped_column(BigInteger)
+
 
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="regulatory_sequences_fk")
