@@ -79,13 +79,19 @@ export default function ConservationHistogram({ geneName, scoreType }: Histogram
 
   // Calculate min/max for scaling
   const scores = data.map(d => scoreType === 'phastcons' ? d.phastcon_score : d.phylop_score);
-  const minScore = Math.min(...scores);
-  const maxScore = Math.max(...scores);
+  const dataMin = Math.min(...scores);
+  const dataMax = Math.max(...scores);
+  const dataRange = dataMax - dataMin;
+
+  // Add padding for better visualization (minimum 20% of range, or 0.05 if range is tiny)
+  const paddingAmount = Math.max(dataRange * 0.2, 0.05);
+  const minScore = dataMin - paddingAmount; // Allow negative values for PhyloP
+  const maxScore = dataMax + paddingAmount;
   const range = maxScore - minScore;
 
   const width = 600;
   const height = 200;
-  const padding = 40;
+  const padding = 50;
   const barWidth = Math.max(1, (width - 2 * padding) / data.length);
 
   return (
@@ -113,20 +119,20 @@ export default function ConservationHistogram({ geneName, scoreType }: Histogram
 
         {/* Y-axis labels */}
         <text
-          x={padding - 30}
+          x={padding - 10}
           y={padding}
           fontSize="12"
           fill="var(--main-text)"
-          textAnchor="middle"
+          textAnchor="end"
         >
           {maxScore.toFixed(2)}
         </text>
         <text
-          x={padding - 30}
+          x={padding - 10}
           y={height - padding}
           fontSize="12"
           fill="var(--main-text)"
-          textAnchor="middle"
+          textAnchor="end"
         >
           {minScore.toFixed(2)}
         </text>
@@ -170,12 +176,59 @@ export default function ConservationHistogram({ geneName, scoreType }: Histogram
         </text>
       </svg>
 
+      {/* Legend */}
+      <div className="legend">
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: NUCLEOTIDE_COLORS['A'] }}></span>
+          <span className="legend-label">A (Adenine)</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: NUCLEOTIDE_COLORS['T'] }}></span>
+          <span className="legend-label">T (Thymine)</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: NUCLEOTIDE_COLORS['G'] }}></span>
+          <span className="legend-label">G (Guanine)</span>
+        </div>
+        <div className="legend-item">
+          <span className="legend-color" style={{ backgroundColor: NUCLEOTIDE_COLORS['C'] }}></span>
+          <span className="legend-label">C (Cytosine)</span>
+        </div>
+      </div>
+
       <style jsx>{`
         .histogram-container {
           display: flex;
+          flex-direction: column;
           justify-content: center;
           align-items: center;
           padding: 10px;
+        }
+
+        .legend {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 10px;
+          justify-content: center;
+          font-size: 11px;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .legend-color {
+          width: 14px;
+          height: 14px;
+          border-radius: 2px;
+          opacity: 0.8;
+        }
+
+        .legend-label {
+          color: var(--main-text);
         }
 
         .histogram-svg {
