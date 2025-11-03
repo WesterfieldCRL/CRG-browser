@@ -1,96 +1,232 @@
 'use client'
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useMediaQuery } from 'react-responsive'
-import { Home, Dna, GitCompare, Activity } from "lucide-react"
+import { Home, Dna, GitCompare } from "lucide-react"
+
+const NAV_ITEMS = [
+  { href: '/', label: 'Home', icon: Home },
+  { href: '/browser', label: 'Genome Browser', icon: Dna },
+  { href: '/comparison', label: 'Genome Comparison', icon: GitCompare },
+] as const
 
 export default function Header() {
+  const pathname = usePathname()
   const isMobile = useMediaQuery({ query: '(max-width: 768px)' })
+
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/'
+    return pathname.startsWith(href)
+  }
 
   return (
     <>
       <header className="header">
-        <nav className="nav-container">
-          <Link href="/" className="logo">CoRGi</Link>
-          <ul className="nav-links">
-            <li>
-              <Link href="/" aria-label="Home">
-                {isMobile ? <Home size={22} /> : 'Home'}
-              </Link>
-            </li>
-            <li>
-              <Link href="/browser" aria-label="Genome Browser">
-                {isMobile ? <Dna size={22} /> : 'Genome Browser'}
-              </Link>
-            </li>
-            <li>
-              <Link href="/comparison" aria-label="Genome Comparison">
-                {isMobile ? <GitCompare size={22} /> : 'Genome Comparison'}
-              </Link>
-            </li>
+        <nav className="nav-container" role="navigation" aria-label="Main navigation">
+          <Link href="/" className="logo" aria-label="CoRGi - Home">
+            <span className="logo-text">CoRGi</span>
+            <span className="logo-subtitle">Comparative Regulatory Genomics</span>
+          </Link>
+          <ul className="nav-links" role="list">
+            {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+              const active = isActive(href)
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={`nav-link ${active ? 'active' : ''}`}
+                    aria-label={label}
+                    aria-current={active ? 'page' : undefined}
+                  >
+                    {isMobile ? (
+                      <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                    ) : (
+                      <>
+                        <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                        <span>{label}</span>
+                      </>
+                    )}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </nav>
       </header>
 
       <style jsx>{`
         .header {
-          background: linear-gradient(135deg, var(--primary, #0b7285) 0%, var(--accent, #2db4b6) 100%);
+          background: linear-gradient(135deg, #0a6080 0%, #1a8fa0 50%, #2db4b6 100%);
           color: white;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(0, 0, 0, 0.08);
           position: sticky;
           top: 0;
-          z-index: 100;
-          transition: background 0.3s ease, box-shadow 0.3s ease;
+          z-index: 1000;
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .nav-container {
-          max-width: 1400px;
+          max-width: 1600px;
           margin: 0 auto;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 1rem 2rem;
+          padding: 0.75rem 3rem;
+          gap: 3rem;
         }
 
         .logo {
-          font-size: 1.8rem;
-          font-weight: bold;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
           color: white;
           text-decoration: none;
-          transition: transform 0.2s ease;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .logo:hover {
-          transform: scale(1.05);
+          opacity: 0.95;
+          transform: translateY(-1px);
+        }
+
+        .logo:focus-visible {
+          outline: 2px solid rgba(255, 255, 255, 0.8);
+          outline-offset: 6px;
+          border-radius: 6px;
+        }
+
+        .logo-text {
+          font-size: 2rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 1;
+        }
+
+        .logo-subtitle {
+          font-size: 0.6875rem;
+          font-weight: 500;
+          opacity: 0.9;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          line-height: 1;
         }
 
         .nav-links {
           display: flex;
           list-style: none;
-          gap: 2rem;
+          gap: 1.5rem;
           margin: 0;
           padding: 0;
+          align-items: center;
         }
 
-        .nav-links a {
-          color: white;
+        .nav-link {
+          color: rgba(255, 255, 255, 0.95);
           text-decoration: none;
           font-weight: 500;
-          padding: 0.5rem 1rem;
-          border-radius: 6px;
-          transition: background-color 0.3s ease, transform 0.2s ease;
+          font-size: 0.9375rem;
+          padding: 0.625rem 1.75rem;
+          border-radius: 10px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           align-items: center;
-          justify-content: center;
+          gap: 0.625rem;
+          position: relative;
+          white-space: nowrap;
         }
 
-        .nav-links a:hover {
+        .nav-link:hover {
           background-color: rgba(255, 255, 255, 0.15);
+          color: white;
           transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .nav-links a:active {
+        .nav-link:active {
           transform: translateY(0);
+        }
+
+        .nav-link:focus-visible {
+          outline: 2px solid rgba(255, 255, 255, 0.8);
+          outline-offset: 3px;
+        }
+
+        .nav-link.active {
+          background-color: rgba(255, 255, 255, 0.25);
+          color: white;
+          font-weight: 600;
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+                      0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-link.active::after {
+          content: '';
+          position: absolute;
+          bottom: -0.75rem;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 5px;
+          height: 5px;
+          background-color: white;
+          border-radius: 50%;
+          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        }
+
+        @media (max-width: 768px) {
+          .nav-container {
+            padding: 0.625rem 1.5rem;
+            gap: 1.5rem;
+          }
+
+          .logo-subtitle {
+            display: none;
+          }
+
+          .logo-text {
+            font-size: 1.625rem;
+          }
+
+          .nav-links {
+            gap: 0.5rem;
+          }
+
+          .nav-link {
+            padding: 0.75rem;
+            width: 48px;
+            height: 48px;
+            justify-content: center;
+            border-radius: 12px;
+          }
+
+          .nav-link.active::after {
+            bottom: -0.25rem;
+            width: 4px;
+            height: 4px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .nav-container {
+            padding: 0.875rem 1rem;
+          }
+
+          .logo-text {
+            font-size: 1.5rem;
+          }
+
+          .nav-link {
+            width: 44px;
+            height: 44px;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .logo,
+          .nav-link {
+            transition: none;
+          }
         }
       `}</style>
     </>
