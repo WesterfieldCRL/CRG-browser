@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS "RegulatorySequences" (
 	"sequence" TEXT NOT NULL,
 	"total_start" BIGINT NOT NULL,
 	"total_end" BIGINT NOT NULL,
+	"allignment_num" BIGINT NOT NULL,
 	PRIMARY KEY("id")
 );
 

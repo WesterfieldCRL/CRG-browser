@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from app.models import RegulatorySequences, Species, Genes, RegulatoryElements
 from app.dependencies import async_session
-from app.routers import species
+from app.routers import species, regulatory_sequences
 from fastapi import APIRouter
 
 
