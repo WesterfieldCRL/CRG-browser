@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import List
 from sqlalchemy import select
 from app.models import Genes
-from app.dependencies import async_session
+from app.utils import async_session
 
 router = APIRouter(prefix="/genes")
 

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import Species
-from app.dependencies import async_session
+from app.utils import async_session
 
 from fastapi import APIRouter
 

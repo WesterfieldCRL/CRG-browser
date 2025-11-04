@@ -11,7 +11,7 @@ import shutil
 # Importing all of the sqlalchemy classes
 from app.models import *
 from app.routers import genes, species, regulatory_sequences, regulatory_elements, conservation_scores
-from app.dependencies import async_session
+from app.utils import async_session
 
 
 async def load_Genes() -> None:

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from app.models import RegulatorySequences, Species, Genes
-from app.dependencies import async_session
+from app.utils import async_session
 
 from fastapi import APIRouter
 
@@ -75,24 +75,44 @@ async def get_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordina
     
 # This is going to return a list of all species mapped to the offsets of their sequences from zero
 @router.get("/sequence_offsets", response_model=dict[str, int])
-async def get_sequence_offsets(gene_name: str) -> dict[str, int]:
+async def get_sequence_offsets(gene_name: str) -> tuple[dict[str, int],int]:
+    async with async_session() as session:
 
-    # Get the sequence numbers
-    geo_coords, allignment_num = await asyncio.gather(
-        get_geonomic_coordinates(gene_name),
-        get_allignment_num(gene_name)
-    )
+        allignment_num = await get_allignment_num(gene_name)
 
-    offsets: dict[str, int] = {}
 
-    largest_negative_start_coordinate = 0
+        geo_coords = await get_geonomic_coordinates(gene_name)
 
-    # Since everything needs to be alligned relative to something I am positioning every sequence so that the allignment number is at 0
-    # and then shifting them back over so that the sequence with the smallest start value has the start value at 0 but they are all alligned by the allignment num
-    for species in geo_coords:
-        geo_coords[species].start = geo_coords[species].start - allignment_num[species]
+        offsets: dict[str, int] = {}
 
-    return offsets
+        largest_negative_start_coordinate = 0
+
+        # Since everything needs to be alligned relative to something I am positioning every sequence so that the allignment number is at 0
+        # and then shifting them back over so that the sequence with the smallest start value has the start value at 0 but they are all alligned by the allignment num
+        for species in geo_coords:
+            new_start_coord = geo_coords[species].start - allignment_num[species]
+
+            # to move everything the same amount after alligning them we need to know what the furthest point past zero is
+            if new_start_coord < largest_negative_start_coordinate:
+                largest_negative_start_coordinate = new_start_coord
+            
+            geo_coords[species].start = new_start_coord
+
+        largest_negative_start_coordinate *= -1
+
+        max_right_value = 0
+
+        for species in geo_coords:
+            geo_coords[species].start += largest_negative_start_coordinate
+            offsets[species] = offsets[species] - geo_coords[species].start
+
+            curr_right_value = geo_coords[species].end + offsets[species]
+
+            if curr_right_value > max_right_value:
+                max_right_value = curr_right_value
+
+
+        return offsets, max_right_value
 
 
 
