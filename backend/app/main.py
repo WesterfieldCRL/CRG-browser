@@ -1,14 +1,10 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from sqlalchemy import insert, select
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from csv import DictReader
 import asyncio
 import shutil
-
-# Importing all of the sqlalchemy classes
 from app.models import *
 from app.routers import genes, species, regulatory_sequences, regulatory_elements, conservation_scores
 from app.utils import async_session

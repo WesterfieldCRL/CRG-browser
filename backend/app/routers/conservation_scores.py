@@ -1,6 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import ConservationNucleotides, ConservationScores, Genes, Species
 from app.utils import async_session

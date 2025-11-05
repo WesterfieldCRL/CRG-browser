@@ -10,6 +10,13 @@ from fastapi import APIRouter
 
 from app.routers import species
 
+class GeonomicCoordinate(BaseModel):
+    start: int = Field(..., description="Start position of the sequence range")
+    end: int = Field(..., description="End position of the sequence range")
+
+class Offsets(BaseModel):
+    offsets: dict[str, int] = Field(..., description="Dictionary mapping species to their offsets alligned starting at zero")
+    max_value: int = Field(..., description="The rightmost value of all the alligned sequence (the leftmost will be zero)")
 
 router = APIRouter(prefix="/sequences")
 
@@ -36,8 +43,8 @@ async def get_sequences(gene_name: str, species_name: str) -> str:
         else:
             raise HTTPException(status_code=404, detail="Unable to find sequence")
         
-@router.get("/allignment_num", response_model=dict[str,int])
-async def get_allignment_num(gene_name: str) -> dict[str,int]:
+@router.get("/allignment_numbers", response_model=dict[str,int])
+async def get_allignment_numbers(gene_name: str) -> dict[str,int]:
     async with async_session() as session:
         stmt = select(RegulatorySequences.allignment_num, Species.name).select_from(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name)
         result = (await session.execute(stmt)).tuples().all()
@@ -49,15 +56,67 @@ async def get_allignment_num(gene_name: str) -> dict[str,int]:
 
     return return_value
 
-class GeonomicCoordinate(BaseModel):
-    start: int = Field(..., description="Start position of the sequence range")
-    end: int = Field(..., description="End position of the sequence range")
+# gets the genomic coordinates for the individual gene
+@router.get("/genomic_coordinate", response_model=GeonomicCoordinate)
+async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
+    async with async_session() as session:
+        stmt = (select(RegulatorySequences.gene_start, RegulatorySequences.gene_end)
+                .join(Genes)
+                .join(Species)
+                .where(Genes.name == gene_name)
+                .where(Species.name == species_name))
+        
+        result = (await session.execute(stmt)).tuples().first()
 
-@router.get("/geonomic_coordinates", response_model=dict[str, GeonomicCoordinate])
-async def get_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unable to get gene coordinates for {gene_name} and {species_name}")
+
+        return GeonomicCoordinate(start = result[0], end = result[1])
+    
+# gets the genomic coordinates for the total sequence
+@router.get("/sequence_coordinate", response_model=GeonomicCoordinate)
+async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
+    async with async_session() as session:
+        stmt = (select(RegulatorySequences.total_start, RegulatorySequences.total_end)
+                .join(Genes)
+                .join(Species)
+                .where(Genes.name == gene_name)
+                .where(Species.name == species_name))
+        
+        result = (await session.execute(stmt)).tuples().first()
+
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Unable to get sequence coordinates for {gene_name} and {species_name}")
+
+        return GeonomicCoordinate(start = result[0], end = result[1])
+
+# gets the sequence coordinates for every species in a dictionary with species as the key
+@router.get("/all_sequence_coordinates", response_model=dict[str, GeonomicCoordinate])
+async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
     async with async_session() as session:
 
-        stmt = (select(Species.name, RegulatorySequences.total_start, RegulatorySequences.total_end, RegulatorySequences.allignment_num)
+        stmt = (select(Species.name, RegulatorySequences.total_start, RegulatorySequences.total_end)
+                .select_from(RegulatorySequences)
+                .join(Genes)
+                .join(Species)
+                .where(Genes.name == gene_name))
+        
+        result = (await session.execute(stmt)).tuples().all()
+        
+        return_value: dict[str, GeonomicCoordinate] = {}
+
+        for row in result:
+            curr_geo_coord = GeonomicCoordinate(start = row[1], end = row[2])
+            return_value[row[0]] = curr_geo_coord
+
+        return return_value
+    
+# gets the gene coordinates for every species in a dictionary with species as the key
+@router.get("/all_geonomic_coordinates", response_model=dict[str, GeonomicCoordinate])
+async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+    async with async_session() as session:
+
+        stmt = (select(Species.name, RegulatorySequences.gene_start, RegulatorySequences.gene_end)
                 .select_from(RegulatorySequences)
                 .join(Genes)
                 .join(Species)
@@ -74,46 +133,56 @@ async def get_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordina
         return return_value
     
 # This is going to return a list of all species mapped to the offsets of their sequences from zero
-@router.get("/sequence_offsets", response_model=dict[str, int])
-async def get_sequence_offsets(gene_name: str) -> tuple[dict[str, int],int]:
-    async with async_session() as session:
+@router.get("/sequence_offsets", response_model=Offsets)
+async def get_sequence_offsets(gene_name: str) -> Offsets:
 
-        allignment_num = await get_allignment_num(gene_name)
-
-
-        geo_coords = await get_geonomic_coordinates(gene_name)
-
-        offsets: dict[str, int] = {}
-
-        largest_negative_start_coordinate = 0
-
-        # Since everything needs to be alligned relative to something I am positioning every sequence so that the allignment number is at 0
-        # and then shifting them back over so that the sequence with the smallest start value has the start value at 0 but they are all alligned by the allignment num
-        for species in geo_coords:
-            new_start_coord = geo_coords[species].start - allignment_num[species]
-
-            # to move everything the same amount after alligning them we need to know what the furthest point past zero is
-            if new_start_coord < largest_negative_start_coordinate:
-                largest_negative_start_coordinate = new_start_coord
-            
-            geo_coords[species].start = new_start_coord
-
-        largest_negative_start_coordinate *= -1
-
-        max_right_value = 0
-
-        for species in geo_coords:
-            geo_coords[species].start += largest_negative_start_coordinate
-            offsets[species] = offsets[species] - geo_coords[species].start
-
-            curr_right_value = geo_coords[species].end + offsets[species]
-
-            if curr_right_value > max_right_value:
-                max_right_value = curr_right_value
+    allignment_num = await get_allignment_numbers(gene_name)
 
 
-        return offsets, max_right_value
+    geo_coords = await get_all_sequence_coordinates(gene_name)
 
+    offsets: dict[str, int] = {}
+
+    largest_negative_start_coordinate = 0
+
+    # Since everything needs to be alligned relative to something I am positioning every sequence so that the allignment number is at 0
+    # and then shifting them back over so that the sequence with the smallest start value has the start value at 0 but they are all alligned by the allignment num
+    for species in geo_coords:
+        new_start_coord = geo_coords[species].start - allignment_num[species]
+
+        # to move everything the same amount after alligning them we need to know what the furthest point past zero is
+        if new_start_coord < largest_negative_start_coordinate:
+            largest_negative_start_coordinate = new_start_coord
+        
+        geo_coords[species].start = new_start_coord
+
+    largest_negative_start_coordinate *= -1
+
+    max_right_value = 0
+
+    for species in geo_coords:
+        geo_coords[species].start += largest_negative_start_coordinate
+        offsets[species] = offsets[species] - geo_coords[species].start
+
+        curr_right_value = geo_coords[species].end + offsets[species]
+
+        if curr_right_value > max_right_value:
+            max_right_value = curr_right_value
+
+    return Offsets(offsets = offsets, max_value = max_right_value)
+
+@router.get("/min_and_max", response_model=tuple[int, int])
+async def get_sequence_max_and_min(gene_name: str, species_name: str) -> tuple[int, int]:
+    
+    offsets, original_coordinates = asyncio.gather(
+        get_sequence_offsets(gene_name),
+        get_genomic_coordinate(gene_name, species_name)
+    )
+
+    max = original_coordinates.end + offsets[species_name]
+    min = original_coordinates.start + offsets[species_name]
+
+    return (min, max)
 
 
 # class ColorSegment(BaseModel):
@@ -124,8 +193,6 @@ async def get_sequence_offsets(gene_name: str) -> tuple[dict[str, int],int]:
 #     sequences: Dict[str, List[ColorSegment]] = Field(..., description="Dictionary mapping species to their condensed sequences")
 #     start: int = Field(..., description="Start position of the sequence range")
 #     end: int = Field(..., description="End position of the sequence range")
-
-# THRESHOLD = 0.009  # Threshold for merging segments
 
 # async def compare_sequences(sequences: List[str]) -> List[bool]:
 #     # Compare sequences character by character and return a list indicating if all characters at each position are identical
