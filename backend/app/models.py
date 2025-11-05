@@ -44,6 +44,7 @@ class RegulatorySequences(Base):
     sequence: Mapped[str] = mapped_column(Text)
     total_start: Mapped[int] = mapped_column(BigInteger)
     total_end: Mapped[int] = mapped_column(BigInteger)
+    allignment_num: Mapped[int] = mapped_column(BigInteger)
 
 
     # Relationships

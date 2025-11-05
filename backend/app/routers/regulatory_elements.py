@@ -1,91 +1,142 @@
-from typing import Dict, List, Optional
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
-from sqlalchemy import select
-from app.models import RegulatorySequences, Species, Genes, RegulatoryElements
-from app.dependencies import async_session
-from app.routers import species
+import asyncio
 from fastapi import APIRouter
+from pydantic import BaseModel, Field
+from sqlalchemy import or_, select
+from app.models import RegulatorySequences, Species, Genes, RegulatoryElements
+from app.utils import async_session
+from fastapi import APIRouter
+from app.routers import regulatory_sequences
 
-
-router = APIRouter(prefix="/elements")
-
-class LineShapes(BaseModel):
-    start: int = Field(..., description="Start position of the shape")
-    end: int = Field(..., description="End position of the shape")
-    info: str = Field(..., description="Information to be displayed when clicked on") # This will likley be changed later when we have more information
-    color: str = Field(..., description="Hex color code representing something(?)")
-
-class RegulatoryLine(BaseModel):
-    relative_start: int = Field(..., description="Start position of the line")
-    relative_end: int = Field(..., description="End position of the line")
-    real_start: int = Field(..., description="Start position of the sequence based on the larger genome")
-    real_end: int = Field(..., description="Start position of the sequence based on the larger genome")
-    shapes: List[LineShapes] = Field(..., description="list of regulatory elements represented by shapes")
-
-#TODO: remove get_species_regulatory_line and get_regulatory_line
-
-### assembles a line for a specifc species's regulatory elements
-async def get_species_regulatory_line(given_species: str, given_gene: str) -> RegulatoryLine:
-    async with async_session() as session:
-
-        stmt = select(RegulatorySequences.id, RegulatorySequences.start, RegulatorySequences.end).join(Genes).join(Species).where(Genes.name == given_gene).where(Species.name == given_species)
-
-        reg_elem_endpoints = (await session.execute(stmt)).first() # This should only give me one row I think
-
-        if reg_elem_endpoints is None:
-            raise HTTPException(status_code=404, detail = "Unable to find specifed sequence when getting regulatory line elements")
-
-        relative_start = 0
-        relative_end = reg_elem_endpoints[2] - reg_elem_endpoints[1]
-        real_start = reg_elem_endpoints[1]
-        real_end = reg_elem_endpoints[2]
-
-        stmt = select(RegulatoryElements).join(RegulatorySequences).where(RegulatorySequences.id == reg_elem_endpoints[0])
-        
-        reg_elems = (await session.execute(stmt)).scalars().all()
-
-        print(len(reg_elems))
-
-        shapes = []
-        for element in reg_elems:
-            shapes.append(LineShapes(start = element.start - reg_elem_endpoints[1], 
-                                    end = element.end - reg_elem_endpoints[1], 
-                                    info = f"Chromosome: {element.chromosome} | {element.strand} | {element.element_type}",
-                                    color = "#ad463e"))
-        
-        return RegulatoryLine(relative_start = relative_start, relative_end = relative_end, real_start = real_start, real_end = real_end, shapes = shapes)
-
-@router.get("/regulatory_line_elements", response_model=Dict[str, RegulatoryLine])
-async def get_regulatory_line(gene_name: str) -> Dict[str, RegulatoryLine]:
-    async with async_session() as session:
-
-        species_list = await species.get_names()
-
-        result = {}
-
-        for species_name in species_list:
-            result[species_name] = await get_species_regulatory_line(species_name, gene_name)
-
-        return result
-    
+class Element(BaseModel):
+    type: str = Field(..., description="string representing what the element is")
+    start: int = Field(..., description="start of this element")
+    end: int = Field(..., description="end of this element")
 
 class ColorSegment(BaseModel):
-    color: str = Field(..., description="Hex color code representing similarity")
+    color: str = Field(..., description="string representing how it will be displayed on the frontend, if a solid color it will be a hex value")
     width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
 
-class Sequence(BaseModel):
-    sequences: List[ColorSegment] = Field(..., description="Dictionary mapping species to their condensed sequences")
-    start: int = Field(..., description="Start position of the sequence range")
-    end: int = Field(..., description="End position of the sequence range")
+router = APIRouter(prefix="/elements")    
 
-@router.get("/enhancers_and_promoters", response_model=Sequence)
-async def get_enh_prom_sequence(gene_name: str, start: Optional[int] = None, end: Optional[int] = None) -> Sequence:
+NORMAL_GAP = "gap"
+
+THRESHOLD = 0.09
+
+@router.get("/all_TFBS", response_model=list[str])
+async def get_all_TFBS(gene_name: str) -> list[str]:
+    async with async_session() as session:
+
+        stmt = (select(RegulatoryElements.element_type)
+                .join(RegulatorySequences)
+                .join(Genes)
+                .where(Genes.name == gene_name)
+                .where(((RegulatoryElements.element_type != "Enh") & (RegulatoryElements.element_type != "Prom")))
+                .distinct())
+        
+        result = (await session.execute(stmt)).scalars().all()
+
+    return list(result)
+
+# Returns a list of all elements within the given parameters
+@router.get("/filtered_list", response_model=list[Element])
+async def get_filtered_elements(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
+    async with async_session() as session:
+
+        element_list: list[Element] = []
+
+
+        stmt = (select(RegulatoryElements.element_type, RegulatoryElements.start, RegulatoryElements.end)
+                .join(RegulatorySequences)
+                .join(Genes)
+                .join(Species)
+                .where(Genes.name == gene_name)
+                .where(Species.name == species_name)
+                .where((RegulatoryElements.start >= start) & (RegulatoryElements.end <= end))
+                .where(RegulatoryElements.element_type.in_(element_types))
+                .order_by(RegulatoryElements.start))
+            
+        result = (await session.execute(stmt)).tuples().all()
+
+        for row in result:
+
+            element_list.append(Element(type = row[0], start = row[1], end = row[2]))
+
     
-    # Allign our sequences together
-    # TODO: use the actual data once I get it to allign the sequences
+        return element_list
     
+@router.get("/mapped_list", response_model=list[ColorSegment])
+async def get_mapped_list(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[ColorSegment]:
+
+    element_list, offsets, sequence_coords = await asyncio.gather(
+        get_filtered_elements(gene_name, species_name, element_types, start, end),
+        regulatory_sequences.get_sequence_offsets(gene_name),
+        regulatory_sequences.get_sequence_coordinate(gene_name,species_name)
+    )
+
+    total_start = 0
+    total_end = offsets.max_value
+
+    sequence_start = sequence_coords.start + offsets.offsets[species_name]
+    sequence_end = sequence_coords.end + offsets.offsets[species_name]
+
+    color_map = await populate_color_map(total_start, total_end, sequence_start, sequence_end, element_list, offsets.offsets[species_name])
+
+    return color_map
     
+# From the parameters generates a list of segments where the widths add up to 100 that can be given to the frontend to display
+async def populate_color_map(total_start: int, total_end: int, sequence_start: int, sequence_end: int, element_list: list[Element], offset: int) -> list[ColorSegment]:
+
+    total_width = total_end-total_start
+
+    prev_index = total_start
+
+    curr_width = 0
+
+    color_segment_list: list[ColorSegment] = []
+
+    for element in element_list:
+
+        element_start = element.start + offset
+        element_end = element.end + offset
+
+        # if the elements are right not right next to each other we need this to fill in the gap
+        if element_start > prev_index:
+            gap_width = ((element_start - prev_index) / total_width) * 100
+            color_segment_list.append(ColorSegment(color = NORMAL_GAP, width = gap_width))
+            curr_width += gap_width
+            prev_index = element_start
+
+        # using prev_index instead of element.start to handle overlaps
+        element_width = ((element_end - prev_index) / total_width) * 100
+        color_segment_list.append(ColorSegment(color = element.type, width = element_width))
+        curr_width += element_width
+        prev_index = element_end
+
+    # add any remaing space in the sequence
+
+    # add any remaing allignment space
+    color_segment_list.append(ColorSegment(color = NORMAL_GAP, width=100-curr_width))
     
+
+    # Merge segments that are below the threshold
+    # length = len(color_map[species_name])
+    # i = 0
+    # while i < length:
+        
+    #     if color_map[species_name][i].width < THRESHOLD:
+    #         if i > 0:
+    #             color_map[species_name][i - 1].width += color_map[species_name][i].width
+    #             del color_map[species_name][i]
+    #             i -= 1
+    #             length -= 1
+    #         else:
+    #             color_map[species_name][i + 1].width += color_map[species_name][i].width
+    #             del color_map[species_name][i]
+    #             i -= 1
+    #             length -= 1
+
+    #     i += 1
+
+
+    return color_segment_list
     
-    return None

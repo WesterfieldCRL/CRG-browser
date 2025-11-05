@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models import ConservationNucleotides, ConservationScores, Genes, Species
-from app.dependencies import async_session
+from app.utils import async_session
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/conservation_scores")

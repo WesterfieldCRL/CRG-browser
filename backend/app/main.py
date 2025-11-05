@@ -1,17 +1,13 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from sqlalchemy import insert, select
-from sqlalchemy.orm import Session
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from csv import DictReader
 import asyncio
 import shutil
-
-# Importing all of the sqlalchemy classes
 from app.models import *
 from app.routers import genes, species, regulatory_sequences, regulatory_elements, conservation_scores
-from app.dependencies import async_session
+from app.utils import async_session
 
 
 async def load_Genes() -> None:
@@ -77,7 +73,8 @@ async def load_RegulatorySequences() -> None:
                         gene_end = int(row["gene_end"]),
                         sequence = sequence,
                         total_start = int(row["total_start"]),
-                        total_end = int(row["total_end"]))
+                        total_end = int(row["total_end"]),
+                        allignment_num = int(row["allignment_num"]))
                     session.add(regulatory_sequences_object)
 
             await session.commit()
