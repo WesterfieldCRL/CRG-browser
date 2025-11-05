@@ -10,6 +10,11 @@ class Element(BaseModel):
     start: int = Field(..., description="start of this element")
     end: int = Field(..., description="end of this element")
 
+class ColorSegment(BaseModel):
+    color: str = Field(..., description="string representing how it will be displayed on the frontend, if a solid color it will be a hex value")
+    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
+
 router = APIRouter(prefix="/elements")    
 
 
@@ -40,15 +45,6 @@ async def get_filtered_elements(gene_name: str, species_name: str, element_types
     
         return element_list
     
-
-ALLIGNMENT_GAP = "none"
-NORMAL_GAP = "gray"
-THRESHOLD = 0.009  # Threshold for merging segments
-
-class ColorSegment(BaseModel):
-    color: str = Field(..., description="string representing how it will be displayed on the frontend, if a solid color it will be a hex value")
-    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
-
 # From the parameters generates a list of segments where the widths add up to 100 that can be given to the frontend to display
 async def populate_color_map(total_start: int, total_end: int, sequence_start: int, sequence_end: int, element_list: list[Element]) -> list[ColorSegment]:
 

@@ -148,6 +148,7 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
     # Since everything needs to be alligned relative to something I am positioning every sequence so that the allignment number is at 0
     # and then shifting them back over so that the sequence with the smallest start value has the start value at 0 but they are all alligned by the allignment num
     for species in geo_coords:
+        offsets[species] = geo_coords[species].start
         new_start_coord = geo_coords[species].start - allignment_num[species]
 
         # to move everything the same amount after alligning them we need to know what the furthest point past zero is
@@ -160,9 +161,10 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
 
     max_right_value = 0
 
+    # Now move everything back so that the minimum value is at 0
     for species in geo_coords:
         geo_coords[species].start += largest_negative_start_coordinate
-        offsets[species] = offsets[species] - geo_coords[species].start
+        offsets[species] = geo_coords[species].start - offsets[species]
 
         curr_right_value = geo_coords[species].end + offsets[species]
 
@@ -174,13 +176,13 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
 @router.get("/min_and_max", response_model=tuple[int, int])
 async def get_sequence_max_and_min(gene_name: str, species_name: str) -> tuple[int, int]:
     
-    offsets, original_coordinates = asyncio.gather(
+    offsets, original_coordinates = await asyncio.gather(
         get_sequence_offsets(gene_name),
         get_genomic_coordinate(gene_name, species_name)
     )
 
-    max = original_coordinates.end + offsets[species_name]
-    min = original_coordinates.start + offsets[species_name]
+    max = original_coordinates.end + offsets.offsets[species_name]
+    min = original_coordinates.start + offsets.offsets[species_name]
 
     return (min, max)
 
