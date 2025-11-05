@@ -75,7 +75,7 @@ async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicC
     
 # gets the genomic coordinates for the total sequence
 @router.get("/sequence_coordinate", response_model=GeonomicCoordinate)
-async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
+async def get_sequence_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
     async with async_session() as session:
         stmt = (select(RegulatorySequences.total_start, RegulatorySequences.total_end)
                 .join(Genes)
