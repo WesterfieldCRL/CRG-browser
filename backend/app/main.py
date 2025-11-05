@@ -74,7 +74,7 @@ async def load_RegulatorySequences() -> None:
                         sequence = sequence,
                         total_start = int(row["total_start"]),
                         total_end = int(row["total_end"]),
-                        allignment_num = ((int(row["total_end"]) - int(row["total_start"]))/2)+int(row["total_start"]))
+                        allignment_num = int(row["allignment_num"]))
                     session.add(regulatory_sequences_object)
 
             await session.commit()
