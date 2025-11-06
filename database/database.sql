@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS "EnhancersPromoters" (
 	"category" VARCHAR(255) NOT NULL,
 	"start" BIGINT NOT NULL,
 	"end" BIGINT NOT NULL,
-	"sequences_id" INTEGER NOT NULL,
+	"regulatory_sequence_id" INTEGER NOT NULL,
 	PRIMARY KEY("id")
 );
 
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS "TranscriptionFactorBindingSites" (
 	"category" VARCHAR(255) NOT NULL,
 	"start" INTEGER NOT NULL,
 	"end" INTEGER NOT NULL,
-	"sequences_id" INTEGER NOT NULL,
+	"regulatory_sequence_id" INTEGER NOT NULL,
 	PRIMARY KEY("id")
 );
 
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS "Variants" (
 	"category" VARCHAR(255) NOT NULL,
 	"start" BIGINT NOT NULL,
 	"end" BIGINT NOT NULL,
-	"sequences_id" INTEGER NOT NULL,
+	"regulatory_sequence_id" INTEGER NOT NULL,
 	PRIMARY KEY("id")
 );
 
@@ -110,11 +110,11 @@ ALTER TABLE "ConservationNucleotides"
 ADD FOREIGN KEY("conservation_id") REFERENCES "ConservationScores"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 ALTER TABLE "EnhancersPromoters"
-ADD FOREIGN KEY("sequences_id") REFERENCES "RegulatorySequences"("id")
+ADD FOREIGN KEY("regulatory_sequence_id") REFERENCES "RegulatorySequences"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 ALTER TABLE "TranscriptionFactorBindingSites"
-ADD FOREIGN KEY("sequences_id") REFERENCES "RegulatorySequences"("id")
+ADD FOREIGN KEY("regulatory_sequence_id") REFERENCES "RegulatorySequences"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 ALTER TABLE "Variants"
-ADD FOREIGN KEY("sequences_id") REFERENCES "RegulatorySequences"("id")
+ADD FOREIGN KEY("regulatory_sequence_id") REFERENCES "RegulatorySequences"("id")
 ON UPDATE NO ACTION ON DELETE NO ACTION;
