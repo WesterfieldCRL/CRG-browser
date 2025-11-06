@@ -79,37 +79,96 @@ async def load_RegulatorySequences() -> None:
 
             await session.commit()
 
-
-async def load_RegulatoryElements() -> None:
+async def load_Enh_Prom() -> None:
     async with async_session() as session:
-        print("loading regulatory elements table")
 
-        files = ["RegulatoryElements.csv", "TransformationBindingFactors.csv"]
+        print("loading enahncers and promoters")
 
-        for file_name in files:
-            with open(f"app/data/{file_name}", "r") as file:
+        with open("app/data/Complete_2Mil_Enh_Prom.csv", "r") as file:
 
                 
-                reader = DictReader(file)        
+            reader = DictReader(file)        
 
-                for row in reader:
-                    stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
+            for row in reader:
+                gene_name = row["Gene"]
+                species_name = row["Species"]
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)
 
-                    reg_seq = (await session.execute(stmt)).scalar()
+                reg_seq = (await session.execute(stmt)).scalar()
 
-                    if reg_seq is None:
-                        raise ValueError("Unable to find regulatory sequence")
+                if reg_seq is None:
+                    raise ValueError(f"Unable to find regulatory sequence for Enh and Proms for {gene_name} and {species_name}")
 
-                    regulatory_elements_object = RegulatoryElements(
-                        chromosome = int(row["chromosome"]),
-                        strand = row["strand"],
-                        element_type = row["element_type"],
-                        start = int(row["start"]),
-                        end = int(row["end"]),
-                        regulatory_sequence_id = reg_seq.id)
-                    
-                    session.add(regulatory_elements_object)
-        await session.commit()
+                enh_prom_object = EnhancersPromoters(
+                    chromosome = int(row["Chromosome"]),
+                    category = row["Enh_Prom"],
+                    start = int(row["Type_Start"]),
+                    end = int(row["Type_End"]),
+                    regulatory_sequence_id = reg_seq.id)
+                
+                session.add(enh_prom_object)
+
+            await session.commit()
+
+async def load_TFBS() -> None:
+    async with async_session() as session:
+
+        print("loading Transcription Factor Binding Sites")
+
+        with open("app/data/TransformationBindingFactors.csv", "r") as file:
+   
+            reader = DictReader(file)        
+
+            for row in reader:
+                gene_name = row["gene_name"]
+                species_name = row["species_name"]
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)
+
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError(f"Unable to find regulatory sequence for TFBS for {gene_name} and {species_name}")
+
+                enh_prom_object = TranscriptionFactorBindingSites(
+                    chromosome = int(row["chromosome"]),
+                    category = row["element_type"],
+                    start = int(row["start"]),
+                    end = int(row["end"]),
+                    regulatory_sequence_id = reg_seq.id)
+                
+                session.add(enh_prom_object)
+            
+            await session.commit()
+
+async def load_variants() -> None:
+    async with async_session() as session:
+
+        print("loading variants")
+
+        with open("app/data/variants_november_6_2025.tsv", "r") as file:
+
+            reader = DictReader(file, delimiter="\t")
+
+            for row in reader:
+                gene_name = row["gene"]
+                species_name = row["species"]
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)
+
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError(f"Unable to find regulatory sequence for variants for {gene_name} and {species_name}")
+
+                enh_prom_object = Variants(
+                    chromosome = int(row["chromosome"]),
+                    category = row["category"],
+                    start = int(row["start_position"]),
+                    end = int(row["end_position"]),
+                    regulatory_sequence_id = reg_seq.id)
+                
+                session.add(enh_prom_object)
+
+            await session.commit()
 
 async def ConservationAnalysisTask(gene_name: str, species_list: List[tuple[int, str]]) -> None:
     async with async_session() as session:
@@ -171,12 +230,13 @@ async def lifespan(app: FastAPI):
 
     # Regulatory elements depends on regulatory sequences so that must be done before we load reg elements
     await regulatory_sequences_future
-    regulatory_elements_future = load_RegulatoryElements()
 
     # Make sure all tasks have finished
     await asyncio.gather(
         conservation_analysis_future,
-        regulatory_elements_future
+        load_Enh_Prom(),
+        load_TFBS(),
+        load_variants()
     )
 
     print("Finished loading tables")

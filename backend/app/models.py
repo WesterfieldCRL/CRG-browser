@@ -50,17 +50,18 @@ class RegulatorySequences(Base):
     # Relationships
     gene_fk: Mapped[Genes] = relationship(back_populates="regulatory_sequences_fk")
     species_fk: Mapped[Species] = relationship(back_populates="regulatory_sequences_fk")
-    regulatoryElements_fk: Mapped[List["RegulatoryElements"]] = relationship(back_populates="regulatorySequences_fk")
+    enhancersPromoters_fk: Mapped[List["EnhancersPromoters"]] = relationship(back_populates="regulatorySequences_fk")
+    transcriptionFactorBindingSites_fk: Mapped[List["TranscriptionFactorBindingSites"]] = relationship(back_populates="regulatorySequences_fk")
+    variants_fk: Mapped[List["Variants"]] = relationship(back_populates="regulatorySequences_fk")
 
-class RegulatoryElements(Base):
-    __tablename__ = "RegulatoryElements"
+class EnhancersPromoters(Base):
+    __tablename__ = "EnhancersPromoters"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     chromosome: Mapped[int]
-    strand: Mapped[str] = mapped_column(CHAR)
-    element_type: Mapped[str] = mapped_column(String(4))
-    start: Mapped[int]
-    end: Mapped[int]
+    category: Mapped[str] = mapped_column(String(4))
+    start: Mapped[int] = mapped_column(BigInteger)
+    end: Mapped[int] = mapped_column(BigInteger)
     regulatory_sequence_id = mapped_column(ForeignKey("RegulatorySequences.id"))
 
     __table_args__ = (
@@ -69,7 +70,43 @@ class RegulatoryElements(Base):
     )
 
     # Relationships
-    regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="regulatoryElements_fk")
+    regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="enhancersPromoters_fk")
+
+class TranscriptionFactorBindingSites(Base):
+    __tablename__ = "TranscriptionFactorBindingSites"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chromosome: Mapped[int]
+    category: Mapped[str] = mapped_column(String(4))
+    start: Mapped[int] = mapped_column(BigInteger)
+    end: Mapped[int] = mapped_column(BigInteger)
+    regulatory_sequence_id = mapped_column(ForeignKey("RegulatorySequences.id"))
+
+    __table_args__ = (
+        CheckConstraint("typeStart >= 0", name="check_typeStart_nonnegative"),
+        CheckConstraint("typeEnd >= typeStart", name="check_typeEnd_ge_typeStart"),
+    )
+
+    # Relationships
+    regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="transcriptionFactorBindingSites_fk")
+
+class Variants(Base):
+    __tablename__ = "Variants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    chromosome: Mapped[int]
+    category: Mapped[str] = mapped_column(String(4))
+    start: Mapped[int] = mapped_column(BigInteger)
+    end: Mapped[int] = mapped_column(BigInteger)
+    regulatory_sequence_id = mapped_column(ForeignKey("RegulatorySequences.id"))
+
+    __table_args__ = (
+        CheckConstraint("typeStart >= 0", name="check_typeStart_nonnegative"),
+        CheckConstraint("typeEnd >= typeStart", name="check_typeEnd_ge_typeStart"),
+    )
+
+    # Relationships
+    regulatorySequences_fk: Mapped[RegulatorySequences] = relationship(back_populates="variants_fk")
 
 class ConservationScores(Base):
     __tablename__ = "ConservationScores"
