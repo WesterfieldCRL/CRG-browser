@@ -170,7 +170,7 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
     # add any remaing allignment space
     if prev_index < sequence_end:
-        color_segment_list.append(Segment(type = NORMAL_GAP, width=100-curr_width, start = prev_index - offset, end=sequence_end))
+        color_segment_list.append(Segment(type = NORMAL_GAP, width=100-curr_width, start = (prev_index - offset), end = (sequence_end - offset))
     
 
     # Merge segments that are below the threshold
