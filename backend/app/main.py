@@ -82,33 +82,74 @@ async def load_RegulatorySequences() -> None:
 
 async def load_RegulatoryElements() -> None:
     async with async_session() as session:
-        print("loading regulatory elements table")
+        print("loading regulatory elements tables")
+ 
+        with open("app/data/Complete_2Mil_Enh_Prom.csv", "r") as file:
 
-        files = ["RegulatoryElements.csv", "TransformationBindingFactors.csv"]
+            
+            reader = DictReader(file)        
 
-        for file_name in files:
-            with open(f"app/data/{file_name}", "r") as file:
+            for row in reader:
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["Gene"]).where(Species.name == row["Species"])
 
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError("Unable to find regulatory sequence")
+
+                enh_prom_object = EnhancersPromoters(
+                    chromosome = int(row["Chromosome"]),
+                    category = row["Enh_Prom"],
+                    start = int(row["Type_Start"]),
+                    end = int(row["Type_End"]),
+                    regulatory_sequence_id = reg_seq.id)
                 
-                reader = DictReader(file)        
+                session.add(enh_prom_object)
 
-                for row in reader:
-                    stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
+        
+        with open("app/data/TransformationBindingFactors.csv", "r") as file:
 
-                    reg_seq = (await session.execute(stmt)).scalar()
+            
+            reader = DictReader(file)        
 
-                    if reg_seq is None:
-                        raise ValueError("Unable to find regulatory sequence")
+            for row in reader:
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene_name"]).where(Species.name == row["species_name"])
 
-                    regulatory_elements_object = RegulatoryElements(
-                        chromosome = int(row["chromosome"]),
-                        strand = row["strand"],
-                        element_type = row["element_type"],
-                        start = int(row["start"]),
-                        end = int(row["end"]),
-                        regulatory_sequence_id = reg_seq.id)
-                    
-                    session.add(regulatory_elements_object)
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError("Unable to find regulatory sequence")
+
+                enh_prom_object = TranscriptionFactorBindingSites(
+                    chromosome = int(row["chromosome"]),
+                    category = row["element_type"],
+                    start = int(row["start"]),
+                    end = int(row["end"]),
+                    regulatory_sequence_id = reg_seq.id)
+                
+                session.add(enh_prom_object)
+
+        with open("app/data/variants_november_6_2025.tsv", "r") as file:
+
+            reader = DictReader(file, delimiter="\t")
+
+            for row in reader:
+                stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == row["gene"]).where(Species.name == row["species"])
+
+                reg_seq = (await session.execute(stmt)).scalar()
+
+                if reg_seq is None:
+                    raise ValueError("Unable to find regulatory sequence")
+
+                enh_prom_object = Variants(
+                    chromosome = int(row["chromosome"]),
+                    category = row["category"],
+                    start = int(row["start_position"]),
+                    end = int(row["end_position"]),
+                    regulatory_sequence_id = reg_seq.id)
+                
+                session.add(enh_prom_object)
+
         await session.commit()
 
 async def ConservationAnalysisTask(gene_name: str, species_list: List[tuple[int, str]]) -> None:
