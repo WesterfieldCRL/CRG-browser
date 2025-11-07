@@ -115,13 +115,13 @@ async def load_TFBS() -> None:
 
         print("loading Transcription Factor Binding Sites")
 
-        with open("app/data/TransformationBindingFactors.csv", "r") as file:
+        with open("app/data/Complete_TFBS.csv", "r") as file:
    
             reader = DictReader(file)        
 
             for row in reader:
-                gene_name = row["gene_name"]
-                species_name = row["species_name"]
+                gene_name = row["Gene"]
+                species_name = row["Species"]
                 stmt = select(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)
 
                 reg_seq = (await session.execute(stmt)).scalar()
@@ -130,10 +130,10 @@ async def load_TFBS() -> None:
                     raise ValueError(f"Unable to find regulatory sequence for TFBS for {gene_name} and {species_name}")
 
                 enh_prom_object = TranscriptionFactorBindingSites(
-                    chromosome = int(row["chromosome"]),
-                    category = row["element_type"],
-                    start = int(row["start"]),
-                    end = int(row["end"]),
+                    chromosome = int(row["Chromosome"]),
+                    category = row["Type"],
+                    start = int(row["Type_Start"]),
+                    end = int(row["Type_End"]),
                     regulatory_sequence_id = reg_seq.id)
                 
                 session.add(enh_prom_object)
