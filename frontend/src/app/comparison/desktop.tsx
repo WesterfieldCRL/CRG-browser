@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import InteractiveLine from "./InteractiveLine";
 import ConservationHistogram from "./ConservationHistogram";
 import {
   fetchGenes,
-  fetchRegulatoryElementLines,
 } from "../utils/services";
 
 class LineShapes {
@@ -48,8 +46,6 @@ class RegulatoryLine {
 export default function RegComp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [genes, setGenes] = useState<Array<string>>([]);
-  const [selected_gene, setSelectedGene] = useState<string>("none");
-  const [reg_lines, setRegLines] = useState<Record<string, RegulatoryLine>>();
 
   async function loadGenes() {
     setLoading(true);
@@ -63,24 +59,6 @@ export default function RegComp() {
     }
   }
 
-  async function loadLines(geneName: string) {
-    setLoading(true);
-    try {
-      const data = await fetchRegulatoryElementLines(geneName);
-
-      setRegLines(data);
-    } catch (error) {
-      console.error("Error fetching condensed sequences:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleButtonPress(gene: string) {
-    loadLines(gene);
-    setSelectedGene(gene);
-  }
-
   // Initial load
   useEffect(() => {
     loadGenes();
@@ -89,44 +67,6 @@ export default function RegComp() {
   return (
     <>
       <main>
-        <h1>Regulatory Element Comparison</h1>
-        <p className="page-description">
-          Compare regulatory elements and their conservation across species
-        </p>
-        {!loading && (
-          <>
-            <div className="controls">
-              <label>Select Gene:</label>
-              <div className="gene-buttons">
-                {genes.map((gene) => (
-                  <button
-                    key={gene}
-                    className="gene-button"
-                    onClick={() => handleButtonPress(gene)}
-                  >
-                    {gene}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {!(selected_gene === "none") && (
-              <div className="results-container">
-                {Object.entries(reg_lines).map(([key, value]) => (
-                  <div key={key} className="container-box">
-                    <div className="species-name">{key}</div>
-                    <InteractiveLine
-                      start={value.relative_start}
-                      end={value.relative_end}
-                      start_label={value.real_start}
-                      end_label={value.real_end}
-                      shapes={value.shapes}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
 
         {!loading && genes.length > 0 && (
           <div className="conservation-section">
