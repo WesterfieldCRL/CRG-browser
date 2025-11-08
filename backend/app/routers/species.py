@@ -30,3 +30,16 @@ async def get_id(name: str) -> int:
             return result
         else:
             raise HTTPException(status_code=404, detail="Unable to find species name")
+        
+
+@router.get("/assemblies", response_model=str)
+async def get_assemblies(species_name: str) -> str:
+
+    async with async_session() as session:
+        stmt = select(Species.assembly).where(Species.name == species_name)
+        result = (await session.execute(stmt)).scalar()
+
+        if result is not None:
+            return result
+        else:
+            raise HTTPException(status_code=404, detail=f"Unable to find assembly for {species_name}")
