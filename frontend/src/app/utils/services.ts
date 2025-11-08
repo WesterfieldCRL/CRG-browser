@@ -43,25 +43,14 @@ export async function fetchSpecies() {
 
 /** Get assembly for a species */
 export async function fetchAssembly(species: string) {
-  try {
-    const response = await fetch(
-      `/species/assemblies&species_name=${encodeURIComponent(species)}`
-    );
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    return await response.text();
-  } catch(err) {
-    console.error('Error fetching assemblies', err);
-  }
+  return fetchJSON(`/species/assemblies?species_name=${encodeURIComponent(species)}`);
 }
 
-export async function fetchSequenceNums(geneName: string) {
-  return fetchJSON(`/sequences/allignment_numbers?gene_name=${encodeURIComponent(geneName)}`);
+export async function fetchSequenceNums(geneName: string, speciesName: string) {
+  return fetchJSON(`/sequences/sequence_coordinate?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
-export async function fetchGeneNums(speciesName: string, geneName: string) {
+export async function fetchGeneNums(geneName: string, speciesName: string) {
   return fetchJSON(`/sequences/genomic_coordinate?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
