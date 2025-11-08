@@ -3,7 +3,7 @@
 // Make sure there are NO duplicate exports in this file.
 
 // Always use /api to go through Next.js proxy (not direct to backend:8000)
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 // Small JSON fetch with timeout + retry
 async function fetchJSON(
@@ -19,7 +19,7 @@ async function fetchJSON(
     const res = await fetch(`${API_BASE}${path}`, {
       ...init,
       signal: ctrl.signal,
-      cache: 'no-store',
+      cache: "no-store",
     });
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
@@ -39,4 +39,56 @@ export async function fetchGenes() {
 /** Fetch all species names */
 export async function fetchSpecies() {
   return fetchJSON(`/species/names`);
+}
+
+/** Get assembly for a species */
+export async function fetchAssembly(species: string) {
+  try {
+    const response = await fetch(
+      `/species/assemblies&species_name=${encodeURIComponent(species)}`
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    return await response.text();
+  } catch(err) {
+    console.error('Error fetching assemblies', err);
+  }
+}
+
+export async function fetchSequenceNums(){
+
+}
+
+export async function fetchGeneNums(){
+
+}
+
+export async function fetchEnhPromBars(){
+
+}
+
+export async function fetchTFBSBars(){
+
+}
+
+export async function fetchNucleotides(){
+
+}
+
+export async function fetchVariantPositions(){
+
+}
+
+export async function fetchTFBS(){
+
+}
+
+export async function fetchVariants(){
+
+}
+
+export async function fetchAllVariantPositions(){
+  
 }
