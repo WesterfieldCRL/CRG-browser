@@ -57,38 +57,59 @@ export async function fetchAssembly(species: string) {
   }
 }
 
-export async function fetchSequenceNums(){
-
+export async function fetchSequenceNums(geneName: string) {
+  return fetchJSON(`/sequences/allignment_numbers?gene_name=${encodeURIComponent(geneName)}`);
 }
 
-export async function fetchGeneNums(){
-
+export async function fetchGeneNums(speciesName: string, geneName: string) {
+  return fetchJSON(`/sequences/genomic_coordinate?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
-export async function fetchEnhPromBars(){
-
+export async function fetchEnhPromBars(geneName: string, speciesName: string, elementTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  elementTypes.forEach(type => params.append('element_types', type));
+  return fetchJSON(`/elements/filtered_Enh_Prom?${params}`);
 }
 
-export async function fetchTFBSBars(){
-
+export async function fetchTFBSBars(geneName: string, speciesName: string, elementTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  elementTypes.forEach(type => params.append('element_types', type));
+  return fetchJSON(`/elements/filtered_TFBS?${params}`);
 }
 
-export async function fetchNucleotides(){
-
+export async function fetchNucleotides(geneName: string, speciesName: string, start: number, end: number) {
+  return fetchJSON(`/sequences/range?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}&start=${start}&end=${end}`);
 }
 
-export async function fetchVariantPositions(){
-
+export async function fetchVariantPositions(geneName: string, speciesName: string, variantTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  variantTypes.forEach(type => params.append('variant_types', type));
+  return fetchJSON(`/elements/filtered_variants?${params}`);
 }
 
-export async function fetchTFBS(){
-
+export async function fetchTFBS(geneName: string) {
+  return fetchJSON(`/elements/all_TFBS?gene_name=${encodeURIComponent(geneName)}`);
 }
 
-export async function fetchVariants(){
-
+export async function fetchVariants(geneName: string) {
+  return fetchJSON(`/elements/all_variants?gene_name=${encodeURIComponent(geneName)}`);
 }
 
-export async function fetchAllVariantPositions(){
-  
+export async function fetchAllVariantPositions(geneName: string, speciesName: string) {
+  return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
