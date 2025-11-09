@@ -61,8 +61,13 @@ export async function fetchEnhPromBars(geneName: string, speciesName: string, el
     start: start.toString(),
     end: end.toString()
   });
-  elementTypes.forEach(type => params.append('element_types', type));
-  return fetchJSON(`/elements/filtered_Enh_Prom?${params}`);
+  return fetchJSON(`/elements/mapped_Enh_Prom?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(elementTypes)
+  });
 }
 
 export async function fetchTFBSBars(geneName: string, speciesName: string, elementTypes: string[], start: number, end: number) {
@@ -72,8 +77,13 @@ export async function fetchTFBSBars(geneName: string, speciesName: string, eleme
     start: start.toString(),
     end: end.toString()
   });
-  elementTypes.forEach(type => params.append('element_types', type));
-  return fetchJSON(`/elements/filtered_TFBS?${params}`);
+  return fetchJSON(`/elements/mapped_TFBS?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(elementTypes)
+  });
 }
 
 export async function fetchNucleotides(geneName: string, speciesName: string, start: number, end: number) {
@@ -101,4 +111,35 @@ export async function fetchVariants(geneName: string) {
 
 export async function fetchAllVariantPositions(geneName: string, speciesName: string) {
   return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
+}
+
+/**
+ * Generates a color mapping for TFBS names
+ * @param tfbsNames Array of TFBS names to generate colors for
+ * @returns Object mapping TFBS names to hex color codes
+ */
+export function generateTFBSColorMap(tfbsNames: string[]): { [key: string]: string } {
+  const colorMap: { [key: string]: string } = {};
+  
+  // Predefined color palette - you can modify these colors as needed
+  const baseColors = [
+    '#FF6B6B', // Red
+    '#4ECDC4', // Teal
+    '#45B7D1', // Blue
+    '#96CEB4', // Green
+    '#FFBE0B', // Yellow
+    '#FF006E', // Pink
+    '#8338EC', // Purple
+    '#3A86FF', // Royal Blue
+    '#FB5607', // Orange
+    '#38B000', // Bright Green
+  ];
+
+  tfbsNames.forEach((name, index) => {
+    // If we have more TFBS than colors, cycle through the colors
+    const colorIndex = index % baseColors.length;
+    colorMap[name] = baseColors[colorIndex];
+  });
+
+  return colorMap;
 }

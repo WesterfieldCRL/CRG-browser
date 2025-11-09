@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import {
   fetchAssembly,
+  fetchEnhPromBars,
   fetchGeneNums,
   fetchSequenceNums,
+  fetchTFBSBars,
 } from "../utils/services";
 import Slider from "rc-slider";
 import { spec } from "node:test/reporters";
+import ColorBar from "./ColorBar";
 
 interface NavigatableBarProps {
   gene: string;
@@ -14,9 +17,19 @@ interface NavigatableBarProps {
   prom: boolean;
   TFBS: string[];
   variants: string[];
+  color_map: { [key: string]: string };
+}
+
+interface ColorSegment {
+  type: string;
+  width: number; 
+  start: number; 
+  end: number;
 }
 
 const INITIAL_VIEW = 4000;
+
+const Enh_Prom_Color_Mapping = {"Enh": "stripes", "Prom": "bars", "none": "#8a8a8aff"}
 
 export default function NavigatableBar({
   gene,
@@ -25,6 +38,7 @@ export default function NavigatableBar({
   prom,
   TFBS,
   variants,
+  color_map,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
@@ -34,6 +48,8 @@ export default function NavigatableBar({
   const [sequenceStart, setSequenceStartValue] = useState<number>(null);
   const [sequenceEnd, setSequenceEndValue] = useState<number>(null);
   const [geneNums, setGeneNumsValue] = useState<[number, number]>(null);
+  const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
+  const [enhancerPromoterSequence, setEnhancerPromoterSequence] = useState<Array<ColorSegment>>(null);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -48,6 +64,22 @@ export default function NavigatableBar({
   async function loadGenomicNums() {
     const genomic_nums = await fetchGeneNums(gene, species);
     setGeneNumsValue([genomic_nums.start, genomic_nums.end]);
+  }
+
+  async function loadSequences() {
+    const tfbs = await fetchTFBSBars(gene, species, TFBS, startValue, endValue);
+    setTFBSSequence(tfbs);
+
+    const enh_prom_list = [];
+    if (enh == true) {
+      enh_prom_list.push("Enh");
+    }
+    if (prom == true) {
+      enh_prom_list.push("Prom");
+    }
+    const enh_proms = await fetchEnhPromBars(gene, species, enh_prom_list, startValue, endValue);
+    setEnhancerPromoterSequence(enh_proms);
+
   }
 
   useEffect(() => {
@@ -69,9 +101,33 @@ export default function NavigatableBar({
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
       setRange([geneNums[0], geneNums[0] + INITIAL_VIEW]);
-      setLoading(false);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    if (
+      startValue !== null &&
+      endValue !== null && 
+      enhancerPromoterSequence == null &&
+      tfbsSequence == null
+    ) {
+      loadSequences();
+    }
+  }, [startValue, endValue])
+
+  useEffect(() => {
+    if (!loading) return;
+
+    if (
+      enhancerPromoterSequence !== null &&
+      tfbsSequence !== null
+    ) {
+      setLoading(false);
+    }
+
+  }, [tfbsSequence, enhancerPromoterSequence])
 
   const handleSubmit = () => {
     setRange([startValue, endValue]);
@@ -158,22 +214,26 @@ export default function NavigatableBar({
               </div>
             </div>
           </div>
+          <div style={{marginTop: 30}}>
+            <div className="flex items-center gap-2">
+              <label>
+                  Transformation Binding Factors
+              </label>
+              <ColorBar segments={tfbsSequence} color_mapping={color_map}/>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <label>
-                Transformation Binding Factors
-            </label>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <label>
-                Enhancers and Promoters
-            </label>
-          </div>
-          <div className="flex items-center gap-2">
-            <label>
-                Nucleotides/Variants
-            </label>
+            <div className="flex items-center gap-2">
+              <label>
+                  Enhancers and Promoters
+              </label>
+              <ColorBar segments={enhancerPromoterSequence} color_mapping={Enh_Prom_Color_Mapping}/>
+            </div>
+            <div className="flex items-center gap-2">
+              <label>
+                  Nucleotides/Variants
+              </label>
+              Nucleotides are not visible at this zoom level. Please zoom in to see individual nucletoides and variants.
+            </div>
           </div>
         </div>
       )}
