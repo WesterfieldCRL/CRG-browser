@@ -54,7 +54,7 @@ async def get_all_variants(gene_name: str) -> list[str]:
     return list(result)
 
 # Returns a list of all enahncers and promoter locations within the given parameters
-@router.get("/filtered_Enh_Prom", response_model=list[Element])
+@router.post("/filtered_Enh_Prom", response_model=list[Element])
 async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
     async with async_session() as session:
 
@@ -81,7 +81,7 @@ async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types
         return element_list
     
 # Returns a list of all transcription factor binding site locations within the given parameters
-@router.get("/filtered_TFBS", response_model=list[Element])
+@router.post("/filtered_TFBS", response_model=list[Element])
 async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
     async with async_session() as session:
 
@@ -96,7 +96,7 @@ async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: li
                 .where(Species.name == species_name)
                 .where((TranscriptionFactorBindingSites.start >= start) & (TranscriptionFactorBindingSites.end <= end))
                 .where(TranscriptionFactorBindingSites.category.in_(element_types))
-                .order_by(EnhancersPromoters.start))
+                .order_by(TranscriptionFactorBindingSites.start))
             
         result = (await session.execute(stmt)).tuples().all()
 
@@ -107,7 +107,7 @@ async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: li
     
         return element_list
     
-@router.get("/mapped_TFBS", response_model=list[Segment])
+@router.post("/mapped_TFBS", response_model=list[Segment])
 async def get_mapped_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Segment]:
 
     element_list, offsets = await asyncio.gather(
@@ -122,7 +122,7 @@ async def get_mapped_TFBS(gene_name: str, species_name: str, element_types: list
 
     return color_map
 
-@router.get("/mapped_Enh_Prom", response_model=list[Segment])
+@router.post("/mapped_Enh_Prom", response_model=list[Segment])
 async def get_mapped_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Segment]:
 
     element_list, offsets = await asyncio.gather(
@@ -162,6 +162,8 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         # using prev_index instead of element.start to handle overlaps
         element_width = ((relative_end - prev_index) / total_width) * 100
+        if element_width < 0:
+            element_width = 0
         color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end))
         curr_width += element_width
         prev_index = relative_end
