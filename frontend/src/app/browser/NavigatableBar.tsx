@@ -172,10 +172,16 @@ export default function NavigatableBar({
   };
 
   return (
-    <div className="container-box">
+    <div className="container-box" style={{
+      background: 'var(--panel-bg)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-md, 12px)',
+      padding: '24px',
+      marginBottom: '16px'
+    }}>
       {!loading && (
         <div>
-          <h1>
+          <h1 style={{ color: 'var(--text)', marginBottom: '16px' }}>
             {species} -{" "}
             {gene === "ALDH1A3" && species !== "Homo sapiens"
               ? "ALDH1A1"
@@ -185,7 +191,7 @@ export default function NavigatableBar({
           <div className="flex items-center justify-between w-full gap-2">
             <div className="flex items-center gap-2">
               <div className="flex flex-col">
-                <label className="text-sm mb-1">
+                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                   Min Value = {sequenceStart}
                 </label>
                 <input
@@ -197,12 +203,21 @@ export default function NavigatableBar({
                     )
                   }
                   className="p-2 border rounded"
+                  style={{
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderColor: 'var(--border)'
+                  }}
                   placeholder="Min value"
                 />
               </div>
               <button
                 onClick={() => handleSubmit()}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
+                style={{
+                  background: 'var(--primary)',
+                  color: 'white'
+                }}
               >
                 Set Min
               </button>
@@ -239,12 +254,16 @@ export default function NavigatableBar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleGeneSubmit()}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
+                style={{
+                  background: 'var(--accent)',
+                  color: 'white'
+                }}
               >
-                Zoom to Gene
+                Reset to Gene
               </button>
               <div className="flex flex-col">
-                <label className="text-sm mb-1">
+                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                   {geneNums[0]} - {geneNums[0] + INITIAL_VIEW}
                 </label>
               </div>
@@ -252,12 +271,16 @@ export default function NavigatableBar({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleSubmit()}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
+                style={{
+                  background: 'var(--primary)',
+                  color: 'white'
+                }}
               >
                 Set Max
               </button>
               <div className="flex flex-col">
-                <label className="text-sm mb-1">
+                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                   Max Value = {sequenceEnd}
                 </label>
                 <input
@@ -267,22 +290,33 @@ export default function NavigatableBar({
                     setEndValue(Math.min(sequenceEnd, Number(e.target.value)))
                   }
                   className="p-2 border rounded"
+                  style={{
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    borderColor: 'var(--border)'
+                  }}
                   placeholder="Max value"
                 />
               </div>
             </div>
           </div>
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 24 }}>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
-                marginBottom: "8px",
+                padding: "16px 0",
+                borderBottom: '2px solid var(--border)',
               }}
             >
-              <label style={{ alignSelf: "center" }}>
-                Transformation Binding Factors
+              <label style={{
+                alignSelf: "center",
+                color: 'var(--text)',
+                fontWeight: 600,
+                fontSize: '14px'
+              }}>
+                Transcription Factor Binding Sites
               </label>
               <div style={{ minWidth: 0 }}>
                 <ColorBar
@@ -290,6 +324,53 @@ export default function NavigatableBar({
                   color_mapping={tfbs_color_map}
                   width="100%"
                 />
+                {(() => {
+                  // Get unique TFBS types that are actually visible in current view
+                  const visibleTypes = new Set(
+                    tfbsSequence
+                      .map(segment => segment.type)
+                      .filter(type => type !== 'none')
+                  );
+
+                  return visibleTypes.size > 0 && (
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '12px',
+                      marginTop: '8px',
+                      padding: '8px',
+                      background: 'var(--bg)',
+                      borderRadius: '4px',
+                      border: '1px solid var(--border)'
+                    }}>
+                      {Object.entries(tfbs_color_map)
+                        .filter(([key]) => visibleTypes.has(key))
+                        .map(([name, color]) => (
+                          <div key={name} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}>
+                            <div style={{
+                              width: '16px',
+                              height: '16px',
+                              backgroundColor: color,
+                              borderRadius: '3px',
+                              border: '1px solid var(--border)',
+                              flexShrink: 0
+                            }} />
+                            <span style={{
+                              fontSize: '12px',
+                              color: 'var(--text)',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {name}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -298,10 +379,16 @@ export default function NavigatableBar({
                 display: "grid",
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
-                marginBottom: "8px",
+                padding: "16px 0",
+                borderBottom: '2px solid var(--border)',
               }}
             >
-              <label style={{ alignSelf: "center" }}>
+              <label style={{
+                alignSelf: "center",
+                color: 'var(--text)',
+                fontWeight: 600,
+                fontSize: '14px'
+              }}>
                 Enhancers and Promoters
               </label>
               <div style={{ minWidth: 0 }}>
@@ -318,14 +405,19 @@ export default function NavigatableBar({
                 display: "grid",
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
-                marginBottom: "8px",
+                padding: "16px 0",
               }}
             >
-              <label style={{ alignSelf: "center" }}>
+              <label style={{
+                alignSelf: "center",
+                color: 'var(--text)',
+                fontWeight: 600,
+                fontSize: '14px'
+              }}>
                 Nucleotides/Variants
               </label>
               <div style={{ minWidth: 0 }}>
-                {renderNucleotides && (
+                {renderNucleotides ? (
                   <div
                     style={{
                       display: "grid",
@@ -342,16 +434,37 @@ export default function NavigatableBar({
                       <span
                         key={index}
                         style={{
-                          border: "1px solid #ccc",
+                          border: '1px solid var(--border)',
+                          background: 'var(--panel-bg)',
+                          color: 'var(--text)',
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           minWidth: 0,
+                          fontSize: '12px',
+                          fontFamily: 'monospace'
                         }}
                       >
                         {char}
                       </span>
                     ))}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      height: "30px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: 'var(--panel-bg)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '4px',
+                      color: 'var(--text-secondary)',
+                      fontSize: '13px',
+                      fontStyle: 'italic'
+                    }}
+                  >
+                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
                   </div>
                 )}
               </div>
