@@ -46,6 +46,7 @@ class RegulatoryLine {
 export default function RegComp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [genes, setGenes] = useState<Array<string>>([]);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   async function loadGenes() {
     setLoading(true);
@@ -56,6 +57,42 @@ export default function RegComp() {
       console.error("Error fetching condensed sequences:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function downloadCSV(geneName: string) {
+    setDownloading(geneName);
+    try {
+      const response = await fetch(
+        `/api/conservation_scores/histogram_data?species_name=Homo%20sapiens&gene_name=${encodeURIComponent(geneName)}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Convert JSON to CSV
+      const csvHeader = 'Nucleotide,PhastCons Score,PhyloP Score\n';
+      const csvRows = data.map((row: any) =>
+        `${row.nucleotide},${row.phastcon_score},${row.phylop_score}`
+      ).join('\n');
+      const csvContent = csvHeader + csvRows;
+
+      // Create download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${geneName}_conservation_scores.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading CSV:', error);
+      alert('Failed to download CSV data');
+    } finally {
+      setDownloading(null);
     }
   }
 
@@ -78,6 +115,7 @@ export default function RegComp() {
                     <th>Gene</th>
                     <th>PhastCons</th>
                     <th>PhyloP</th>
+                    <th>Download</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -89,6 +127,15 @@ export default function RegComp() {
                       </td>
                       <td className="data-cell">
                         <ConservationHistogram geneName={gene} scoreType="phylop" />
+                      </td>
+                      <td className="download-cell">
+                        <button
+                          onClick={() => downloadCSV(gene)}
+                          disabled={downloading === gene}
+                          className="download-button"
+                        >
+                          {downloading === gene ? 'Downloading...' : 'Download CSV'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -274,6 +321,40 @@ export default function RegComp() {
         .data-cell {
           padding: 10px;
           vertical-align: middle;
+        }
+
+        .download-cell {
+          padding: 10px;
+          vertical-align: middle;
+          text-align: center;
+        }
+
+        .download-button {
+          padding: 8px 16px;
+          background: var(--primary, #0b7285);
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+
+        .download-button:hover:not(:disabled) {
+          background: var(--primary-dark, #074d52);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .download-button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
       `}</style>
     </>

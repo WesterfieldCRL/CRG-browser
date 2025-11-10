@@ -26,7 +26,6 @@ export default function Header() {
         <nav className="nav-container" role="navigation" aria-label="Main navigation">
           <Link href="/" className="logo" aria-label="CoRGi - Home">
             <span className="logo-text">CoRGi</span>
-            <span className="logo-subtitle">Comparative Regulatory Genomics</span>
           </Link>
           <ul className="nav-links" role="list">
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
@@ -40,10 +39,10 @@ export default function Header() {
                     aria-current={active ? 'page' : undefined}
                   >
                     {isMobile ? (
-                      <Icon size={22} strokeWidth={active ? 2.5 : 2} />
+                      <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                     ) : (
                       <>
-                        <Icon size={18} strokeWidth={active ? 2.5 : 2} />
+                        <Icon size={16} strokeWidth={active ? 2.5 : 2} />
                         <span>{label}</span>
                       </>
                     )}
@@ -73,7 +72,7 @@ export default function Header() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.75rem 3rem;
+          padding: 0.375rem 3rem;
           gap: 3rem;
         }
 
@@ -98,7 +97,7 @@ export default function Header() {
         }
 
         .logo-text {
-          font-size: 2rem;
+          font-size: 1.375rem;
           font-weight: 800;
           letter-spacing: -0.03em;
           line-height: 1;
@@ -126,13 +125,14 @@ export default function Header() {
           color: rgba(255, 255, 255, 0.95);
           text-decoration: none;
           font-weight: 500;
-          font-size: 0.9375rem;
-          padding: 0.625rem 1.75rem;
-          border-radius: 10px;
+          font-size: 0.875rem;
+          padding: 0.5rem 1.25rem;
+          border-radius: 8px;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          display: flex;
+          display: flex !important;
+          flex-direction: row !important;
           align-items: center;
-          gap: 0.625rem;
+          gap: 0.5rem;
           position: relative;
           white-space: nowrap;
         }
@@ -164,14 +164,14 @@ export default function Header() {
         .nav-link.active::after {
           content: '';
           position: absolute;
-          bottom: -0.75rem;
+          bottom: -0.5rem;
           left: 50%;
           transform: translateX(-50%);
-          width: 5px;
-          height: 5px;
+          width: 4px;
+          height: 4px;
           background-color: white;
           border-radius: 50%;
-          box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+          box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
         }
 
         @media (max-width: 768px) {
@@ -201,7 +201,7 @@ export default function Header() {
           }
 
           .nav-link.active::after {
-            bottom: -0.25rem;
+            bottom: -0.125rem;
             width: 4px;
             height: 4px;
           }
