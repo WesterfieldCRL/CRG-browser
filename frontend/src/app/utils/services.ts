@@ -3,7 +3,7 @@
 // Make sure there are NO duplicate exports in this file.
 
 // Always use /api to go through Next.js proxy (not direct to backend:8000)
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 // Small JSON fetch with timeout + retry
 async function fetchJSON(
@@ -19,7 +19,7 @@ async function fetchJSON(
     const res = await fetch(`${API_BASE}${path}`, {
       ...init,
       signal: ctrl.signal,
-      cache: 'no-store',
+      cache: "no-store",
     });
     clearTimeout(timer);
     if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
@@ -31,60 +31,115 @@ async function fetchJSON(
   }
 }
 
-/** ===== Project A–style helpers (names used throughout your code) ===== **/
-
 /** Fetch all gene names */
 export async function fetchGenes() {
-  // Adjust this path if your backend route differs
   return fetchJSON(`/genes/names`);
 }
 
 /** Fetch all species names */
 export async function fetchSpecies() {
-  // Adjust this path if your backend route differs
   return fetchJSON(`/species/names`);
 }
 
-/** Fetch one sequence by gene/species */
-export async function fetchSequence(geneName: string, speciesName: string) {
-  const qs = `gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`;
-  // Adjust endpoint if your backend differs
-  return fetchJSON(`/sequences/sequence?${qs}`);
+/** Get assembly for a species */
+export async function fetchAssembly(species: string) {
+  return fetchJSON(`/species/assemblies?species_name=${encodeURIComponent(species)}`);
 }
 
-/** Fetch condensed sequences by gene (used by IterativeZoom) */
-export async function fetchCondensedSequences(geneName: string) {
-  // GET /sequences/condensed_sequences/?gene_name=...
-  const qs = `gene_name=${encodeURIComponent(geneName)}`;
-  return fetchJSON(`/sequences/condensed_sequences/?${qs}`);
+export async function fetchSequenceNums(geneName: string, speciesName: string) {
+  return fetchJSON(`/sequences/sequence_coordinate?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
-/** Fetch condensed sequences for a specific range (used by IterativeZoom) */
-export async function fetchCondensedSequencesInRange(
-  geneName: string,
-  start: number,
-  end: number
-) {
-  // GET /sequences/condensed_sequences_range?gene_name=...&start=...&end=...
-  const qs = `gene_name=${encodeURIComponent(geneName)}&start=${start}&end=${end}`;
-  return fetchJSON(`/sequences/condensed_sequences_range?${qs}`);
+export async function fetchGeneNums(geneName: string, speciesName: string) {
+  return fetchJSON(`/sequences/genomic_coordinate?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
-/** Fetch regulatory element lines for a gene (used by reg_comparison) */
-export async function fetchRegulatoryElementLines(geneName: string) {
-  const qs = `gene_name=${encodeURIComponent(geneName)}`;
-  // Adjust endpoint if needed
-  return fetchJSON(`/elements/regulatory_line_elements?${qs}`);
+export async function fetchEnhPromBars(geneName: string, speciesName: string, elementTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  return fetchJSON(`/elements/mapped_Enh_Prom?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(elementTypes)
+  });
 }
 
-/** ===== Optional newer wrappers (keep names different to avoid conflicts) ===== **/
-
-export async function fetchSpeciesList() {
-  return fetchJSON(`/species`);
+export async function fetchTFBSBars(geneName: string, speciesName: string, elementTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  return fetchJSON(`/elements/mapped_TFBS?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(elementTypes)
+  });
 }
 
-export async function fetchGeneSequence(params: { species: string; gene: string }) {
-  const { species, gene } = params;
-  const qs = `species=${encodeURIComponent(species)}&gene=${encodeURIComponent(gene)}`;
-  return fetchJSON(`/sequence?${qs}`);
+export async function fetchNucleotides(geneName: string, speciesName: string, start: number, end: number) {
+  return fetchJSON(`/sequences/range?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}&start=${start}&end=${end}`);
+}
+
+export async function fetchVariantPositions(geneName: string, speciesName: string, variantTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  variantTypes.forEach(type => params.append('variant_types', type));
+  return fetchJSON(`/elements/filtered_variants?${params}`);
+}
+
+export async function fetchTFBS(geneName: string) {
+  return fetchJSON(`/elements/all_TFBS?gene_name=${encodeURIComponent(geneName)}`);
+}
+
+export async function fetchVariants(geneName: string) {
+  return fetchJSON(`/elements/all_variants?gene_name=${encodeURIComponent(geneName)}`);
+}
+
+export async function fetchAllVariantPositions(geneName: string, speciesName: string) {
+  return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
+}
+
+/**
+ * Generates a color mapping for TFBS names
+ * @param tfbsNames Array of TFBS names to generate colors for
+ * @returns Object mapping TFBS names to hex color codes
+ */
+export function generateTFBSColorMap(tfbsNames: string[]): { [key: string]: string } {
+  const colorMap: { [key: string]: string } = {};
+  
+  // Predefined color palette - you can modify these colors as needed
+  const baseColors = [
+    '#FF6B6B', // Red
+    '#4ECDC4', // Teal
+    '#45B7D1', // Blue
+    '#96CEB4', // Green
+    '#FFBE0B', // Yellow
+    '#FF006E', // Pink
+    '#8338EC', // Purple
+    '#3A86FF', // Royal Blue
+    '#FB5607', // Orange
+    '#38B000', // Bright Green
+  ];
+
+  tfbsNames.forEach((name, index) => {
+    // If we have more TFBS than colors, cycle through the colors
+    const colorIndex = index % baseColors.length;
+    colorMap[name] = baseColors[colorIndex];
+  });
+
+  return colorMap;
 }

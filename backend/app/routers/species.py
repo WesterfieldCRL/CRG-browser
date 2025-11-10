@@ -1,5 +1,6 @@
 from typing import List
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import select
 from app.models import Species
 from app.utils import async_session
@@ -30,3 +31,18 @@ async def get_id(name: str) -> int:
             return result
         else:
             raise HTTPException(status_code=404, detail="Unable to find species name")
+        
+class Assmebly(BaseModel):
+    assembly: str
+
+@router.get("/assemblies", response_model=Assmebly)
+async def get_assemblies(species_name: str) -> Assmebly:
+
+    async with async_session() as session:
+        stmt = select(Species.assembly).where(Species.name == species_name)
+        result = (await session.execute(stmt)).scalar()
+
+        if result is not None:
+            return {"assembly": result}
+        else:
+            raise HTTPException(status_code=404, detail=f"Unable to find assembly for {species_name}")

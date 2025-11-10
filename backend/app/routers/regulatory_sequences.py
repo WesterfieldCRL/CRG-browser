@@ -71,8 +71,8 @@ async def get_sequence_range(gene_name: str, species_name: str, start: int, end:
     if range[0] > start or range[1] < end:
         raise HTTPException(status_code=400, detail="Invalid coordinates")
 
-    relative_start = 0
-    relative_end = range[1] - range[0]
+    relative_start = start - range[0]
+    relative_end = end - range[0]
 
     return sequence[relative_start:relative_end]
         
