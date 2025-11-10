@@ -3,12 +3,14 @@ import {
   fetchAssembly,
   fetchEnhPromBars,
   fetchGeneNums,
+  fetchNucleotides,
   fetchSequenceNums,
   fetchTFBSBars,
 } from "../utils/services";
 import Slider from "rc-slider";
 import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
+import { time } from "console";
 
 interface NavigatableBarProps {
   gene: string;
@@ -17,19 +19,22 @@ interface NavigatableBarProps {
   prom: boolean;
   TFBS: string[];
   variants: string[];
-  color_map: { [key: string]: string };
+  tfbs_color_map: { [key: string]: string };
+  enh_prom_color_map: { [key: string]: string};
 }
 
 interface ColorSegment {
   type: string;
-  width: number; 
-  start: number; 
+  width: number;
+  start: number;
   end: number;
 }
 
+const NUCLEOTIDES_VIEW = 100;
+
 const INITIAL_VIEW = 4000;
 
-const Enh_Prom_Color_Mapping = {"Enh": "stripes", "Prom": "bars", "none": "#8a8a8aff"}
+
 
 export default function NavigatableBar({
   gene,
@@ -38,18 +43,21 @@ export default function NavigatableBar({
   prom,
   TFBS,
   variants,
-  color_map,
+  tfbs_color_map,
+  enh_prom_color_map,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState<[number, number]>(null);
   const [startValue, setStartValue] = useState<number>(null);
   const [endValue, setEndValue] = useState<number>(null);
   const [sequenceStart, setSequenceStartValue] = useState<number>(null);
   const [sequenceEnd, setSequenceEndValue] = useState<number>(null);
   const [geneNums, setGeneNumsValue] = useState<[number, number]>(null);
   const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
-  const [enhancerPromoterSequence, setEnhancerPromoterSequence] = useState<Array<ColorSegment>>(null);
+  const [enhancerPromoterSequence, setEnhancerPromoterSequence] =
+    useState<Array<ColorSegment>>(null);
+  const [nucletoides, setNucleotides] = useState<string>(null);
+  const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -77,9 +85,24 @@ export default function NavigatableBar({
     if (prom == true) {
       enh_prom_list.push("Prom");
     }
-    const enh_proms = await fetchEnhPromBars(gene, species, enh_prom_list, startValue, endValue);
+    const enh_proms = await fetchEnhPromBars(
+      gene,
+      species,
+      enh_prom_list,
+      startValue,
+      endValue
+    );
     setEnhancerPromoterSequence(enh_proms);
+  }
 
+  async function loadNucleotides() {
+    const nucleotides_string = await fetchNucleotides(
+      gene,
+      species,
+      startValue,
+      endValue
+    );
+    setNucleotides(nucleotides_string);
   }
 
   useEffect(() => {
@@ -87,6 +110,12 @@ export default function NavigatableBar({
     loadSequenceNums();
     loadGenomicNums();
   }, []);
+
+  useEffect(() => {
+    loadAssembly();
+    loadSequenceNums();
+    loadGenomicNums();
+  }, [gene, species, enh, prom, variants, TFBS]);
 
   useEffect(() => {
     if (!loading) return;
@@ -97,40 +126,49 @@ export default function NavigatableBar({
       sequenceStart !== null &&
       geneNums !== null
     ) {
-      setRange([sequenceStart, sequenceEnd]);
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
-      setRange([geneNums[0], geneNums[0] + INITIAL_VIEW]);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
 
   useEffect(() => {
-    if (!loading) return;
-
     if (
       startValue !== null &&
-      endValue !== null && 
+      endValue !== null &&
       enhancerPromoterSequence == null &&
       tfbsSequence == null
     ) {
       loadSequences();
+    } else if (
+      !loading &&
+      startValue == geneNums[0] &&
+      endValue == geneNums[0] + INITIAL_VIEW
+    ) {
+      loadSequences();
     }
-  }, [startValue, endValue])
+  }, [startValue, endValue]);
 
   useEffect(() => {
     if (!loading) return;
 
-    if (
-      enhancerPromoterSequence !== null &&
-      tfbsSequence !== null
-    ) {
+    if (enhancerPromoterSequence !== null && tfbsSequence !== null) {
       setLoading(false);
     }
-
-  }, [tfbsSequence, enhancerPromoterSequence])
+  }, [tfbsSequence, enhancerPromoterSequence]);
 
   const handleSubmit = () => {
-    setRange([startValue, endValue]);
+    loadSequences();
+    if (endValue - startValue <= NUCLEOTIDES_VIEW) {
+      setRenderNucleotides(true);
+      loadNucleotides();
+    } else {
+      setRenderNucleotides(false);
+    }
+  };
+
+  const handleGeneSubmit = () => {
+    setStartValue(geneNums[0]);
+    setEndValue(geneNums[0] + INITIAL_VIEW);
   };
 
   return (
@@ -153,7 +191,11 @@ export default function NavigatableBar({
                 <input
                   type="number"
                   value={startValue}
-                  onChange={(e) => setStartValue(Number(e.target.value))}
+                  onChange={(e) =>
+                    setStartValue(
+                      Math.max(sequenceStart, Number(e.target.value))
+                    )
+                  }
                   className="p-2 border rounded"
                   placeholder="Min value"
                 />
@@ -164,8 +206,9 @@ export default function NavigatableBar({
               >
                 Set Min
               </button>
-            </div>
-            <div style={{ display: "contents", pointerEvents: "none" }}>
+            </div>{" "}
+            {/*Commented out cause it looked like shit, we can do something with this later*/}
+            {/* <div style={{ display: "contents", pointerEvents: "none" }}>
               <Slider
                 range={{ draggableTrack: true }}
                 min={sequenceStart}
@@ -173,8 +216,8 @@ export default function NavigatableBar({
                 value={range}
                 styles={{
                   handle: {
-                    height: "230px",
-                    marginTop: "-10px",
+                    height: "130px",
+                    marginTop: "40px",
                     border: "3px solid var(--accent, #2db4b6)",
                     boxShadow: "inset 0 0 15px rgba(45, 180, 182, 0.4)",
                   },
@@ -184,14 +227,27 @@ export default function NavigatableBar({
                     height: "5px",
                   },
                   track: {
-                    height: "230px",
-                    marginTop: "-10px",
+                    height: "130px",
+                    marginTop: "40px",
                     backgroundColor: "rgba(45, 180, 182, 0.35)",
                     border: "3px solid var(--accent, #2db4b6)",
                     boxShadow: "inset 0 0 15px rgba(45, 180, 182, 0.4)",
                   },
                 }}
               />
+            </div> */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleGeneSubmit()}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Zoom to Gene
+              </button>
+              <div className="flex flex-col">
+                <label className="text-sm mb-1">
+                  {geneNums[0]} - {geneNums[0] + INITIAL_VIEW}
+                </label>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -207,32 +263,98 @@ export default function NavigatableBar({
                 <input
                   type="number"
                   value={endValue}
-                  onChange={(e) => setEndValue(Number(e.target.value))}
+                  onChange={(e) =>
+                    setEndValue(Math.min(sequenceEnd, Number(e.target.value)))
+                  }
                   className="p-2 border rounded"
                   placeholder="Max value"
                 />
               </div>
             </div>
           </div>
-          <div style={{marginTop: 30}}>
-            <div className="flex items-center gap-2">
-              <label>
-                  Transformation Binding Factors
+          <div style={{ marginTop: 20 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                marginBottom: "8px",
+              }}
+            >
+              <label style={{ alignSelf: "center" }}>
+                Transformation Binding Factors
               </label>
-              <ColorBar segments={tfbsSequence} color_mapping={color_map}/>
+              <div style={{ minWidth: 0 }}>
+                <ColorBar
+                  segments={tfbsSequence}
+                  color_mapping={tfbs_color_map}
+                  width="100%"
+                />
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label>
-                  Enhancers and Promoters
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                marginBottom: "8px",
+              }}
+            >
+              <label style={{ alignSelf: "center" }}>
+                Enhancers and Promoters
               </label>
-              <ColorBar segments={enhancerPromoterSequence} color_mapping={Enh_Prom_Color_Mapping}/>
+              <div style={{ minWidth: 0 }}>
+                <ColorBar
+                  segments={enhancerPromoterSequence}
+                  color_mapping={enh_prom_color_map}
+                  width="100%"
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <label>
-                  Nucleotides/Variants
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                marginBottom: "8px",
+              }}
+            >
+              <label style={{ alignSelf: "center" }}>
+                Nucleotides/Variants
               </label>
-              Nucleotides are not visible at this zoom level. Please zoom in to see individual nucletoides and variants.
+              <div style={{ minWidth: 0 }}>
+                {renderNucleotides && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridAutoFlow: "row",
+                      gridTemplateColumns: `repeat(${
+                        nucletoides?.length || 1
+                      }, 1fr)`,
+                      width: "100%",
+                      gap: "1px",
+                      height: "30px", // Match ColorBar default height
+                    }}
+                  >
+                    {nucletoides?.split("").map((char, index) => (
+                      <span
+                        key={index}
+                        style={{
+                          border: "1px solid #ccc",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          minWidth: 0,
+                        }}
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
