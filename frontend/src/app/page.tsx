@@ -161,52 +161,23 @@ export default function Page() {
         </div>
       )}
 
-      <style jsx global>{`
-        /* Override feature card dark mode from public styles */
-        .feature-card {
-          background: var(--panel-bg, #ffffff) !important;
-          border: 2px solid var(--border, rgba(11,17,18,0.08)) !important;
-          transition: all 0.3s ease !important;
-        }
-
-        .feature-title {
-          color: var(--primary, #0b7285) !important;
-          transition: color 0.3s ease !important;
-        }
-
-        .feature-description {
-          color: var(--text-secondary, #4b5563) !important;
-          transition: color 0.3s ease !important;
-        }
-
-        [data-theme="dark"] .feature-card {
-          background: var(--panel-bg, #1a2332) !important;
-          border-color: var(--border, rgba(248,250,252,0.1)) !important;
-        }
-
-        [data-theme="dark"] .feature-title {
-          color: var(--primary, #5ecbcd) !important;
-        }
-
-        [data-theme="dark"] .feature-description {
-          color: var(--text-secondary, #cbd5e1) !important;
-        }
-
-        @media (prefers-color-scheme: dark) {
-          :root:not([data-theme="light"]) .feature-card {
-            background: var(--panel-bg, #1a2332) !important;
-            border-color: var(--border, rgba(248,250,252,0.1)) !important;
-          }
-
-          :root:not([data-theme="light"]) .feature-title {
-            color: var(--primary, #5ecbcd) !important;
-          }
-
-          :root:not([data-theme="light"]) .feature-description {
-            color: var(--text-secondary, #cbd5e1) !important;
-          }
-        }
-      `}</style>
+      {/* Version Indicator */}
+      <div style={{
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        background: 'var(--accent)',
+        color: 'white',
+        padding: '4px 12px',
+        borderRadius: '6px',
+        fontSize: '12px',
+        fontWeight: '600',
+        fontFamily: 'monospace',
+        zIndex: 9999,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      }}>
+        v2.2 - {new Date().toISOString().split('T')[0]}
+      </div>
     </main>
   )
 }

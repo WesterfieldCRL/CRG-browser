@@ -59,13 +59,36 @@
   --z-tooltip: 1080;
 }
 
+[data-theme="light"] {
+  --primary: #0b7285;
+  --primary-dark: #074d52;
+  --accent: #2db4b6;
+  --accent-dark: #0a8c86;
+  --bg: #f8fafb;
+  --panel-bg: #ffffff;
+  --text: #0f1720;
+  --text-secondary: #4b5563;
+  --muted: #6b7280;
+  --border: rgba(11,17,18,0.08);
+  --border-strong: rgba(11,17,18,0.15);
+  --shadow: 0 6px 20px rgba(8,20,40,0.08);
+  --shadow-strong: 0 12px 24px rgba(8,20,40,0.12);
+}
+
 [data-theme="dark"] {
+  --primary: #5ecbcd;
+  --primary-dark: #2db4b6;
+  --accent: #5ecbcd;
+  --accent-dark: #2db4b6;
   --bg: #0b1220;
   --panel-bg: #0f1720;
   --text: #e5e7eb;
   --text-secondary: #94a3b8;
+  --muted: #94a3b8;
   --border: #1f2a3b;
+  --border-strong: #2a3b4f;
   --shadow: 0 10px 24px rgba(0,0,0,0.35);
+  --shadow-strong: 0 12px 30px rgba(0,0,0,0.45);
 }
 html, body { background: var(--bg); color: var(--text); }
 .panel { background: var(--panel-bg); box-shadow: var(--shadow); border: 1px solid var(--border); }
@@ -79,7 +102,11 @@ html, body { background: var(--bg); color: var(--text); }
 
 /* Dark Mode Support */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    --primary: #5ecbcd;
+    --primary-dark: #2db4b6;
+    --accent: #5ecbcd;
+    --accent-dark: #2db4b6;
     --bg: #0f1720;
     --panel-bg: #1a2332;
     --text: #f8fafc;
@@ -221,12 +248,12 @@ button {
 }
 
 @media (prefers-color-scheme: dark) {
-  .navbar {
+  :root:not([data-theme="light"]) .navbar {
     background: rgba(15,23,32,0.95);
   }
-  
+
   @supports (backdrop-filter: blur(10px)) {
-    .navbar {
+    :root:not([data-theme="light"]) .navbar {
       background: rgba(15,23,32,0.85);
     }
   }
@@ -330,7 +357,7 @@ button {
 }
 
 @media (prefers-color-scheme: dark) {
-  .loading-screen {
+  :root:not([data-theme="light"]) .loading-screen {
     background: linear-gradient(135deg, #0f1720 0%, #1a2332 100%);
   }
 }
@@ -363,7 +390,7 @@ button {
 }
 
 @media (prefers-color-scheme: dark) {
-  .hero-section {
+  :root:not([data-theme="light"]) .hero-section {
     background: linear-gradient(135deg, rgba(11,114,133,0.15) 0%, rgba(45,180,182,0.1) 100%);
   }
 }
@@ -718,39 +745,3 @@ button {
   }
 }
 
-/* === CoRGi Dark Theme Overrides (integrated) === */
-:root {
-  --brand-start: #0f172a;
-  --brand-end:   #1e293b;
-  --bg-0:       #0b0f16;
-  --surface-0:  #0f172a;
-  --surface-1:  #111827;
-  --text-0:     #e6f1ff;
-}
-
-html, body {
-  background: var(--bg-0);
-  color: var(--text-0);
-}
-
-.topbar, .app-navbar, .site-header {
-  background: linear-gradient(180deg, var(--brand-start), var(--brand-end));
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-}
-
-/* Remove unintended white backgrounds */
-main, .container, .page, .page-content {
-  background: transparent !important;
-}
-
-/* Dark surfaces for cards and stats */
-.feature-card,
-.stats-grid .stat-card,
-.card,
-.panel {
-  background: var(--surface-1) !important;
-  border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 6px 24px rgba(0,0,0,0.35);
-}
-
-a.feature-link { color: inherit; }
