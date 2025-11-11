@@ -17,7 +17,9 @@ class Segment(BaseModel):
     width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
     start: int = Field(..., description="start of this element")
     end: int = Field(..., description="end of this element")
-    
+
+class VariantsDict(BaseModel):
+    variants: dict[str, list[Element]] = Field(..., description="dictionary mapping variant types to a list of positions in the given gene/species combo where those variants are")
 
 router = APIRouter(prefix="/elements")    
 
@@ -53,59 +55,71 @@ async def get_all_variants(gene_name: str) -> list[str]:
 
     return list(result)
 
-# Returns a list of all enahncers and promoter locations within the given parameters
-@router.post("/filtered_Enh_Prom", response_model=list[Element])
-async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
+# returns a dictionary mapping the given variants list to a list of all of the locations where those variants appear in the given gene
+@router.post("/variants_dict", response_model=VariantsDict)
+async def get_variants_dict(gene_name: str, species_name: str, variants_list: list[str]) -> VariantsDict:
+    async with async_session() as session:
+        
+        variants_dict: dict[str, list[Element]] = {}
+
+        for variant_name in variants_list:
+            stmt = (select(Variants.category, Variants.start, Variants.end)
+                .join(RegulatorySequences)
+                .join(Genes)
+                .where(Genes.name == gene_name)
+                .where(Species.name == species_name)
+                .where(Variants.category == variant_name))
+        
+            result = (await session.execute(stmt)).tuples().all()
+
+            if variant_name not in variants_dict:
+                variants_dict[variant_name] = []
+            for item in result:
+                variants_dict[variant_name].append(Element(type=item[0], start=item[1], end=item[2]))
+        
+
+    return VariantsDict(variants=variants_dict)
+
+async def get_elements(model: type, gene_name: str, species_name: str, model_types: list[str], start: int, end: int) -> list[Element]:
     async with async_session() as session:
 
-        element_list: list[Element] = []
+        model_list: list[Element] = []
 
 
-        stmt = (select(EnhancersPromoters.category, EnhancersPromoters.start, EnhancersPromoters.end)
+        stmt = (select(model.category, model.start, model.end)
                 .join(RegulatorySequences)
                 .join(Genes)
                 .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where(or_(((EnhancersPromoters.start >= start) & (EnhancersPromoters.start < end)), ((EnhancersPromoters.end <= end) & (EnhancersPromoters.end > start))))
-                .where(EnhancersPromoters.category.in_(element_types))
-                .order_by(EnhancersPromoters.start))
+                .where(or_(((model.start >= start) & (model.start < end)), ((model.end <= end) & (model.end > start))))
+                .where(model.category.in_(model_types))
+                .order_by(model.start))
             
         result = (await session.execute(stmt)).tuples().all()
 
-        for row in result:
 
-            element_list.append(Element(type = row[0], start = row[1], end = row[2]))
+    for row in result:
+
+            model_list.append(Element(type = row[0], start = row[1], end = row[2]))
 
     
-        return element_list
+    return model_list
+
+# Returns a list of all variant locations within the given parameters
+@router.post("filtered_variants", response_model=list[Element])
+async def get_filtered_variants(gene_name: str, species_name: str, variants_types: list[str], start: int, end: int) -> list[Element]:
+    return await get_elements(Variants, gene_name, species_name, variants_types, start, end)
+
+# Returns a list of all enahncers and promoter locations within the given parameters
+@router.post("/filtered_Enh_Prom", response_model=list[Element])
+async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
+    return await get_elements(EnhancersPromoters, gene_name, species_name, element_types, start, end)
     
 # Returns a list of all transcription factor binding site locations within the given parameters
 @router.post("/filtered_TFBS", response_model=list[Element])
 async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
-    async with async_session() as session:
-
-        element_list: list[Element] = []
-
-
-        stmt = (select(TranscriptionFactorBindingSites.category, TranscriptionFactorBindingSites.start, TranscriptionFactorBindingSites.end)
-                .join(RegulatorySequences)
-                .join(Genes)
-                .join(Species)
-                .where(Genes.name == gene_name)
-                .where(Species.name == species_name)
-                .where(or_(((TranscriptionFactorBindingSites.start >= start) & (TranscriptionFactorBindingSites.start < end)), ((TranscriptionFactorBindingSites.end <= end) & (TranscriptionFactorBindingSites.end > start))))
-                .where(TranscriptionFactorBindingSites.category.in_(element_types))
-                .order_by(TranscriptionFactorBindingSites.start))
-            
-        result = (await session.execute(stmt)).tuples().all()
-
-        for row in result:
-
-            element_list.append(Element(type = row[0], start = row[1], end = row[2]))
-
-    
-        return element_list
+    return await get_elements(TranscriptionFactorBindingSites, gene_name, species_name, element_types, start, end)
     
 @router.post("/mapped_TFBS", response_model=list[Segment])
 async def get_mapped_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Segment]:
@@ -181,19 +195,19 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
     
 
     # Merge segments that are below the threshold
-    # length = len(color_map[species_name])
+    # length = len(color_segment_list)
     # i = 0
     # while i < length:
         
-    #     if color_map[species_name][i].width < THRESHOLD:
+    #     if color_segment_list[i].width < THRESHOLD:
     #         if i > 0:
-    #             color_map[species_name][i - 1].width += color_map[species_name][i].width
-    #             del color_map[species_name][i]
+    #             color_segment_list[i - 1].width += color_segment_list[i].width
+    #             del color_segment_list[i]
     #             i -= 1
     #             length -= 1
     #         else:
-    #             color_map[species_name][i + 1].width += color_map[species_name][i].width
-    #             del color_map[species_name][i]
+    #             color_segment_list[i + 1].width += color_segment_list[i].width
+    #             del color_segment_list[i]
     #             i -= 1
     #             length -= 1
 
