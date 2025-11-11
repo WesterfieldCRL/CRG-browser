@@ -67,7 +67,7 @@ async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types
                 .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where((EnhancersPromoters.start >= start) & (EnhancersPromoters.end <= end))
+                .where(or_(((EnhancersPromoters.start >= start) & (EnhancersPromoters.start < end)), ((EnhancersPromoters.end <= end) & (EnhancersPromoters.end > start))))
                 .where(EnhancersPromoters.category.in_(element_types))
                 .order_by(EnhancersPromoters.start))
             
@@ -94,7 +94,7 @@ async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: li
                 .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where((TranscriptionFactorBindingSites.start >= start) & (TranscriptionFactorBindingSites.end <= end))
+                .where(or_(((TranscriptionFactorBindingSites.start >= start) & (TranscriptionFactorBindingSites.start < end)), ((TranscriptionFactorBindingSites.end <= end) & (TranscriptionFactorBindingSites.end > start))))
                 .where(TranscriptionFactorBindingSites.category.in_(element_types))
                 .order_by(TranscriptionFactorBindingSites.start))
             
@@ -152,6 +152,11 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         relative_start = element.start + offset
         relative_end = element.end + offset
+
+        if relative_start < sequence_start:
+            relative_start = sequence_start
+        elif relative_end > sequence_end:
+            relative_end = sequence_end
 
         # if the elements are right not right next to each other we need this to fill in the gap
         if relative_start > prev_index:
