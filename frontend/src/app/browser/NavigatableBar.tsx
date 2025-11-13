@@ -144,6 +144,7 @@ export default function NavigatableBar({
       endValue == geneNums[0] + INITIAL_VIEW
     ) {
       loadSequences();
+      setRenderNucleotides(false);
     }
   }, [startValue, endValue]);
 
@@ -329,7 +330,7 @@ export default function NavigatableBar({
                   fontSize: "14px",
                 }}
               >
-                Transcription Factor Binding Sites
+                Legend
               </label>
               <div style={{ minWidth: 0 }}>
                 <Legend
@@ -338,6 +339,28 @@ export default function NavigatableBar({
                     new Set(tfbsSequence.map((segment) => segment.type))
                   }
                 />
+              </div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                padding: "16px 0",
+                borderBottom: "2px solid var(--border)",
+              }}
+            >
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Transcription Factor Binding Sites
+              </label>
+              <div style={{ minWidth: 0 }}>
                 <ColorBar
                   segments={tfbsSequence}
                   color_mapping={tfbs_color_map}
