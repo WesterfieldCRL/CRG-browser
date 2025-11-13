@@ -73,8 +73,8 @@ export default function NavigatableBar({
     setGeneNumsValue([genomic_nums.start, genomic_nums.end]);
   }
 
-  async function loadSequences() {
-    const tfbs = await fetchTFBSBars(gene, species, TFBS, startValue, endValue);
+  async function loadSequences(start: number, end: number) {
+    const tfbs = await fetchTFBSBars(gene, species, TFBS, start, end);
     setTFBSSequence(tfbs);
 
     const enh_prom_list = [];
@@ -88,18 +88,18 @@ export default function NavigatableBar({
       gene,
       species,
       enh_prom_list,
-      startValue,
-      endValue
+      start,
+      end
     );
     setEnhancerPromoterSequence(enh_proms);
   }
 
-  async function loadNucleotides() {
+  async function loadNucleotides(start: number, end: number) {
     const nucleotides_string = await fetchNucleotides(
       gene,
       species,
-      startValue,
-      endValue
+      start,
+      end
     );
     setNucleotides(nucleotides_string);
   }
@@ -127,26 +127,9 @@ export default function NavigatableBar({
     ) {
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
+      loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW)
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
-
-  useEffect(() => {
-    if (
-      startValue !== null &&
-      endValue !== null &&
-      enhancerPromoterSequence == null &&
-      tfbsSequence == null
-    ) {
-      loadSequences();
-    } else if (
-      !loading &&
-      startValue == geneNums[0] &&
-      endValue == geneNums[0] + INITIAL_VIEW
-    ) {
-      loadSequences();
-      setRenderNucleotides(false);
-    }
-  }, [startValue, endValue]);
 
   useEffect(() => {
     if (!loading) return;
@@ -157,10 +140,10 @@ export default function NavigatableBar({
   }, [tfbsSequence, enhancerPromoterSequence]);
 
   const handleSubmit = () => {
-    loadSequences();
+    loadSequences(startValue, endValue);
     if (endValue - startValue <= NUCLEOTIDES_VIEW) {
       setRenderNucleotides(true);
-      loadNucleotides();
+      loadNucleotides(startValue, endValue);
     } else {
       setRenderNucleotides(false);
     }
@@ -169,6 +152,14 @@ export default function NavigatableBar({
   const handleGeneSubmit = () => {
     setStartValue(geneNums[0]);
     setEndValue(geneNums[0] + INITIAL_VIEW);
+    loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW)
+    setRenderNucleotides(false);
+  };
+
+  const handleSegmentClick = (s: number, e: number) => {
+    setStartValue(s);
+    setEndValue(s + NUCLEOTIDES_VIEW);
+    loadSequences(s, s + NUCLEOTIDES_VIEW);
   };
 
   return (
@@ -365,6 +356,7 @@ export default function NavigatableBar({
                   segments={tfbsSequence}
                   color_mapping={tfbs_color_map}
                   width="100%"
+                  onSegmentClick={handleSegmentClick}
                 />
               </div>
             </div>
@@ -393,6 +385,7 @@ export default function NavigatableBar({
                   segments={enhancerPromoterSequence}
                   color_mapping={enh_prom_color_map}
                   width="100%"
+                  onSegmentClick={handleSegmentClick}
                 />
               </div>
             </div>

@@ -13,6 +13,7 @@ interface ColorBarProps {
   color_mapping: { [key: string]: string };
   height?: number;
   width?: string;
+  onSegmentClick?: (start: number, end: number) => void;
 }
 
 const getBackgroundStyle = (color: string) => {
@@ -45,6 +46,7 @@ export default function ColorBar({
   color_mapping,
   height = 30,
   width = "100%",
+  onSegmentClick,
 }: ColorBarProps) {
   const [tooltip, setTooltip] = useState<{
     text: string;
@@ -72,6 +74,11 @@ export default function ColorBar({
               cursor: segment.type !== "none" ? "pointer" : "default",
               pointerEvents: segment.type !== "none" ? "auto" : "none",
               ...getBackgroundStyle(color_mapping[segment.type]),
+            }}
+            onClick={() => {
+              if (segment.type !== "none" && onSegmentClick) {
+                onSegmentClick(segment.start, segment.end);
+              }
             }}
             onMouseEnter={(e) => {
               const text = `Type: ${segment.type}\nStart: ${segment.start}\nEnd: ${segment.end}`;
