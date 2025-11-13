@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import NavigatableBar from "./NavigatableBar";
 import {
   fetchGenes,
@@ -16,7 +17,9 @@ const Enh_Prom_Color_Mapping = {
 };
 
 //TODO: add variants cause I cant be bothered to deal with that rn
-export default function GenomeBrowserPage() {
+export default function GeneBrowserPage() {
+  const searchParams = useSearchParams();
+
   const [color_map, setColorMap] = useState<{ [key: string]: string }>(null);
   const [loading, setLoading] = useState(true);
   const [genes, setGenes] = useState<Array<string>>(null);
@@ -24,11 +27,20 @@ export default function GenomeBrowserPage() {
   const [allTFBS, setAllTFBS] = useState<Array<string>>(null);
   const [selectedTFBS, setSelectedTFBS] = useState<Array<string>>(null);
   const [selectedGene, setSelectedGene] = useState<string>(null);
+  const [showEnhancers, setShowEnhancers] = useState<boolean>(false);
+  const [showPromoters, setShowPromoters] = useState<boolean>(false);
 
   async function loadGenesAndSpecies() {
     const gene_list = await fetchGenes();
     setGenes(gene_list);
-    setSelectedGene(gene_list[0]);
+
+    // Get gene from URL params or default to first gene
+    const geneParam = searchParams.get('gene');
+    setSelectedGene(geneParam && gene_list.includes(geneParam) ? geneParam : gene_list[0]);
+
+    // Get enhancer/promoter settings from URL params
+    setShowEnhancers(searchParams.get('enh') === 'true');
+    setShowPromoters(searchParams.get('prom') === 'true');
 
     const species_list = await fetchSpecies();
     setSpecies(species_list);
@@ -37,7 +49,15 @@ export default function GenomeBrowserPage() {
   async function loadTFBS() {
     const tfbs_list = await fetchTFBS(selectedGene);
     setAllTFBS(tfbs_list);
-    setSelectedTFBS(tfbs_list);
+
+    // Get TFBS selection from URL params or default to all
+    const tfbsParam = searchParams.get('tfbs');
+    if (tfbsParam) {
+      const requestedTFBS = tfbsParam.split(',').filter(t => tfbs_list.includes(t));
+      setSelectedTFBS(requestedTFBS.length > 0 ? requestedTFBS : tfbs_list);
+    } else {
+      setSelectedTFBS(tfbs_list);
+    }
   }
 
   useEffect(() => {
@@ -71,8 +91,8 @@ export default function GenomeBrowserPage() {
               <NavigatableBar
                 gene={selectedGene}
                 species={species_name}
-                enh={true}
-                prom={true}
+                enh={showEnhancers}
+                prom={showPromoters}
                 TFBS={selectedTFBS}
                 variants={[]}
                 tfbs_color_map={color_map}
