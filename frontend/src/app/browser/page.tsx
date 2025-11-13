@@ -103,6 +103,14 @@ export default function GeneBrowserFilterPage() {
     );
   };
 
+  const handleVariantSelectAll = () => {
+    if (selectedVariants.length === allVariants.length) {
+      setSelectedVariants([]); // Deselect all if all are selected
+    } else {
+      setSelectedVariants([...allVariants]); // Select all
+    }
+  };
+
   const handleGo = () => {
     const params = new URLSearchParams();
     params.set('gene', selectedGene);
@@ -216,8 +224,21 @@ export default function GeneBrowserFilterPage() {
     <>
       <main className="filter-page">
         <div className="container">
-          <h1 className="title">Gene Browser</h1>
-          <p className="subtitle">Select a gene to explore</p>
+          <h1 className={`title ${selectedGene ? 'compact' : ''}`}>Gene Browser</h1>
+          {!selectedGene && <p className="subtitle">Select a gene to explore</p>}
+
+          {/* Instructions */}
+          {!selectedGene && <div className="instructions">
+            <div className="instructions-header">
+              <span className="instructions-icon">ℹ️</span>
+              <h3>How to Use</h3>
+            </div>
+            <ol className="instructions-list">
+              <li><strong>Select a gene</strong> from the options below (DRD4, CHRNA6, or ALDH1A3)</li>
+              <li><strong>Choose filters</strong> for regulatory elements, transcription factors, and variant categories</li>
+              <li><strong>Click &ldquo;Go to Browser&rdquo;</strong> to view aligned sequences across Human, Mouse, and Macaque</li>
+            </ol>
+          </div>}
 
           {/* Backend Error State */}
           {genes.length === 0 && !loading && (
@@ -301,22 +322,32 @@ export default function GeneBrowserFilterPage() {
               )}
 
               <section className="filter-section">
-                <h2>Variant Categories</h2>
                 {allVariants.length > 0 ? (
-                  <div className="checkbox-grid">
-                    {allVariants.map(variant => (
-                      <label key={variant} className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={selectedVariants.includes(variant)}
-                          onChange={() => handleVariantToggle(variant)}
-                        />
-                        <span>{variant}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <>
+                    <div className="section-header">
+                      <h2>Variant Categories</h2>
+                      <button className="select-all-button" onClick={handleVariantSelectAll}>
+                        {selectedVariants.length === allVariants.length ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="checkbox-grid">
+                      {allVariants.map(variant => (
+                        <label key={variant} className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={selectedVariants.includes(variant)}
+                            onChange={() => handleVariantToggle(variant)}
+                          />
+                          <span>{variant}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </>
                 ) : (
-                  <p className="no-data-message">No variant categories available for this gene</p>
+                  <>
+                    <h2>Variant Categories</h2>
+                    <p className="no-data-message">No variant categories available for this gene</p>
+                  </>
                 )}
               </section>
 
@@ -355,13 +386,61 @@ export default function GeneBrowserFilterPage() {
           color: #0a6080;
           margin-bottom: 0.5rem;
           text-align: center;
+          transition: all 0.3s ease;
+        }
+
+        .title.compact {
+          font-size: 2rem;
+          margin-bottom: 1.5rem;
+          margin-top: 0;
         }
 
         .subtitle {
           font-size: 1.125rem;
           color: #555;
           text-align: center;
-          margin-bottom: 3rem;
+          margin-bottom: 2rem;
+        }
+
+        .instructions {
+          background: rgba(26, 143, 160, 0.1);
+          border-left: 4px solid #1a8fa0;
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin-bottom: 2rem;
+        }
+
+        .instructions-header {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 1rem;
+        }
+
+        .instructions-icon {
+          font-size: 1.5rem;
+        }
+
+        .instructions-header h3 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #0a6080;
+          margin: 0;
+        }
+
+        .instructions-list {
+          margin: 0;
+          padding-left: 1.5rem;
+          color: #333;
+          line-height: 1.8;
+        }
+
+        .instructions-list li {
+          margin-bottom: 0.5rem;
+        }
+
+        .instructions-list strong {
+          color: #0a6080;
         }
 
         .error-section {
@@ -584,6 +663,23 @@ export default function GeneBrowserFilterPage() {
             color: #94a3b8;
           }
 
+          .instructions {
+            background: rgba(94, 203, 205, 0.15);
+            border-left-color: #5ecbcd;
+          }
+
+          .instructions-header h3 {
+            color: #5ecbcd;
+          }
+
+          .instructions-list {
+            color: #94a3b8;
+          }
+
+          .instructions-list strong {
+            color: #5ecbcd;
+          }
+
           .error-section,
           .gene-card,
           .filter-section {
@@ -663,6 +759,23 @@ export default function GeneBrowserFilterPage() {
 
         [data-theme="dark"] .subtitle {
           color: #94a3b8;
+        }
+
+        [data-theme="dark"] .instructions {
+          background: rgba(94, 203, 205, 0.15);
+          border-left-color: #5ecbcd;
+        }
+
+        [data-theme="dark"] .instructions-header h3 {
+          color: #5ecbcd;
+        }
+
+        [data-theme="dark"] .instructions-list {
+          color: #94a3b8;
+        }
+
+        [data-theme="dark"] .instructions-list strong {
+          color: #5ecbcd;
         }
 
         [data-theme="dark"] .error-section,
