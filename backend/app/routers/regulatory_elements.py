@@ -169,7 +169,8 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         if relative_start < sequence_start:
             relative_start = sequence_start
-        elif relative_end > sequence_end:
+        
+        if relative_end > sequence_end:
             relative_end = sequence_end
 
         # if the elements are right not right next to each other we need this to fill in the gap
