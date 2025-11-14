@@ -92,7 +92,7 @@ async def get_elements(model: type, gene_name: str, species_name: str, model_typ
                 .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where(or_(((model.start >= start) & (model.start < end)), ((model.end <= end) & (model.end > start))))
+                .where(or_(((model.start >= start) & (model.start < end)), ((model.end <= end) & (model.end > start)), ((model.start <= start) & (model.end >= end))))
                 .where(model.category.in_(model_types))
                 .order_by(model.start))
             
@@ -181,11 +181,10 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         # using prev_index instead of element.start to handle overlaps
         element_width = ((relative_end - prev_index) / total_width) * 100
-        if element_width < 0:
-            element_width = 0
-        color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end))
-        curr_width += element_width
-        prev_index = relative_end
+        if element_width > 0:
+            color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end))
+            curr_width += element_width
+            prev_index = relative_end
 
     # add any remaing space in the sequence
 
