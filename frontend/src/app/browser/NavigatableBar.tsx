@@ -160,6 +160,8 @@ export default function NavigatableBar({
     setStartValue(s);
     setEndValue(s + NUCLEOTIDES_VIEW);
     loadSequences(s, s + NUCLEOTIDES_VIEW);
+    setRenderNucleotides(true);
+    loadNucleotides(s, s + NUCLEOTIDES_VIEW);
   };
 
   return (
