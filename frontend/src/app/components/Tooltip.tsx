@@ -107,8 +107,9 @@ export default function Tooltip({ tooltip }: TooltipProps) {
           padding: 8px 14px;
           border-radius: 8px;
           font-size: 0.9rem;
-          max-width: 260px;
-          white-space: nowrap;
+          max-width: 400px;
+          white-space: normal;
+          word-wrap: break-word;
           user-select: none;
           box-shadow:
             0 2px 8px rgba(0, 0, 0, 0.15),

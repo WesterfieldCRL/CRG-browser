@@ -12,6 +12,7 @@ import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
 import { time } from "console";
 import Legend from "./Legend";
+import NucleotdiesDisplay from "./NucleotidesDisplay";
 
 interface NavigatableBarProps {
   gene: string;
@@ -55,7 +56,7 @@ export default function NavigatableBar({
   const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
   const [enhancerPromoterSequence, setEnhancerPromoterSequence] =
     useState<Array<ColorSegment>>(null);
-  const [nucletoides, setNucleotides] = useState<string>(null);
+  const [nucleotides, setNucleotides] = useState<string>(null);
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
 
   async function loadAssembly() {
@@ -412,37 +413,7 @@ export default function NavigatableBar({
               </label>
               <div style={{ minWidth: 0 }}>
                 {renderNucleotides ? (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridAutoFlow: "row",
-                      gridTemplateColumns: `repeat(${
-                        nucletoides?.length || 1
-                      }, 1fr)`,
-                      width: "100%",
-                      gap: "1px",
-                      height: "30px", // Match ColorBar default height
-                    }}
-                  >
-                    {nucletoides?.split("").map((char, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          border: "1px solid var(--border)",
-                          background: "var(--panel-bg)",
-                          color: "var(--text)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          minWidth: 0,
-                          fontSize: "12px",
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        {char}
-                      </span>
-                    ))}
-                  </div>
+                  <NucleotdiesDisplay nucleotides={nucleotides} variants_list={[]}/>
                 ) : (
                   <div
                     style={{
