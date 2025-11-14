@@ -118,7 +118,9 @@ export default function ColorBar({
                 onSegmentClick(segment.start, segment.end);
               }
             }}
-          />
+          >
+            
+          </div>
         ))}
       </div>
       <Tooltip tooltip={tooltip} />
