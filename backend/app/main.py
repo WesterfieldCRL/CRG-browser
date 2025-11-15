@@ -74,7 +74,7 @@ async def load_RegulatorySequences() -> None:
                         sequence = sequence,
                         total_start = int(row["total_start"]),
                         total_end = int(row["total_end"]),
-                        allignment_num = int(row.get("allignment_num", 0)))
+                        allignment_num = int(row["allignment_num"]))
                     session.add(regulatory_sequences_object)
 
             await session.commit()
@@ -86,8 +86,8 @@ async def load_Enh_Prom() -> None:
 
         with open("app/data/Complete_2Mil_Enh_Prom.csv", "r") as file:
 
-
-            reader = DictReader(file)
+                
+            reader = DictReader(file)        
 
             for row in reader:
                 gene_name = row["Gene"]
@@ -105,7 +105,7 @@ async def load_Enh_Prom() -> None:
                     start = int(row["Type_Start"]),
                     end = int(row["Type_End"]),
                     regulatory_sequence_id = reg_seq.id)
-
+                
                 session.add(enh_prom_object)
 
             await session.commit()
@@ -116,8 +116,8 @@ async def load_TFBS() -> None:
         print("loading Transcription Factor Binding Sites")
 
         with open("app/data/Complete_TFBS.csv", "r") as file:
-
-            reader = DictReader(file)
+   
+            reader = DictReader(file)        
 
             for row in reader:
                 gene_name = row["Gene"]
@@ -129,15 +129,15 @@ async def load_TFBS() -> None:
                 if reg_seq is None:
                     raise ValueError(f"Unable to find regulatory sequence for TFBS for {gene_name} and {species_name}")
 
-                tfbs_object = TranscriptionFactorBindingSites(
+                enh_prom_object = TranscriptionFactorBindingSites(
                     chromosome = int(row["Chromosome"]),
                     category = row["Type"],
                     start = int(row["Type_Start"]),
                     end = int(row["Type_End"]),
                     regulatory_sequence_id = reg_seq.id)
-
-                session.add(tfbs_object)
-
+                
+                session.add(enh_prom_object)
+            
             await session.commit()
 
 async def load_variants() -> None:
@@ -159,14 +159,14 @@ async def load_variants() -> None:
                 if reg_seq is None:
                     raise ValueError(f"Unable to find regulatory sequence for variants for {gene_name} and {species_name}")
 
-                variant_object = Variants(
+                enh_prom_object = Variants(
                     chromosome = int(row["chromosome"]),
                     category = row["category"],
                     start = int(row["start_position"]),
                     end = int(row["end_position"]),
                     regulatory_sequence_id = reg_seq.id)
-
-                session.add(variant_object)
+                
+                session.add(enh_prom_object)
 
             await session.commit()
 
