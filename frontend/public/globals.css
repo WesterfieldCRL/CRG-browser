@@ -45,7 +45,7 @@ body {
   height: 100%;
   overflow-x: hidden;
   color: var(--foreground);
-  background: var(--background);
+  background: transparent;
   transition: background-color 300ms ease, color 300ms ease;
   margin: 0;
   padding: 0;
