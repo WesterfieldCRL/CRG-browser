@@ -12,7 +12,6 @@ import {
 const Enh_Prom_Color_Mapping = {
   Enh: "stripes",
   Prom: "bars",
-  none: "#8a8a8aff",
 };
 
 const Nucleotides_Color_Mapping = {
@@ -21,6 +20,14 @@ const Nucleotides_Color_Mapping = {
   G: "#ca8606ff",
   C: "#003ee7ff",
 };
+
+// I just want all the variants to be one color
+const Variants_Color_Mapping = () =>
+  new Proxy({}, {
+    get() {
+      return "#555555ff";
+    }
+  }) as { [key: string]: string };
 
 export default function GenomeBrowserPage() {
   const [color_map, setColorMap] = useState<{ [key: string]: string }>(null);
@@ -84,6 +91,7 @@ export default function GenomeBrowserPage() {
                 tfbs_color_map={color_map}
                 enh_prom_color_map={Enh_Prom_Color_Mapping}
                 nucleotides_color_map={Nucleotides_Color_Mapping}
+                variants_color_map={Variants_Color_Mapping()}
               ></NavigatableBar>
             </React.Fragment>
           ))}

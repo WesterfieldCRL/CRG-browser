@@ -13,6 +13,7 @@ import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
 import { time } from "console";
 import Legend from "./Legend";
+import { tree } from "next/dist/build/templates/app-page";
 
 interface NavigatableBarProps {
   gene: string;
@@ -23,7 +24,8 @@ interface NavigatableBarProps {
   variants: string[];
   tfbs_color_map: { [key: string]: string };
   enh_prom_color_map: { [key: string]: string };
-  nucleotides_color_map: { [key: string]: string};
+  nucleotides_color_map: { [key: string]: string };
+  variants_color_map: { [key: string]: string };
 }
 
 interface ColorSegment {
@@ -49,6 +51,7 @@ export default function NavigatableBar({
   tfbs_color_map,
   enh_prom_color_map,
   nucleotides_color_map,
+  variants_color_map,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
@@ -58,10 +61,13 @@ export default function NavigatableBar({
   const [sequenceEnd, setSequenceEndValue] = useState<number>(null);
   const [geneNums, setGeneNumsValue] = useState<[number, number]>(null);
   const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
-  const [enhancerPromoterSequence, setEnhancerPromoterSequence] = useState<Array<ColorSegment>>(null);
+  const [enhancerPromoterSequence, setEnhancerPromoterSequence] =
+    useState<Array<ColorSegment>>(null);
   const [nucleotides, setNucleotides] = useState<Array<ColorSegment>>(null);
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
-  const [renderNucleotideLetters, setRenderNucleotideLetters] = useState<boolean>(false);
+  const [renderNucleotideLetters, setRenderNucleotideLetters] =
+    useState<boolean>(false);
+  const [variantsSequence, setVariantsSequence] = useState<Array<ColorSegment>>(null);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -99,7 +105,11 @@ export default function NavigatableBar({
     setEnhancerPromoterSequence(enh_proms);
   }
 
-  async function loadNucleotides(start: number, end: number, showLetters: boolean) {
+  async function loadNucleotides(
+    start: number,
+    end: number,
+    showLetters: boolean
+  ) {
     const nucleotides_bar = await fetchNucleotideBar(
       gene,
       species,
@@ -123,12 +133,17 @@ export default function NavigatableBar({
   }, [gene, species, enh, prom, variants, TFBS]);
 
   useEffect(() => {
-    if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
-      setRenderNucleotideLetters(true);
+    if (endValue - startValue <= NUCLEOTIDES_VIEW) {
+      setRenderNucleotides(true);
+      if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
+        setRenderNucleotideLetters(true);
+      } else {
+        setRenderNucleotideLetters(false);
+      }
     } else {
-      setRenderNucleotideLetters(false);
+      setRenderNucleotides(false);
     }
-  }), [nucleotides]
+  }, [nucleotides]);
 
   useEffect(() => {
     if (!loading) return;
@@ -141,7 +156,7 @@ export default function NavigatableBar({
     ) {
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
-      loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW)
+      loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
       loadNucleotides(geneNums[0], geneNums[0] + INITIAL_VIEW, false);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
@@ -157,10 +172,8 @@ export default function NavigatableBar({
   const handleSubmit = () => {
     loadSequences(startValue, endValue);
     if (endValue - startValue <= NUCLEOTIDES_VIEW) {
-      setRenderNucleotides(true);
       loadNucleotides(startValue, endValue, true);
     } else {
-      setRenderNucleotides(false);
       loadNucleotides(startValue, endValue, false);
     }
   };
@@ -168,15 +181,14 @@ export default function NavigatableBar({
   const handleGeneSubmit = () => {
     setStartValue(geneNums[0]);
     setEndValue(geneNums[0] + INITIAL_VIEW);
-    loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW)
-    setRenderNucleotides(false);
+    loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
+    loadNucleotides(startValue, endValue, false);
   };
 
   const handleSegmentClick = (s: number, e: number) => {
     setStartValue(s);
     setEndValue(s + NUCLEOTIDES_LETTERS);
     loadSequences(s, s + NUCLEOTIDES_LETTERS);
-    setRenderNucleotides(true);
     loadNucleotides(s, s + NUCLEOTIDES_LETTERS, true);
   };
 
@@ -427,13 +439,13 @@ export default function NavigatableBar({
                 Nucleotides/Variants
               </label>
               <div style={{ minWidth: 0 }}>
-                {!loading && renderNucleotides ? (
+                {renderNucleotides ? (
                   <ColorBar
-                  segments={nucleotides}
-                  color_mapping={nucleotides_color_map}
-                  interactible={false}
-                  letters={renderNucleotideLetters}
-                  width="100%"
+                    segments={nucleotides}
+                    color_mapping={nucleotides_color_map}
+                    interactible={false}
+                    letters={renderNucleotideLetters}
+                    width="100%"
                   />
                 ) : (
                   <div
@@ -450,10 +462,37 @@ export default function NavigatableBar({
                       fontStyle: "italic",
                     }}
                   >
-                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
+                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides and ≤{NUCLEOTIDES_LETTERS}bp to view letters
                   </div>
-                )
-                }
+                )}
+              </div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                padding: "16px 0",
+                borderBottom: "2px solid var(--border)",
+              }}
+            >
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Variants
+              </label>
+              <div style={{ minWidth: 0 }}>
+                <ColorBar
+                  segments={enhancerPromoterSequence}
+                  color_mapping={enh_prom_color_map}
+                  width="100%"
+                  onSegmentClick={handleSegmentClick}
+                />
               </div>
             </div>
           </div>

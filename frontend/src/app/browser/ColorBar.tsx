@@ -20,15 +20,18 @@ interface ColorBarProps {
   onSegmentClick?: (start: number, end: number) => void;
 }
 
-const getBackgroundStyle = (color: string) => {
+const getBackgroundStyle = (color: string, displayLetters: boolean) => {
+  if (displayLetters) {
+    return {color: color};
+  }
   if (color === "stripes") {
     return {
       backgroundImage: `repeating-linear-gradient(
                 45deg,
                 #d42626ff,
                 #e21818ff 10px,
-                #cccccc 10px,
-                #cccccc 20px
+                #ffffffff 10px,
+                #ffffffff 20px
             )`,
     };
   } else if (color === "bars") {
@@ -37,8 +40,8 @@ const getBackgroundStyle = (color: string) => {
                 135deg,
                 #153be2ff,
                 #0638dfff 10px,
-                #cccccc 10px,
-                #cccccc 20px
+                #ffffffff 10px,
+                #ffffffff 20px
             )`,
     };
   }
@@ -77,7 +80,7 @@ export default function ColorBar({
       const segmentWidth = (segment.width / 100) * rect.width;
 
       if (x >= accumulatedWidth && x < accumulatedWidth + segmentWidth) {
-        if (segment.type === "none") {
+        if (segment.type === "none" || !interactible) {
           setTooltip(null);
         } else {
           const text = `Type: ${segment.type} | Chromosome: ${segment.chromosome} | Start: ${segment.start} | End: ${segment.end}`;
@@ -104,7 +107,8 @@ export default function ColorBar({
           height: `${height}px`,
           display: "flex",
           overflow: "hidden",
-          borderRadius: "0px",
+          border: "1px solid var(--border)",
+          borderRadius: "4px",
         }}
         onMouseMove={handleContainerMouseMove}
         onMouseLeave={handleContainerMouseLeave}
@@ -119,7 +123,7 @@ export default function ColorBar({
               cursor:
                 segment.type !== "none" && interactible ? "pointer" : "default",
               pointerEvents: segment.type !== "none" ? "auto" : "none",
-              ...getBackgroundStyle(color_mapping[segment.type]),
+              ...getBackgroundStyle(color_mapping[segment.type], letters),
             }}
             onClick={() => {
               onSegmentClick(segment.start, segment.end);
