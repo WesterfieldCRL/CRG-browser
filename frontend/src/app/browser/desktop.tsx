@@ -15,7 +15,13 @@ const Enh_Prom_Color_Mapping = {
   none: "#8a8a8aff",
 };
 
-//TODO: add variants cause I cant be bothered to deal with that rn
+const Nucleotides_Color_Mapping = {
+  A: "#00ff2aff",
+  T: "#ff0000ff",
+  G: "#ca8606ff",
+  C: "#003ee7ff",
+};
+
 export default function GenomeBrowserPage() {
   const [color_map, setColorMap] = useState<{ [key: string]: string }>(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +83,7 @@ export default function GenomeBrowserPage() {
                 variants={[]}
                 tfbs_color_map={color_map}
                 enh_prom_color_map={Enh_Prom_Color_Mapping}
+                nucleotides_color_map={Nucleotides_Color_Mapping}
               ></NavigatableBar>
             </React.Fragment>
           ))}

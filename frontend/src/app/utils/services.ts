@@ -113,6 +113,11 @@ export async function fetchAllVariantPositions(geneName: string, speciesName: st
   return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
 
+export async function fetchNucleotideBar(geneName: string, speciesName: string, start: number, end: number, showLetters: boolean) {
+  return fetchJSON(`/sequences/mapped_nucleotides?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&show_letters=${encodeURIComponent(showLetters)}`);
+} 
+
+
 /**
  * Generates a color mapping for TFBS names
  * @param tfbsNames Array of TFBS names to generate colors for

@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 interface ColorSegment {
   type: string;
   width: number;
-  start: number;
-  end: number;
+  start?: number;
+  end?: number;
+  chromosome?: number;
 }
 
 interface ColorBarProps {
@@ -74,7 +75,7 @@ export default function ColorBar({
         if (segment.type === "none") {
           setTooltip(null);
         } else {
-          const text = `Type: ${segment.type} | Start: ${segment.start} | End: ${segment.end}`;
+          const text = `Type: ${segment.type} | Chromosome: ${segment.chromosome} | Start: ${segment.start} | End: ${segment.end}`;
           setTooltip({ text, x: e.clientX, y: e.clientY });
         }
         return;

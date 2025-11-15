@@ -3,6 +3,7 @@ import {
   fetchAssembly,
   fetchEnhPromBars,
   fetchGeneNums,
+  fetchNucleotideBar,
   fetchNucleotides,
   fetchSequenceNums,
   fetchTFBSBars,
@@ -12,7 +13,6 @@ import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
 import { time } from "console";
 import Legend from "./Legend";
-import NucleotdiesDisplay from "./NucleotidesDisplay";
 
 interface NavigatableBarProps {
   gene: string;
@@ -23,6 +23,7 @@ interface NavigatableBarProps {
   variants: string[];
   tfbs_color_map: { [key: string]: string };
   enh_prom_color_map: { [key: string]: string };
+  nucleotides_color_map: { [key: string]: string};
 }
 
 interface ColorSegment {
@@ -45,6 +46,7 @@ export default function NavigatableBar({
   variants,
   tfbs_color_map,
   enh_prom_color_map,
+  nucleotides_color_map,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
@@ -54,9 +56,8 @@ export default function NavigatableBar({
   const [sequenceEnd, setSequenceEndValue] = useState<number>(null);
   const [geneNums, setGeneNumsValue] = useState<[number, number]>(null);
   const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
-  const [enhancerPromoterSequence, setEnhancerPromoterSequence] =
-    useState<Array<ColorSegment>>(null);
-  const [nucleotides, setNucleotides] = useState<string>(null);
+  const [enhancerPromoterSequence, setEnhancerPromoterSequence] = useState<Array<ColorSegment>>(null);
+  const [nucleotides, setNucleotides] = useState<Array<ColorSegment>>(null);
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
 
   async function loadAssembly() {
@@ -95,14 +96,15 @@ export default function NavigatableBar({
     setEnhancerPromoterSequence(enh_proms);
   }
 
-  async function loadNucleotides(start: number, end: number) {
-    const nucleotides_string = await fetchNucleotides(
+  async function loadNucleotides(start: number, end: number, showLetters: boolean) {
+    const nucleotides_bar = await fetchNucleotideBar(
       gene,
       species,
       start,
-      end
+      end,
+      showLetters
     );
-    setNucleotides(nucleotides_string);
+    setNucleotides(nucleotides_bar);
   }
 
   useEffect(() => {
@@ -129,6 +131,7 @@ export default function NavigatableBar({
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
       loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW)
+      loadNucleotides(geneNums[0], geneNums[0] + INITIAL_VIEW, false);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
 
@@ -144,9 +147,10 @@ export default function NavigatableBar({
     loadSequences(startValue, endValue);
     if (endValue - startValue <= NUCLEOTIDES_VIEW) {
       setRenderNucleotides(true);
-      loadNucleotides(startValue, endValue);
+      loadNucleotides(startValue, endValue, true);
     } else {
       setRenderNucleotides(false);
+      loadNucleotides(startValue, endValue, false);
     }
   };
 
@@ -162,7 +166,7 @@ export default function NavigatableBar({
     setEndValue(s + NUCLEOTIDES_VIEW);
     loadSequences(s, s + NUCLEOTIDES_VIEW);
     setRenderNucleotides(true);
-    loadNucleotides(s, s + NUCLEOTIDES_VIEW);
+    loadNucleotides(s, s + NUCLEOTIDES_VIEW, true);
   };
 
   return (
@@ -412,26 +416,32 @@ export default function NavigatableBar({
                 Nucleotides/Variants
               </label>
               <div style={{ minWidth: 0 }}>
-                {renderNucleotides ? (
-                  <NucleotdiesDisplay nucleotides={nucleotides} variants_list={[]}/>
-                ) : (
-                  <div
-                    style={{
-                      height: "30px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: "var(--panel-bg)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "4px",
-                      color: "var(--text-secondary)",
-                      fontSize: "13px",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
-                  </div>
-                )}
+                {!loading && 
+                  <ColorBar
+                  segments={nucleotides}
+                  color_mapping={nucleotides_color_map}
+                  width="100%"
+                  onSegmentClick={handleSegmentClick}
+                  />
+                // ) : (
+                //   <div
+                //     style={{
+                //       height: "30px",
+                //       display: "flex",
+                //       alignItems: "center",
+                //       justifyContent: "center",
+                //       background: "var(--panel-bg)",
+                //       border: "1px solid var(--border)",
+                //       borderRadius: "4px",
+                //       color: "var(--text-secondary)",
+                //       fontSize: "13px",
+                //       fontStyle: "italic",
+                //     }}
+                //   >
+                //     Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
+                //   </div>
+                // )
+                }
               </div>
             </div>
           </div>
