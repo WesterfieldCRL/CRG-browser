@@ -19,7 +19,7 @@ class Offsets(BaseModel):
     max_value: int = Field(..., description="The rightmost value of all the alligned sequence (the leftmost will be zero)")
 
 class NucleotideSegment(BaseModel):
-    nucleotide: str = Field(..., description="single char representing a nucelotide letter")
+    type: str = Field(..., description="single char representing a nucelotide letter")
     width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
 
 router = APIRouter(prefix="/sequences")
@@ -233,12 +233,12 @@ async def get_mapped_nucleotides(gene_name: str, species_name: str, start: int, 
     for i in range(len(sequence)):
 
         if i > 0 and not show_letters:
-            if nucleotide_bar[-1].nucleotide == sequence[i]:
+            if nucleotide_bar[-1].type == sequence[i]:
                 nucleotide_bar[-1].width += 1
             else:
-                nucleotide_bar.append(NucleotideSegment(nucleotide=sequence[i], width=1))
+                nucleotide_bar.append(NucleotideSegment(type=sequence[i], width=1))
         else:
-            nucleotide_bar.append(NucleotideSegment(nucleotide=sequence[i], width=1))
+            nucleotide_bar.append(NucleotideSegment(type=sequence[i], width=1))
 
 
     # Convert widths to percentages

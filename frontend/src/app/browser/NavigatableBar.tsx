@@ -33,7 +33,9 @@ interface ColorSegment {
   end: number;
 }
 
-const NUCLEOTIDES_VIEW = 100;
+const NUCLEOTIDES_VIEW = 1000;
+
+const NUCLEOTIDES_LETTERS = 100;
 
 const INITIAL_VIEW = 4000;
 
@@ -59,6 +61,7 @@ export default function NavigatableBar({
   const [enhancerPromoterSequence, setEnhancerPromoterSequence] = useState<Array<ColorSegment>>(null);
   const [nucleotides, setNucleotides] = useState<Array<ColorSegment>>(null);
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
+  const [renderNucleotideLetters, setRenderNucleotideLetters] = useState<boolean>(false);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -120,6 +123,14 @@ export default function NavigatableBar({
   }, [gene, species, enh, prom, variants, TFBS]);
 
   useEffect(() => {
+    if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
+      setRenderNucleotideLetters(true);
+    } else {
+      setRenderNucleotideLetters(false);
+    }
+  }), [nucleotides]
+
+  useEffect(() => {
     if (!loading) return;
 
     if (
@@ -163,10 +174,10 @@ export default function NavigatableBar({
 
   const handleSegmentClick = (s: number, e: number) => {
     setStartValue(s);
-    setEndValue(s + NUCLEOTIDES_VIEW);
-    loadSequences(s, s + NUCLEOTIDES_VIEW);
+    setEndValue(s + NUCLEOTIDES_LETTERS);
+    loadSequences(s, s + NUCLEOTIDES_LETTERS);
     setRenderNucleotides(true);
-    loadNucleotides(s, s + NUCLEOTIDES_VIEW, true);
+    loadNucleotides(s, s + NUCLEOTIDES_LETTERS, true);
   };
 
   return (
@@ -416,31 +427,32 @@ export default function NavigatableBar({
                 Nucleotides/Variants
               </label>
               <div style={{ minWidth: 0 }}>
-                {!loading && 
+                {!loading && renderNucleotides ? (
                   <ColorBar
                   segments={nucleotides}
                   color_mapping={nucleotides_color_map}
+                  interactible={false}
+                  letters={renderNucleotideLetters}
                   width="100%"
-                  onSegmentClick={handleSegmentClick}
                   />
-                // ) : (
-                //   <div
-                //     style={{
-                //       height: "30px",
-                //       display: "flex",
-                //       alignItems: "center",
-                //       justifyContent: "center",
-                //       background: "var(--panel-bg)",
-                //       border: "1px solid var(--border)",
-                //       borderRadius: "4px",
-                //       color: "var(--text-secondary)",
-                //       fontSize: "13px",
-                //       fontStyle: "italic",
-                //     }}
-                //   >
-                //     Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
-                //   </div>
-                // )
+                ) : (
+                  <div
+                    style={{
+                      height: "30px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "var(--panel-bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "4px",
+                      color: "var(--text-secondary)",
+                      fontSize: "13px",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
+                  </div>
+                )
                 }
               </div>
             </div>

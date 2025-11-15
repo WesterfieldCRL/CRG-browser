@@ -12,6 +12,9 @@ interface ColorSegment {
 interface ColorBarProps {
   segments: ColorSegment[];
   color_mapping: { [key: string]: string };
+  interactible?: boolean;
+  tooltipVisible?: boolean;
+  letters?: boolean;
   height?: number;
   width?: string;
   onSegmentClick?: (start: number, end: number) => void;
@@ -45,6 +48,8 @@ const getBackgroundStyle = (color: string) => {
 export default function ColorBar({
   segments,
   color_mapping,
+  interactible = true,
+  letters = false,
   height = 30,
   width = "100%",
   onSegmentClick,
@@ -64,13 +69,13 @@ export default function ColorBar({
     const container = e.currentTarget;
     const rect = container.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    
+
     // Find which segment the cursor is over
     let accumulatedWidth = 0;
     for (let i = 0; i < segments.length; i++) {
       const segment = segments[i];
       const segmentWidth = (segment.width / 100) * rect.width;
-      
+
       if (x >= accumulatedWidth && x < accumulatedWidth + segmentWidth) {
         if (segment.type === "none") {
           setTooltip(null);
@@ -82,7 +87,7 @@ export default function ColorBar({
       }
       accumulatedWidth += segmentWidth;
     }
-    
+
     // If cursor is not over any segment, clear tooltip
     setTooltip(null);
   };
@@ -108,19 +113,23 @@ export default function ColorBar({
           <div
             key={index}
             style={{
+              display: "flex", alignItems: "center", justifyContent: 'center',
               width: `${segment.width}%`,
               height: "100%",
-              cursor: segment.type !== "none" ? "pointer" : "default",
+              cursor:
+                segment.type !== "none" && interactible ? "pointer" : "default",
               pointerEvents: segment.type !== "none" ? "auto" : "none",
               ...getBackgroundStyle(color_mapping[segment.type]),
             }}
             onClick={() => {
-              if (segment.type !== "none" && onSegmentClick) {
-                onSegmentClick(segment.start, segment.end);
-              }
+              onSegmentClick(segment.start, segment.end);
             }}
           >
-            
+            {letters && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: 'center' }}>
+                {segment.type}
+              </div>
+            )}
           </div>
         ))}
       </div>
