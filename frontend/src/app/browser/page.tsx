@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { fetchGenes, fetchTFBS, fetchVariants } from '../utils/services';
 
-export default function GeneBrowserFilterPage() {
+function GeneBrowserFilter() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [genes, setGenes] = useState<string[]>([]);
   const [selectedGene, setSelectedGene] = useState<string>('');
 
@@ -30,6 +31,13 @@ export default function GeneBrowserFilterPage() {
         setBackendError(false);
         const geneList = await fetchGenes();
         setGenes(geneList);
+
+        // Check for gene parameter in URL
+        const geneParam = searchParams.get('gene');
+        if (geneParam && geneList.includes(geneParam)) {
+          setSelectedGene(geneParam);
+        }
+
         setLoading(false);
       } catch (error) {
         console.error('Backend not ready:', error);
@@ -60,13 +68,30 @@ export default function GeneBrowserFilterPage() {
         ]);
 
         setAllTFBS(tfbsList);
-        setSelectedTFBS([]); // Reset selections
+
+        // Check for TFBS selections in URL
+        const tfbsParam = searchParams.get('tfbs');
+        if (tfbsParam) {
+          const requestedTFBS = tfbsParam.split(',').filter(t => tfbsList.includes(t));
+          setSelectedTFBS(requestedTFBS);
+        } else {
+          setSelectedTFBS([]); // Reset selections
+        }
 
         setAllVariants(variantsList);
-        setSelectedVariants([]); // Reset selections
 
-        setShowEnhancers(false);
-        setShowPromoters(false);
+        // Check for variant selections in URL
+        const variantsParam = searchParams.get('variants');
+        if (variantsParam) {
+          const requestedVariants = variantsParam.split(',').filter(v => variantsList.includes(v));
+          setSelectedVariants(requestedVariants);
+        } else {
+          setSelectedVariants([]); // Reset selections
+        }
+
+        // Check for enhancer/promoter settings in URL
+        setShowEnhancers(searchParams.get('enh') === 'true');
+        setShowPromoters(searchParams.get('prom') === 'true');
       } catch (error) {
         console.error('Error loading filter options:', error);
       }
@@ -873,5 +898,60 @@ export default function GeneBrowserFilterPage() {
         }
       `}</style>
     </>
+  );
+}
+
+export default function GeneBrowserFilterPage() {
+  return (
+    <Suspense fallback={
+      <>
+        <main className="filter-page">
+          <div className="loading-container">
+            <div className="loading-icon">🧬</div>
+            <div className="loading-title">Loading Gene Browser...</div>
+          </div>
+        </main>
+        <style jsx>{`
+          .filter-page {
+            min-height: calc(100vh - 60px);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+          }
+          .loading-container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+          }
+          .loading-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+          }
+          .loading-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0a6080;
+          }
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+            50% {
+              transform: scale(1.1);
+              opacity: 0.8;
+            }
+          }
+        `}</style>
+      </>
+    }>
+      <GeneBrowserFilter />
+    </Suspense>
   );
 }

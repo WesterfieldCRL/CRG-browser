@@ -109,6 +109,20 @@ export async function fetchVariants(geneName: string) {
   return fetchJSON(`/elements/all_variants?gene_name=${encodeURIComponent(geneName)}`);
 }
 
+export async function fetchVariantsDict(geneName: string, speciesName: string, variantsList: string[]) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName
+  });
+  return fetchJSON(`/elements/variants_dict?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(variantsList)
+  });
+}
+
 export async function fetchAllVariantPositions(geneName: string, speciesName: string) {
   return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }

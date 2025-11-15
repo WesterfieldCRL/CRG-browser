@@ -21,6 +21,7 @@ interface NavigatableBarProps {
   variants: string[];
   tfbs_color_map: { [key: string]: string };
   enh_prom_color_map: { [key: string]: string};
+  zoomToRange?: { start: number; end: number } | null;
 }
 
 interface ColorSegment {
@@ -45,6 +46,7 @@ export default function NavigatableBar({
   variants,
   tfbs_color_map,
   enh_prom_color_map,
+  zoomToRange,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
@@ -155,6 +157,25 @@ export default function NavigatableBar({
       setLoading(false);
     }
   }, [tfbsSequence, enhancerPromoterSequence]);
+
+  useEffect(() => {
+    if (zoomToRange && !loading) {
+      setStartValue(zoomToRange.start);
+      setEndValue(zoomToRange.end);
+    }
+  }, [zoomToRange]);
+
+  useEffect(() => {
+    if (zoomToRange && !loading && startValue === zoomToRange.start && endValue === zoomToRange.end) {
+      loadSequences();
+      if (zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_VIEW) {
+        setRenderNucleotides(true);
+        loadNucleotides();
+      } else {
+        setRenderNucleotides(false);
+      }
+    }
+  }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
     loadSequences();
