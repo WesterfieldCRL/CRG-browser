@@ -18,6 +18,10 @@ class Offsets(BaseModel):
     offsets: dict[str, int] = Field(..., description="Dictionary mapping species to their offsets alligned starting at zero")
     max_value: int = Field(..., description="The rightmost value of all the alligned sequence (the leftmost will be zero)")
 
+class NucleotideSegment(BaseModel):
+    nucleotide: str = Field(..., description="single char representing a nucelotide letter")
+    width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
+
 router = APIRouter(prefix="/sequences")
 
 @router.get("/id", response_model=int)
@@ -206,15 +210,40 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
 
     return Offsets(offsets = offsets, max_value = max_right_value)
 
-@router.get("/min_and_max", response_model=tuple[int, int])
-async def get_sequence_max_and_min(gene_name: str, species_name: str) -> tuple[int, int]:
+# @router.get("/min_and_max", response_model=tuple[int, int])
+# async def get_sequence_max_and_min(gene_name: str, species_name: str) -> tuple[int, int]:
     
-    offsets, original_coordinates = await asyncio.gather(
-        get_sequence_offsets(gene_name),
-        get_sequence_coordinate(gene_name, species_name)
-    )
+#     offsets, original_coordinates = await asyncio.gather(
+#         get_sequence_offsets(gene_name),
+#         get_sequence_coordinate(gene_name, species_name)
+#     )
 
-    max = original_coordinates.end + offsets.offsets[species_name]
-    min = original_coordinates.start + offsets.offsets[species_name]
+#     max = original_coordinates.end + offsets.offsets[species_name]
+#     min = original_coordinates.start + offsets.offsets[species_name]
 
-    return (min, max)
+#     return (min, max)
+
+@router.get("/mapped_nucleotides", response_model=list[NucleotideSegment])
+async def get_mapped_nucleotides(gene_name: str, species_name: str, start: int, end: int, show_letters: bool) -> list[NucleotideSegment]:
+
+    sequence = await get_sequence_range(gene_name, species_name, start, end)
+
+    nucleotide_bar: list[NucleotideSegment] = []
+
+    for i in range(len(sequence)):
+
+        if i > 0 and not show_letters:
+            if nucleotide_bar[-1].nucleotide == sequence[i]:
+                nucleotide_bar[-1].width += 1
+            else:
+                nucleotide_bar.append(NucleotideSegment(nucleotide=sequence[i], width=1))
+        else:
+            nucleotide_bar.append(NucleotideSegment(nucleotide=sequence[i], width=1))
+
+
+    # Convert widths to percentages
+    total_width = len(sequence)
+    for segment in nucleotide_bar:
+        segment.width = (segment.width / total_width) * 100
+
+    return nucleotide_bar
