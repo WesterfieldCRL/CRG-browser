@@ -86,6 +86,22 @@ export async function fetchTFBSBars(geneName: string, speciesName: string, eleme
   });
 }
 
+export async function fetchVariantBars(geneName: string, speciesName: string, variantTypes: string[], start: number, end: number) {
+  const params = new URLSearchParams({
+    gene_name: geneName,
+    species_name: speciesName,
+    start: start.toString(),
+    end: end.toString()
+  });
+  return fetchJSON(`/elements/mapped_Variants?${params}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(variantTypes)
+  });
+}
+
 export async function fetchNucleotides(geneName: string, speciesName: string, start: number, end: number) {
   return fetchJSON(`/sequences/range?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}&start=${start}&end=${end}`);
 }
@@ -112,6 +128,12 @@ export async function fetchVariants(geneName: string) {
 export async function fetchAllVariantPositions(geneName: string, speciesName: string) {
   return fetchJSON(`/variants/positions?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}`);
 }
+
+export async function fetchNucleotideBar(geneName: string, speciesName: string, start: number, end: number, showLetters: boolean) {
+  return fetchJSON(`/sequences/mapped_nucleotides?gene_name=${encodeURIComponent(geneName)}&species_name=${encodeURIComponent(speciesName)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&show_letters=${encodeURIComponent(showLetters)}`);
+} 
+
+
 
 /**
  * Generates a color mapping for TFBS names

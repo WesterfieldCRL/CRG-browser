@@ -6,16 +6,33 @@ import {
   fetchGenes,
   fetchSpecies,
   fetchTFBS,
+  fetchVariants,
   generateTFBSColorMap,
 } from "../utils/services";
 
 const Enh_Prom_Color_Mapping = {
   Enh: "stripes",
   Prom: "bars",
-  none: "#8a8a8aff",
 };
 
-//TODO: add variants cause I cant be bothered to deal with that rn
+const Nucleotides_Color_Mapping = {
+  A: "#00ff2aff",
+  T: "#ff0000ff",
+  G: "#ca8606ff",
+  C: "#003ee7ff",
+};
+
+// I just want all the variants to be one color
+const Variants_Color_Mapping = () =>
+  new Proxy({}, {
+    get(_, prop: string) {
+      if (prop === "none") {
+        return undefined;       // return nothing
+      }
+      return "#555555ff";
+    }
+  }) as { [key: string]: string };
+
 export default function GenomeBrowserPage() {
   const [color_map, setColorMap] = useState<{ [key: string]: string }>(null);
   const [loading, setLoading] = useState(true);
@@ -23,6 +40,8 @@ export default function GenomeBrowserPage() {
   const [species, setSpecies] = useState<Array<string>>(null);
   const [allTFBS, setAllTFBS] = useState<Array<string>>(null);
   const [selectedTFBS, setSelectedTFBS] = useState<Array<string>>(null);
+  const [allVariants, setAllVariants] = useState<Array<string>>(null);
+  const [selectedVariants, setSelectedVariants] = useState<Array<string>>(null);
   const [selectedGene, setSelectedGene] = useState<string>(null);
 
   async function loadGenesAndSpecies() {
@@ -38,6 +57,10 @@ export default function GenomeBrowserPage() {
     const tfbs_list = await fetchTFBS(selectedGene);
     setAllTFBS(tfbs_list);
     setSelectedTFBS(tfbs_list);
+
+    const variants_list = await fetchVariants(selectedGene);
+    setAllVariants(variants_list);
+    setSelectedVariants(variants_list);
   }
 
   useEffect(() => {
@@ -51,10 +74,10 @@ export default function GenomeBrowserPage() {
   }, [genes, species]);
 
   useEffect(() => {
-    if (selectedTFBS !== null && allTFBS !== null) {
+    if (selectedTFBS !== null && allTFBS !== null && selectedVariants !== null && allVariants !== null) {
       setColorMap(generateTFBSColorMap(selectedTFBS));
     }
-  }, [selectedTFBS, allTFBS]);
+  }, [selectedTFBS, allTFBS, selectedVariants, allVariants]);
 
   useEffect(() => {
     if (color_map !== null) {
@@ -74,9 +97,11 @@ export default function GenomeBrowserPage() {
                 enh={true}
                 prom={true}
                 TFBS={selectedTFBS}
-                variants={[]}
+                variants={selectedVariants}
                 tfbs_color_map={color_map}
                 enh_prom_color_map={Enh_Prom_Color_Mapping}
+                nucleotides_color_map={Nucleotides_Color_Mapping}
+                variants_color_map={Variants_Color_Mapping()}
               ></NavigatableBar>
             </React.Fragment>
           ))}
