@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import NavigatableBar from "./NavigatableBar";
+import Accordion from 'react-bootstrap/Accordion';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import {
   fetchGenes,
   fetchSpecies,
@@ -227,7 +229,7 @@ export default function GeneBrowserPage() {
     };
   }, [variantPositions, collapsedSpecies, collapsedVariantTypes]);
 
-  const handleEditFilters = () => {
+  const updateURLParams = () => {
     const params = new URLSearchParams();
     params.set('gene', selectedGene);
 
@@ -247,8 +249,53 @@ export default function GeneBrowserPage() {
       params.set('variants', selectedVariants.join(','));
     }
 
-    router.push(`/browser?${params.toString()}`);
+    router.replace(`/browser/view?${params.toString()}`);
   };
+
+  const handleTFBSToggle = (tfbs: string) => {
+    const newSelection = selectedTFBS.includes(tfbs)
+      ? selectedTFBS.filter(t => t !== tfbs)
+      : [...selectedTFBS, tfbs];
+    setSelectedTFBS(newSelection);
+  };
+
+  const handleTFBSSelectAll = () => {
+    if (selectedTFBS.length === allTFBS.length) {
+      setSelectedTFBS([]);
+    } else {
+      setSelectedTFBS([...allTFBS]);
+    }
+  };
+
+  const handleVariantToggle = (variant: string) => {
+    const newSelection = selectedVariants.includes(variant)
+      ? selectedVariants.filter(v => v !== variant)
+      : [...selectedVariants, variant];
+    setSelectedVariants(newSelection);
+  };
+
+  const handleVariantSelectAll = () => {
+    if (selectedVariants.length === allVariants.length) {
+      setSelectedVariants([]);
+    } else {
+      setSelectedVariants([...allVariants]);
+    }
+  };
+
+  const handleEnhancerToggle = (checked: boolean) => {
+    setShowEnhancers(checked);
+  };
+
+  const handlePromoterToggle = (checked: boolean) => {
+    setShowPromoters(checked);
+  };
+
+  // Update URL when filters change
+  useEffect(() => {
+    if (!loading && selectedGene) {
+      updateURLParams();
+    }
+  }, [selectedTFBS, selectedVariants, showEnhancers, showPromoters]);
 
   const handleVariantClick = (speciesName: string, start: number, end: number) => {
     setZoomRanges({
@@ -293,65 +340,50 @@ export default function GeneBrowserPage() {
 
               {selectedVariants && selectedVariants.length > 0 && Object.keys(variantPositions).length > 0 ? (
                 <div className="variant-list">
-                  {species.map((speciesName) => {
-                    const totalInstances = variantPositions[speciesName]?.variants
-                      ? Object.values(variantPositions[speciesName].variants).reduce((sum, instances) => sum + instances.length, 0)
-                      : 0;
-                    const isCollapsed = collapsedSpecies[speciesName];
+                  <Accordion alwaysOpen>
+                    {species.map((speciesName, speciesIdx) => {
+                      const totalInstances = variantPositions[speciesName]?.variants
+                        ? Object.values(variantPositions[speciesName].variants).reduce((sum, instances) => sum + instances.length, 0)
+                        : 0;
 
-                    return (
-                      <div key={speciesName} className="species-section" data-species={speciesName}>
-                        <div
-                          className="species-header"
-                          onClick={() => toggleSpeciesCollapse(speciesName)}
-                        >
-                          <span className={`species-chevron ${isCollapsed ? 'collapsed' : 'expanded'}`}>⌄</span>
-                          <h4 className="species-name">{speciesName}</h4>
-                          <span className="species-count">({totalInstances})</span>
-                        </div>
-
-                        {!isCollapsed && (
-                          <>
+                      return (
+                        <Accordion.Item eventKey={speciesIdx.toString()} key={speciesName} className="species-section" data-species={speciesName}>
+                          <Accordion.Header className="species-header-accordion">
+                            <h4 className="species-name">{speciesName}</h4>
+                            <span className="species-count">({totalInstances})</span>
+                          </Accordion.Header>
+                          <Accordion.Body className="species-body">
                             {variantPositions[speciesName] && variantPositions[speciesName].variants ? (
-                              Object.entries(variantPositions[speciesName].variants).map(([variantType, instances]: [string, any[]]) => {
-                                const isVariantTypeCollapsed = collapsedVariantTypes[speciesName]?.[variantType] || false;
-
-                                return (
-                                  <div key={variantType} className="variant-type-section" data-variant-type={variantType}>
-                                    <div
-                                      className="variant-type-header"
-                                      onClick={() => toggleVariantType(speciesName, variantType)}
-                                    >
-                                      <span className={`variant-type-chevron ${isVariantTypeCollapsed ? 'collapsed' : 'expanded'}`}>⌄</span>
+                              <Accordion alwaysOpen>
+                                {Object.entries(variantPositions[speciesName].variants).map(([variantType, instances]: [string, any[]], variantIdx) => (
+                                  <Accordion.Item eventKey={variantIdx.toString()} key={variantType} className="variant-type-section" data-variant-type={variantType}>
+                                    <Accordion.Header className="variant-type-header-accordion">
                                       <span className="variant-type-name">{variantType}</span>
                                       <span className="variant-type-count">({instances.length})</span>
-                                    </div>
-
-                                    {!isVariantTypeCollapsed && (
-                                      <div className="variant-instances">
-                                        {instances.map((instance, idx) => (
-                                          <div
-                                            key={idx}
-                                            className="variant-instance"
-                                            onClick={() => handleVariantClick(speciesName, instance.start, instance.end)}
-                                          >
-                                            <span className="variant-type-label">{variantType}:</span>
-                                            <span className="instance-position">{instance.start}-{instance.end}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })
+                                    </Accordion.Header>
+                                    <Accordion.Body className="variant-instances">
+                                      {instances.map((instance, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="variant-instance"
+                                          onClick={() => handleVariantClick(speciesName, instance.start, instance.end)}
+                                        >
+                                          <span className="variant-type-label">{variantType}:</span>
+                                          <span className="instance-position">{instance.start}-{instance.end}</span>
+                                        </div>
+                                      ))}
+                                    </Accordion.Body>
+                                  </Accordion.Item>
+                                ))}
+                              </Accordion>
                             ) : (
                               <p className="no-instances">No instances found</p>
                             )}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                          </Accordion.Body>
+                        </Accordion.Item>
+                      );
+                    })}
+                  </Accordion>
                 </div>
               ) : selectedVariants && selectedVariants.length > 0 ? (
                 <p className="loading-variants">Loading variant positions...</p>
@@ -370,43 +402,77 @@ export default function GeneBrowserPage() {
 
               {!filtersCollapsed && (
                 <div className="filter-bar-content">
-                  <div className="filter-summary">
-                    <div className="filter-group">
-                      <span className="filter-label">Enh/Pro:</span>
-                      <span className="filter-value">
-                        {showEnhancers && <span className="filter-tag">Enhancers</span>}
-                        {showPromoters && <span className="filter-tag">Promoters</span>}
-                        {!showEnhancers && !showPromoters && <span className="filter-empty">None selected</span>}
-                      </span>
+                  <div className="filter-controls">
+                    {/* Enhancers and Promoters */}
+                    <div className="filter-section-inline">
+                      <span className="filter-section-label">Regulatory Elements:</span>
+                      <div className="checkbox-group-inline">
+                        <label className="checkbox-label-inline">
+                          <input
+                            type="checkbox"
+                            checked={showEnhancers}
+                            onChange={(e) => handleEnhancerToggle(e.target.checked)}
+                          />
+                          <span>Enhancers</span>
+                        </label>
+                        <label className="checkbox-label-inline">
+                          <input
+                            type="checkbox"
+                            checked={showPromoters}
+                            onChange={(e) => handlePromoterToggle(e.target.checked)}
+                          />
+                          <span>Promoters</span>
+                        </label>
+                      </div>
                     </div>
 
-                    {selectedTFBS && selectedTFBS.length > 0 && (
-                      <div className="filter-group">
-                        <span className="filter-label">TFBS ({selectedTFBS.length}):</span>
-                        <span className="filter-value">
-                          {selectedTFBS.map(tfbs => (
-                            <span key={tfbs} className="filter-tag" style={{ backgroundColor: color_map[tfbs], color: 'white' }}>
-                              {tfbs}
-                            </span>
+                    {/* TFBS Selection */}
+                    {allTFBS && allTFBS.length > 0 && (
+                      <div className="filter-section-inline">
+                        <div className="filter-section-header">
+                          <span className="filter-section-label">TFBS ({selectedTFBS.length}/{allTFBS.length}):</span>
+                          <button className="select-all-btn-inline" onClick={handleTFBSSelectAll}>
+                            {selectedTFBS.length === allTFBS.length ? 'Deselect All' : 'Select All'}
+                          </button>
+                        </div>
+                        <div className="checkbox-grid-inline">
+                          {allTFBS.map(tfbs => (
+                            <label key={tfbs} className="checkbox-label-inline">
+                              <input
+                                type="checkbox"
+                                checked={selectedTFBS.includes(tfbs)}
+                                onChange={() => handleTFBSToggle(tfbs)}
+                              />
+                              <span style={{ color: color_map[tfbs] }}>{tfbs}</span>
+                            </label>
                           ))}
-                        </span>
+                        </div>
                       </div>
                     )}
 
-                    {selectedVariants && selectedVariants.length > 0 && (
-                      <div className="filter-group">
-                        <span className="filter-label">Variants ({selectedVariants.length}):</span>
-                        <span className="filter-value">
-                          {selectedVariants.map(variant => (
-                            <span key={variant} className="filter-tag">{variant}</span>
+                    {/* Variants Selection */}
+                    {allVariants && allVariants.length > 0 && (
+                      <div className="filter-section-inline">
+                        <div className="filter-section-header">
+                          <span className="filter-section-label">Variants ({selectedVariants.length}/{allVariants.length}):</span>
+                          <button className="select-all-btn-inline" onClick={handleVariantSelectAll}>
+                            {selectedVariants.length === allVariants.length ? 'Deselect All' : 'Select All'}
+                          </button>
+                        </div>
+                        <div className="checkbox-grid-inline">
+                          {allVariants.map(variant => (
+                            <label key={variant} className="checkbox-label-inline">
+                              <input
+                                type="checkbox"
+                                checked={selectedVariants.includes(variant)}
+                                onChange={() => handleVariantToggle(variant)}
+                              />
+                              <span>{variant}</span>
+                            </label>
                           ))}
-                        </span>
+                        </div>
                       </div>
                     )}
-
-                    <button className="edit-filters-btn" onClick={handleEditFilters}>
-                      Edit Filters
-                    </button>
                   </div>
                 </div>
               )}
@@ -495,64 +561,86 @@ export default function GeneBrowserPage() {
           padding: 1.5rem 2rem;
         }
 
-        .filter-summary {
+        .filter-controls {
           display: flex;
           flex-direction: column;
           gap: 1.5rem;
         }
 
-        .filter-group {
+        .filter-section-inline {
           display: flex;
-          align-items: flex-start;
-          gap: 1rem;
-          flex-wrap: wrap;
+          flex-direction: column;
+          gap: 0.75rem;
         }
 
-        .filter-label {
+        .filter-section-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .filter-section-label {
           font-weight: 600;
           color: var(--label-color);
-          min-width: 150px;
+          font-size: 0.9375rem;
         }
 
-        .filter-value {
+        .checkbox-group-inline {
           display: flex;
+          gap: 1.5rem;
           flex-wrap: wrap;
-          gap: 0.5rem;
-          flex: 1;
         }
 
-        .filter-tag {
-          display: inline-block;
-          padding: 0.25rem 0.75rem;
-          background-color: var(--button-bg);
-          color: white;
-          border-radius: 16px;
+        .checkbox-grid-inline {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 0.75rem;
+        }
+
+        .checkbox-label-inline {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          cursor: pointer;
+          padding: 0.4rem 0.6rem;
+          border-radius: 6px;
+          transition: background-color 0.2s ease;
           font-size: 0.875rem;
+        }
+
+        .checkbox-label-inline:hover {
+          background-color: var(--hover-bg, rgba(0, 0, 0, 0.05));
+        }
+
+        .checkbox-label-inline input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+          accent-color: var(--button-bg);
+        }
+
+        .checkbox-label-inline span {
+          font-size: 0.875rem;
+          color: var(--text);
           font-weight: 500;
         }
 
-        .filter-empty {
-          color: var(--info-color);
-          font-style: italic;
-        }
-
-        .edit-filters-btn {
-          align-self: flex-start;
-          padding: 0.75rem 1.5rem;
+        .select-all-btn-inline {
+          padding: 0.4rem 0.8rem;
           background-color: var(--button-bg);
           color: white;
           border: none;
-          border-radius: 8px;
-          font-size: 1rem;
+          border-radius: 6px;
+          font-size: 0.8125rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
         }
 
-        .edit-filters-btn:hover {
+        .select-all-btn-inline:hover {
           background-color: var(--button-hover);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         .collapse-toggle-wrapper {
@@ -816,47 +904,53 @@ export default function GeneBrowserPage() {
         }
 
         .species-section {
-          margin-bottom: 1.5rem;
-          padding-bottom: 1rem;
-          border-bottom: 2px solid var(--border-color);
-        }
-
-        .species-section:last-child {
-          border-bottom: none;
-        }
-
-        .species-header {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          cursor: pointer;
-          padding: 0.75rem 0.5rem;
-          border-radius: 6px;
-          transition: all 0.2s ease;
           margin-bottom: 1rem;
-          background: var(--container-bg);
-          border-left: 4px solid var(--button-bg);
+          border: none;
+          background: transparent;
         }
 
-        .species-header:hover {
+        .species-section .accordion-item {
+          background: transparent;
+          border: none;
+        }
+
+        .species-section .accordion-button {
+          background: var(--container-bg);
+          color: var(--heading-color);
+          border-left: 4px solid var(--button-bg);
+          border-radius: 6px;
+          padding: 0.75rem 0.5rem;
+          font-size: 1rem;
+          font-weight: 700;
+          transition: all 0.2s ease;
+        }
+
+        .species-section .accordion-button:not(.collapsed) {
+          background: var(--main-bg);
+          border-left-color: var(--accent, #2db4b6);
+          box-shadow: none;
+        }
+
+        .species-section .accordion-button:hover {
           background: var(--main-bg);
           border-left-color: var(--accent, #2db4b6);
         }
 
-        .species-chevron {
-          font-size: 1.4rem;
-          font-weight: bold;
-          transition: transform 0.3s ease;
-          display: inline-block;
-          color: var(--button-bg);
+        .species-section .accordion-button:focus {
+          box-shadow: none;
+          border-color: var(--accent, #2db4b6);
         }
 
-        .species-chevron.expanded {
-          transform: rotate(0deg);
+        .species-section .accordion-body {
+          padding: 0.5rem 0;
+          background: transparent;
         }
 
-        .species-chevron.collapsed {
-          transform: rotate(-90deg);
+        .species-header-accordion {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          width: 100%;
         }
 
         .species-name {
@@ -879,43 +973,47 @@ export default function GeneBrowserPage() {
         }
 
         .variant-type-section {
-          margin-bottom: 1rem;
-        }
-
-        .variant-type-header {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: var(--heading-color);
           margin-bottom: 0.5rem;
           margin-left: 1rem;
-          padding: 0.4rem 0.5rem;
+        }
+
+        .variant-type-section .accordion-item {
           background: transparent;
+          border: none;
+        }
+
+        .variant-type-section .accordion-button {
+          background: transparent;
+          color: var(--heading-color);
           border-radius: 4px;
-          cursor: pointer;
+          padding: 0.4rem 0.5rem;
+          font-size: 0.85rem;
+          font-weight: 500;
           transition: background 0.2s ease;
         }
 
-        .variant-type-header:hover {
+        .variant-type-section .accordion-button:not(.collapsed) {
+          background: var(--container-bg);
+          box-shadow: none;
+        }
+
+        .variant-type-section .accordion-button:hover {
           background: var(--container-bg);
         }
 
-        .variant-type-chevron {
-          font-size: 0.9rem;
-          font-weight: bold;
-          transition: transform 0.3s ease;
-          display: inline-block;
-          color: var(--info-color);
+        .variant-type-section .accordion-button:focus {
+          box-shadow: none;
         }
 
-        .variant-type-chevron.expanded {
-          transform: rotate(0deg);
+        .variant-type-section .accordion-body {
+          padding: 0.25rem 0;
         }
 
-        .variant-type-chevron.collapsed {
-          transform: rotate(-90deg);
+        .variant-type-header-accordion {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          width: 100%;
         }
 
         .variant-type-name {
