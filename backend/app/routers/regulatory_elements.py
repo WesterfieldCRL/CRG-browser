@@ -78,6 +78,9 @@ async def get_variants_dict(gene_name: str, species_name: str, variants_list: li
                 variants_dict[variant_name] = []
             for item in result:
                 variants_dict[variant_name].append(Element(type=item[0], start=item[1], end=item[2], chromosome=item[3]))
+
+            if len(variants_dict[variant_name]) == 0:
+                del variants_dict[variant_name]
         
 
     return VariantsDict(variants=variants_dict)
