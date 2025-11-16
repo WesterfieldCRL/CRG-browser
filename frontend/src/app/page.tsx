@@ -112,13 +112,13 @@ export default function Page() {
                 <span className="step-number">2</span>
                 <div className="step-content">
                   <h4>Configure Filters</h4>
-                  <p>Select which regulatory elements to display:</p>
+                  <p>Use the collapsible filter bar at the top to select which regulatory elements to display:</p>
                   <ul>
-                    <li><strong>Transcription Factor Binding Sites (TFBS)</strong> - Choose specific binding sites to visualize</li>
-                    <li><strong>Enhancers</strong> - Toggle enhancer region display</li>
-                    <li><strong>Promoters</strong> - Toggle promoter region display</li>
-                    <li><strong>Variant Categories</strong> - Select genetic variants to analyze</li>
+                    <li><strong>Regulatory Elements</strong> - Toggle Enhancers and Promoters</li>
+                    <li><strong>Transcription Factor Binding Sites (TFBS)</strong> - Select specific binding sites with &ldquo;Select All&rdquo; option</li>
+                    <li><strong>Variants</strong> - Choose genetic variant categories to analyze with &ldquo;Select All&rdquo; option</li>
                   </ul>
+                  <p>The filter bar can be collapsed using the pull tab to save screen space while browsing.</p>
                 </div>
               </div>
 
@@ -128,11 +128,13 @@ export default function Page() {
                   <h4>Explore the Browser</h4>
                   <p>View aligned sequences across three species (Human, Mouse, Macaque) with interactive features:</p>
                   <ul>
-                    <li><strong>Zoom Navigation</strong> - Enter min/max values to focus on specific regions</li>
-                    <li><strong>Reset View</strong> - Return to full gene view with one click</li>
-                    <li><strong>Color-Coded Elements</strong> - Each TFBS type has a unique color for easy identification</li>
-                    <li><strong>Nucleotide View</strong> - Zoom in to 100bp or less to see individual nucleotides</li>
-                    <li><strong>Interactive Tooltips</strong> - Hover over elements to see type, start, and end positions</li>
+                    <li><strong>Variant Sidebar</strong> - Hover over the left sidebar to expand and view variant locations by species and type. Click any variant to zoom directly to that location.</li>
+                    <li><strong>Zoom Navigation</strong> - Enter min/max values to focus on specific genomic regions</li>
+                    <li><strong>Reset View</strong> - Return to full gene view with the &ldquo;Reset to Gene&rdquo; button</li>
+                    <li><strong>Color-Coded Elements</strong> - Each element type (TFBS, Enhancers, Promoters, Variants) has unique colors with a legend for reference</li>
+                    <li><strong>Nucleotide View</strong> - Zoom in to ≤1000bp to see nucleotide bars, or ≤100bp to view individual nucleotide letters</li>
+                    <li><strong>Interactive Elements</strong> - Click on any regulatory element to zoom to that region at 100bp resolution</li>
+                    <li><strong>Direct Editing</strong> - All filter changes update the view in real-time without page navigation</li>
                   </ul>
                 </div>
               </div>
@@ -177,8 +179,10 @@ export default function Page() {
             <ul className="feature-list">
               <li><strong>Aligned Sequences</strong> - Multi-species sequence alignments with synchronized coordinates</li>
               <li><strong>Regulatory Elements</strong> - Comprehensive annotation of enhancers, promoters, and TFBS</li>
-              <li><strong>Genetic Variants</strong> - Catalogued variant positions and categories</li>
+              <li><strong>Genetic Variants</strong> - Catalogued variant positions and categories with clickable sidebar navigation</li>
               <li><strong>Conservation Analysis</strong> - PhastCons and PhyloP conservation scores</li>
+              <li><strong>Interactive Navigation</strong> - Collapsible filter bar, expandable variant sidebar, and zoom controls</li>
+              <li><strong>Real-time Updates</strong> - Filter changes update visualizations instantly without page reloads</li>
               <li><strong>Responsive Design</strong> - Optimized for desktop browsers (mobile not currently supported)</li>
             </ul>
           </div>
