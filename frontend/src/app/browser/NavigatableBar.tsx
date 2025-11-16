@@ -7,6 +7,7 @@ import {
   fetchNucleotides,
   fetchSequenceNums,
   fetchTFBSBars,
+  fetchVariantBars,
 } from "../utils/services";
 import Slider from "rc-slider";
 import { spec } from "node:test/reporters";
@@ -103,6 +104,15 @@ export default function NavigatableBar({
       end
     );
     setEnhancerPromoterSequence(enh_proms);
+
+    const vars = await fetchVariantBars(gene,
+      species,
+      variants,
+      start,
+      end
+    );
+
+    setVariantsSequence(vars);
   }
 
   async function loadNucleotides(
@@ -164,10 +174,10 @@ export default function NavigatableBar({
   useEffect(() => {
     if (!loading) return;
 
-    if (enhancerPromoterSequence !== null && tfbsSequence !== null) {
+    if (enhancerPromoterSequence !== null && tfbsSequence !== null && variantsSequence !== null) {
       setLoading(false);
     }
-  }, [tfbsSequence, enhancerPromoterSequence]);
+  }, [tfbsSequence, enhancerPromoterSequence, variantsSequence]);
 
   const handleSubmit = () => {
     loadSequences(startValue, endValue);
@@ -440,6 +450,7 @@ export default function NavigatableBar({
               </label>
               <div style={{ minWidth: 0 }}>
                 {renderNucleotides ? (
+                  <>
                   <ColorBar
                     segments={nucleotides}
                     color_mapping={nucleotides_color_map}
@@ -447,6 +458,13 @@ export default function NavigatableBar({
                     letters={renderNucleotideLetters}
                     width="100%"
                   />
+                  <ColorBar
+                  segments={variantsSequence}
+                  color_mapping={variants_color_map}
+                  width="100%"
+                  onSegmentClick={handleSegmentClick}
+                />
+                </>
                 ) : (
                   <div
                     style={{
@@ -465,34 +483,6 @@ export default function NavigatableBar({
                     Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides and ≤{NUCLEOTIDES_LETTERS}bp to view letters
                   </div>
                 )}
-              </div>
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "200px 1fr",
-                gap: "16px",
-                padding: "16px 0",
-                borderBottom: "2px solid var(--border)",
-              }}
-            >
-              <label
-                style={{
-                  alignSelf: "center",
-                  color: "var(--text)",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                }}
-              >
-                Variants
-              </label>
-              <div style={{ minWidth: 0 }}>
-                <ColorBar
-                  segments={enhancerPromoterSequence}
-                  color_mapping={enh_prom_color_map}
-                  width="100%"
-                  onSegmentClick={handleSegmentClick}
-                />
               </div>
             </div>
           </div>

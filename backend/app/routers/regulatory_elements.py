@@ -107,7 +107,7 @@ async def get_elements(model: type, gene_name: str, species_name: str, model_typ
     return model_list
 
 # Returns a list of all variant locations within the given parameters
-@router.post("filtered_variants", response_model=list[Element])
+@router.post("/filtered_variants", response_model=list[Element])
 async def get_filtered_variants(gene_name: str, species_name: str, variants_types: list[str], start: int, end: int) -> list[Element]:
     return await get_elements(Variants, gene_name, species_name, variants_types, start, end)
 
@@ -197,6 +197,10 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         # using prev_index instead of element.start to handle overlaps
         element_width = ((relative_end - prev_index) / total_width) * 100
+
+        if element_width == 0:
+            element_width = ((1) / total_width) * 100 # Variants have start and end the same if one nucleotide so this should handle that
+
         if element_width > 0:
             color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end, chromosome=(element.chromosome)))
             curr_width += element_width
