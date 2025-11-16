@@ -3,8 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import NavigatableBar from "./NavigatableBar";
-import Accordion from 'react-bootstrap/Accordion';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import {
   fetchGenes,
   fetchSpecies,
@@ -298,9 +296,32 @@ export default function GeneBrowserPage() {
   }, [selectedTFBS, selectedVariants, showEnhancers, showPromoters]);
 
   const handleVariantClick = (speciesName: string, start: number, end: number) => {
+    // Expand to at least 100bp range centered on the variant
+    const NUCLEOTIDES_LETTERS = 100;
+    const variantLength = end - start;
+
+    let zoomStart, zoomEnd;
+
+    if (variantLength < NUCLEOTIDES_LETTERS) {
+      // Center the variant in a 100bp window
+      const padding = Math.floor((NUCLEOTIDES_LETTERS - variantLength) / 2);
+      zoomStart = start - padding;
+      zoomEnd = end + padding;
+
+      // Adjust if we need exactly 100bp
+      const actualLength = zoomEnd - zoomStart;
+      if (actualLength < NUCLEOTIDES_LETTERS) {
+        zoomEnd += (NUCLEOTIDES_LETTERS - actualLength);
+      }
+    } else {
+      // Use the variant range as-is if it's already large enough
+      zoomStart = start;
+      zoomEnd = end;
+    }
+
     setZoomRanges({
       ...zoomRanges,
-      [speciesName]: { start, end }
+      [speciesName]: { start: zoomStart, end: zoomEnd }
     });
   };
 
@@ -340,50 +361,65 @@ export default function GeneBrowserPage() {
 
               {selectedVariants && selectedVariants.length > 0 && Object.keys(variantPositions).length > 0 ? (
                 <div className="variant-list">
-                  <Accordion alwaysOpen>
-                    {species.map((speciesName, speciesIdx) => {
-                      const totalInstances = variantPositions[speciesName]?.variants
-                        ? Object.values(variantPositions[speciesName].variants).reduce((sum, instances) => sum + instances.length, 0)
-                        : 0;
+                  {species.map((speciesName) => {
+                    const totalInstances = variantPositions[speciesName]?.variants
+                      ? Object.values(variantPositions[speciesName].variants).reduce((sum, instances) => sum + instances.length, 0)
+                      : 0;
+                    const isCollapsed = collapsedSpecies[speciesName];
 
-                      return (
-                        <Accordion.Item eventKey={speciesIdx.toString()} key={speciesName} className="species-section" data-species={speciesName}>
-                          <Accordion.Header className="species-header-accordion">
-                            <h4 className="species-name">{speciesName}</h4>
-                            <span className="species-count">({totalInstances})</span>
-                          </Accordion.Header>
-                          <Accordion.Body className="species-body">
+                    return (
+                      <div key={speciesName} className="species-section" data-species={speciesName}>
+                        <div
+                          className="species-header"
+                          onClick={() => toggleSpeciesCollapse(speciesName)}
+                        >
+                          <span className={`species-chevron ${isCollapsed ? 'collapsed' : 'expanded'}`}>⌄</span>
+                          <h4 className="species-name">{speciesName}</h4>
+                          <span className="species-count">({totalInstances})</span>
+                        </div>
+
+                        {!isCollapsed && (
+                          <>
                             {variantPositions[speciesName] && variantPositions[speciesName].variants ? (
-                              <Accordion alwaysOpen>
-                                {Object.entries(variantPositions[speciesName].variants).map(([variantType, instances]: [string, any[]], variantIdx) => (
-                                  <Accordion.Item eventKey={variantIdx.toString()} key={variantType} className="variant-type-section" data-variant-type={variantType}>
-                                    <Accordion.Header className="variant-type-header-accordion">
+                              Object.entries(variantPositions[speciesName].variants).map(([variantType, instances]: [string, any[]]) => {
+                                const isVariantTypeCollapsed = collapsedVariantTypes[speciesName]?.[variantType] || false;
+
+                                return (
+                                  <div key={variantType} className="variant-type-section" data-variant-type={variantType}>
+                                    <div
+                                      className="variant-type-header"
+                                      onClick={() => toggleVariantType(speciesName, variantType)}
+                                    >
+                                      <span className={`variant-type-chevron ${isVariantTypeCollapsed ? 'collapsed' : 'expanded'}`}>⌄</span>
                                       <span className="variant-type-name">{variantType}</span>
                                       <span className="variant-type-count">({instances.length})</span>
-                                    </Accordion.Header>
-                                    <Accordion.Body className="variant-instances">
-                                      {instances.map((instance, idx) => (
-                                        <div
-                                          key={idx}
-                                          className="variant-instance"
-                                          onClick={() => handleVariantClick(speciesName, instance.start, instance.end)}
-                                        >
-                                          <span className="variant-type-label">{variantType}:</span>
-                                          <span className="instance-position">{instance.start}-{instance.end}</span>
-                                        </div>
-                                      ))}
-                                    </Accordion.Body>
-                                  </Accordion.Item>
-                                ))}
-                              </Accordion>
+                                    </div>
+
+                                    {!isVariantTypeCollapsed && (
+                                      <div className="variant-instances">
+                                        {instances.map((instance, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="variant-instance"
+                                            onClick={() => handleVariantClick(speciesName, instance.start, instance.end)}
+                                          >
+                                            <span className="variant-type-label">{variantType}:</span>
+                                            <span className="instance-position">{instance.start}-{instance.end}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })
                             ) : (
                               <p className="no-instances">No instances found</p>
                             )}
-                          </Accordion.Body>
-                        </Accordion.Item>
-                      );
-                    })}
-                  </Accordion>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ) : selectedVariants && selectedVariants.length > 0 ? (
                 <p className="loading-variants">Loading variant positions...</p>
@@ -405,8 +441,10 @@ export default function GeneBrowserPage() {
                   <div className="filter-controls">
                     {/* Enhancers and Promoters */}
                     <div className="filter-section-inline">
-                      <span className="filter-section-label">Regulatory Elements:</span>
-                      <div className="checkbox-group-inline">
+                      <div className="filter-section-header">
+                        <span className="filter-section-label">Regulatory Elements:</span>
+                      </div>
+                      <div className="checkbox-grid-inline">
                         <label className="checkbox-label-inline">
                           <input
                             type="checkbox"
@@ -520,12 +558,13 @@ export default function GeneBrowserPage() {
           position: sticky;
           top: 0;
           z-index: 100;
-          padding: 10px 20px 0 20px;
+          padding: 10px 20px 10px 20px;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
           background: var(--main-bg);
           margin-left: 60px;
+          margin-bottom: 10px;
         }
 
         .filter-bar {
@@ -546,66 +585,72 @@ export default function GeneBrowserPage() {
         }
 
         .filter-bar-header {
-          padding: 1rem 2rem;
+          padding: 0.5rem 1.5rem;
           border-bottom: 1px solid var(--border-color);
         }
 
         .filter-bar-title {
           margin: 0;
-          font-size: 1.5rem;
+          font-size: 1.125rem;
           font-weight: 700;
           color: var(--heading-color);
         }
 
         .filter-bar-content {
-          padding: 1.5rem 2rem;
+          padding: 0.75rem 1.5rem;
         }
 
         .filter-controls {
           display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
+          flex-direction: row;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+          align-items: flex-start;
         }
 
         .filter-section-inline {
           display: flex;
           flex-direction: column;
-          gap: 0.75rem;
+          gap: 0.5rem;
+          flex: 0 1 auto;
+          min-width: 200px;
         }
 
         .filter-section-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          min-height: 26px;
         }
 
         .filter-section-label {
           font-weight: 600;
           color: var(--label-color);
-          font-size: 0.9375rem;
+          font-size: 0.8125rem;
         }
 
         .checkbox-group-inline {
           display: flex;
-          gap: 1.5rem;
+          gap: 0.75rem;
           flex-wrap: wrap;
         }
 
         .checkbox-grid-inline {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-          gap: 0.75rem;
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+          gap: 0.5rem;
         }
 
         .checkbox-label-inline {
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.4rem;
           cursor: pointer;
-          padding: 0.4rem 0.6rem;
-          border-radius: 6px;
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
           transition: background-color 0.2s ease;
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
         }
 
         .checkbox-label-inline:hover {
@@ -613,25 +658,25 @@ export default function GeneBrowserPage() {
         }
 
         .checkbox-label-inline input[type="checkbox"] {
-          width: 16px;
-          height: 16px;
+          width: 14px;
+          height: 14px;
           cursor: pointer;
           accent-color: var(--button-bg);
         }
 
         .checkbox-label-inline span {
-          font-size: 0.875rem;
+          font-size: 0.8125rem;
           color: var(--text);
           font-weight: 500;
         }
 
         .select-all-btn-inline {
-          padding: 0.4rem 0.8rem;
+          padding: 0.25rem 0.6rem;
           background-color: var(--button-bg);
           color: white;
           border: none;
-          border-radius: 6px;
-          font-size: 0.8125rem;
+          border-radius: 4px;
+          font-size: 0.75rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -647,7 +692,7 @@ export default function GeneBrowserPage() {
           display: flex;
           justify-content: center;
           margin-top: -2px;
-          margin-bottom: 15px;
+          margin-bottom: 0px;
           width: 100%;
         }
 
@@ -657,12 +702,12 @@ export default function GeneBrowserPage() {
           color: white;
           border: 2px solid var(--border-color);
           border-top: none;
-          border-radius: 0 0 12px 12px;
+          border-radius: 0 0 8px 8px;
           cursor: pointer;
           transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
           z-index: 101;
-          min-width: 80px;
+          min-width: 60px;
           position: relative;
           overflow: hidden;
         }
@@ -671,26 +716,26 @@ export default function GeneBrowserPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 6px 0;
+          padding: 4px 0;
           position: relative;
         }
 
         .toggle-handle::before {
           content: '';
           position: absolute;
-          top: 4px;
-          width: 40px;
-          height: 3px;
+          top: 3px;
+          width: 30px;
+          height: 2px;
           background: rgba(255, 255, 255, 0.3);
           border-radius: 2px;
         }
 
         .chevron {
-          font-size: 1.5rem;
+          font-size: 1.125rem;
           font-weight: bold;
           transition: transform 0.3s ease;
           display: inline-block;
-          margin-top: 4px;
+          margin-top: 2px;
         }
 
         .chevron.expanded {
@@ -904,53 +949,47 @@ export default function GeneBrowserPage() {
         }
 
         .species-section {
-          margin-bottom: 1rem;
-          border: none;
-          background: transparent;
+          margin-bottom: 1.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 2px solid var(--border-color);
         }
 
-        .species-section .accordion-item {
-          background: transparent;
-          border: none;
+        .species-section:last-child {
+          border-bottom: none;
         }
 
-        .species-section .accordion-button {
-          background: var(--container-bg);
-          color: var(--heading-color);
-          border-left: 4px solid var(--button-bg);
-          border-radius: 6px;
-          padding: 0.75rem 0.5rem;
-          font-size: 1rem;
-          font-weight: 700;
-          transition: all 0.2s ease;
-        }
-
-        .species-section .accordion-button:not(.collapsed) {
-          background: var(--main-bg);
-          border-left-color: var(--accent, #2db4b6);
-          box-shadow: none;
-        }
-
-        .species-section .accordion-button:hover {
-          background: var(--main-bg);
-          border-left-color: var(--accent, #2db4b6);
-        }
-
-        .species-section .accordion-button:focus {
-          box-shadow: none;
-          border-color: var(--accent, #2db4b6);
-        }
-
-        .species-section .accordion-body {
-          padding: 0.5rem 0;
-          background: transparent;
-        }
-
-        .species-header-accordion {
+        .species-header {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          width: 100%;
+          cursor: pointer;
+          padding: 0.75rem 0.5rem;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          margin-bottom: 1rem;
+          background: var(--container-bg);
+          border-left: 4px solid var(--button-bg);
+        }
+
+        .species-header:hover {
+          background: var(--main-bg);
+          border-left-color: var(--accent, #2db4b6);
+        }
+
+        .species-chevron {
+          font-size: 1.4rem;
+          font-weight: bold;
+          transition: transform 0.3s ease;
+          display: inline-block;
+          color: var(--button-bg);
+        }
+
+        .species-chevron.expanded {
+          transform: rotate(0deg);
+        }
+
+        .species-chevron.collapsed {
+          transform: rotate(-90deg);
         }
 
         .species-name {
@@ -973,47 +1012,43 @@ export default function GeneBrowserPage() {
         }
 
         .variant-type-section {
-          margin-bottom: 0.5rem;
-          margin-left: 1rem;
+          margin-bottom: 1rem;
         }
 
-        .variant-type-section .accordion-item {
-          background: transparent;
-          border: none;
-        }
-
-        .variant-type-section .accordion-button {
-          background: transparent;
-          color: var(--heading-color);
-          border-radius: 4px;
-          padding: 0.4rem 0.5rem;
-          font-size: 0.85rem;
-          font-weight: 500;
-          transition: background 0.2s ease;
-        }
-
-        .variant-type-section .accordion-button:not(.collapsed) {
-          background: var(--container-bg);
-          box-shadow: none;
-        }
-
-        .variant-type-section .accordion-button:hover {
-          background: var(--container-bg);
-        }
-
-        .variant-type-section .accordion-button:focus {
-          box-shadow: none;
-        }
-
-        .variant-type-section .accordion-body {
-          padding: 0.25rem 0;
-        }
-
-        .variant-type-header-accordion {
+        .variant-type-header {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          width: 100%;
+          font-size: 0.85rem;
+          font-weight: 500;
+          color: var(--heading-color);
+          margin-bottom: 0.5rem;
+          margin-left: 1rem;
+          padding: 0.4rem 0.5rem;
+          background: transparent;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background 0.2s ease;
+        }
+
+        .variant-type-header:hover {
+          background: var(--container-bg);
+        }
+
+        .variant-type-chevron {
+          font-size: 0.9rem;
+          font-weight: bold;
+          transition: transform 0.3s ease;
+          display: inline-block;
+          color: var(--info-color);
+        }
+
+        .variant-type-chevron.expanded {
+          transform: rotate(0deg);
+        }
+
+        .variant-type-chevron.collapsed {
+          transform: rotate(-90deg);
         }
 
         .variant-type-name {
