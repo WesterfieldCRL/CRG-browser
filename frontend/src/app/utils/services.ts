@@ -159,16 +159,22 @@ export function generateTFBSColorMap(tfbsNames: string[]): { [key: string]: stri
   
   // Predefined color palette - you can modify these colors as needed
   const baseColors = [
-    '#FF6B6B', // Red
-    '#4ECDC4', // Teal
-    '#45B7D1', // Blue
-    '#96CEB4', // Green
-    '#FFBE0B', // Yellow
-    '#FF006E', // Pink
-    '#8338EC', // Purple
-    '#3A86FF', // Royal Blue
-    '#FB5607', // Orange
-    '#38B000', // Bright Green
+    '#fc0303',
+    '#fca903',
+    '#e7fc03',
+    '#2dfc03',
+    '#03fcce',
+    '#0356fc',
+    '#b503fc',
+    '#fc0380',
+    '#f7b2b2',
+    '#f7ecb2',
+    '#c8f7b2',
+    '#b2f7de',
+    '#b2d8f7',
+    '#c6b2f7',
+    '#f8abff',
+    '#869c9b',
   ];
 
   tfbsNames.forEach((name, index) => {
