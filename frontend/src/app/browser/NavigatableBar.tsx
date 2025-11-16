@@ -27,6 +27,7 @@ interface NavigatableBarProps {
   enh_prom_color_map: { [key: string]: string };
   nucleotides_color_map: { [key: string]: string };
   variants_color_map: { [key: string]: string };
+  zoomToRange?: { start: number; end: number } | null;
 }
 
 interface ColorSegment {
@@ -53,6 +54,7 @@ export default function NavigatableBar({
   enh_prom_color_map,
   nucleotides_color_map,
   variants_color_map,
+  zoomToRange,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
   const [loading, setLoading] = useState(true);
@@ -178,6 +180,25 @@ export default function NavigatableBar({
       setLoading(false);
     }
   }, [tfbsSequence, enhancerPromoterSequence, variantsSequence]);
+
+  useEffect(() => {
+    if (zoomToRange && !loading) {
+      setStartValue(zoomToRange.start);
+      setEndValue(zoomToRange.end);
+    }
+  }, [zoomToRange]);
+
+  useEffect(() => {
+    if (zoomToRange && !loading && startValue === zoomToRange.start && endValue === zoomToRange.end) {
+      loadSequences(zoomToRange.start, zoomToRange.end);
+      if (zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_VIEW) {
+        setRenderNucleotides(true);
+        loadNucleotides(zoomToRange.start, zoomToRange.end, zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_LETTERS);
+      } else {
+        setRenderNucleotides(false);
+      }
+    }
+  }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
     loadSequences(startValue, endValue);

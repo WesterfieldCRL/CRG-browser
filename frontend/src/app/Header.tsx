@@ -7,8 +7,8 @@ import { Home, Dna, GitCompare } from "lucide-react"
 
 const NAV_ITEMS = [
   { href: '/', label: 'Home', icon: Home },
-  { href: '/browser', label: 'Genome Browser', icon: Dna },
-  { href: '/comparison', label: 'Genome Comparison', icon: GitCompare },
+  { href: '/browser', label: 'Gene Browser', icon: Dna },
+  { href: '/comparison', label: 'Gene Comparison', icon: GitCompare },
 ] as const
 
 export default function Header() {

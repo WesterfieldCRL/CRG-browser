@@ -87,47 +87,116 @@ export default function Page() {
         </Link>
       </section>
 
-      {/* Features Grid */}
-      <div className="features-grid" role="list">
-        <article className="feature-card" role="listitem">
-          <Link href="/browser" className="feature-link">
-            <span className="feature-icon" role="img" aria-label="DNA">🧬</span>
-            <h2 className="feature-title">Browse Genes</h2>
-            <p className="feature-description">
-              Interactive genome browser with drag-to-zoom functionality. View aligned sequences across human, mouse, and macaque.
-            </p>
-          </Link>
-        </article>
+      {/* User Documentation */}
+      <div className="documentation-section">
+        <h2 className="doc-title">How to Use CoRGi</h2>
 
-        <article className="feature-card" role="listitem">
-          <Link href="/comparison" className="feature-link">
-            <span className="feature-icon" role="img" aria-label="Compare">📊</span>
-            <h2 className="feature-title">Genome Comparison</h2>
-            <p className="feature-description">
-              Compare regulatory elements and conservation across species. View PhastCons and PhyloP conservation scores with interactive histograms.
-            </p>
-          </Link>
-        </article>
+        <div className="doc-card">
+          <div className="doc-header">
+            <span className="doc-icon">🧬</span>
+            <h3>Gene Browser</h3>
+          </div>
+          <div className="doc-content">
+            <p className="doc-intro">Explore regulatory elements and sequences across species with our interactive browser.</p>
 
-        <article className="feature-card" role="listitem">
-          <Link href="/contact" className="feature-link">
-            <span className="feature-icon" role="img" aria-label="Contact">📧</span>
-            <h2 className="feature-title">Get In Touch</h2>
-            <p className="feature-description">
-              Questions or collaboration opportunities? We&apos;d love to hear from you. All data is publicly available.
-            </p>
-          </Link>
-        </article>
+            <div className="doc-steps">
+              <div className="doc-step">
+                <span className="step-number">1</span>
+                <div className="step-content">
+                  <h4>Select a Gene</h4>
+                  <p>Choose from DRD4, CHRNA6, or ALDH1A3 to begin your analysis.</p>
+                </div>
+              </div>
+
+              <div className="doc-step">
+                <span className="step-number">2</span>
+                <div className="step-content">
+                  <h4>Configure Filters</h4>
+                  <p>Use the collapsible filter bar at the top to select which regulatory elements to display:</p>
+                  <ul>
+                    <li><strong>Regulatory Elements</strong> - Toggle Enhancers and Promoters</li>
+                    <li><strong>Transcription Factor Binding Sites (TFBS)</strong> - Select specific binding sites with &ldquo;Select All&rdquo; option</li>
+                    <li><strong>Variants</strong> - Choose genetic variant categories to analyze with &ldquo;Select All&rdquo; option</li>
+                  </ul>
+                  <p>The filter bar can be collapsed using the pull tab to save screen space while browsing.</p>
+                </div>
+              </div>
+
+              <div className="doc-step">
+                <span className="step-number">3</span>
+                <div className="step-content">
+                  <h4>Explore the Browser</h4>
+                  <p>View aligned sequences across three species (Human, Mouse, Macaque) with interactive features:</p>
+                  <ul>
+                    <li><strong>Variant Sidebar</strong> - Hover over the left sidebar to expand and view variant locations by species and type. Click any variant to zoom directly to that location.</li>
+                    <li><strong>Zoom Navigation</strong> - Enter min/max values to focus on specific genomic regions</li>
+                    <li><strong>Reset View</strong> - Return to full gene view with the &ldquo;Reset to Gene&rdquo; button</li>
+                    <li><strong>Color-Coded Elements</strong> - Each element type (TFBS, Enhancers, Promoters, Variants) has unique colors with a legend for reference</li>
+                    <li><strong>Nucleotide View</strong> - Zoom in to ≤1000bp to see nucleotide bars, or ≤100bp to view individual nucleotide letters</li>
+                    <li><strong>Interactive Elements</strong> - Click on any regulatory element to zoom to that region at 100bp resolution</li>
+                    <li><strong>Direct Editing</strong> - All filter changes update the view in real-time without page navigation</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="doc-card">
+          <div className="doc-header">
+            <span className="doc-icon">📊</span>
+            <h3>Gene Comparison</h3>
+          </div>
+          <div className="doc-content">
+            <p className="doc-intro">Analyze conservation patterns and evolutionary relationships across species.</p>
+
+            <div className="doc-steps">
+              <div className="doc-step">
+                <span className="step-number">1</span>
+                <div className="step-content">
+                  <h4>Conservation Scores</h4>
+                  <p>View PhastCons and PhyloP scores to identify highly conserved regions indicating functional importance.</p>
+                </div>
+              </div>
+
+              <div className="doc-step">
+                <span className="step-number">2</span>
+                <div className="step-content">
+                  <h4>Cross-Species Analysis</h4>
+                  <p>Compare regulatory elements across human, mouse, and macaque to understand evolutionary conservation and species-specific variations.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="doc-card">
+          <div className="doc-header">
+            <span className="doc-icon">💡</span>
+            <h3>Data & Features</h3>
+          </div>
+          <div className="doc-content">
+            <ul className="feature-list">
+              <li><strong>Aligned Sequences</strong> - Multi-species sequence alignments with synchronized coordinates</li>
+              <li><strong>Regulatory Elements</strong> - Comprehensive annotation of enhancers, promoters, and TFBS</li>
+              <li><strong>Genetic Variants</strong> - Catalogued variant positions and categories with clickable sidebar navigation</li>
+              <li><strong>Conservation Analysis</strong> - PhastCons and PhyloP conservation scores</li>
+              <li><strong>Interactive Navigation</strong> - Collapsible filter bar, expandable variant sidebar, and zoom controls</li>
+              <li><strong>Real-time Updates</strong> - Filter changes update visualizations instantly without page reloads</li>
+              <li><strong>Responsive Design</strong> - Optimized for desktop browsers (mobile not currently supported)</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* About Section */}
       <section className="about-section" aria-labelledby="about-title">
         <h2 id="about-title" className="about-title">About CoRGi</h2>
         <p className="about-text">
-          CoRGi (Comparative Regulatory Genomics) is a platform designed to make genomics data accessible and understandable. We provide carefully curated, aligned nucleotide sequences across multiple species, helping researchers identify conserved regulatory elements and evolutionary patterns.
+          CoRGi (Comparative Regulatory Genomics) is an interactive platform for exploring and comparing regulatory elements across species. Our tool provides aligned genomic sequences and comprehensive regulatory annotations for key genes involved in neurodevelopment and behavior.
         </p>
         <p className="about-text">
-          Our user-friendly interface replaces complex command-line tools with intuitive visualizations, making comparative genomics accessible to researchers at all levels.
+          By integrating transcription factor binding sites, enhancers, promoters, and genetic variants with conservation scores, CoRGi enables researchers to identify functionally important regulatory regions and understand their evolutionary patterns across human, mouse, and macaque.
         </p>
 
         {/* Statistics */}
@@ -137,11 +206,11 @@ export default function Page() {
             <span className="stat-label">Species</span>
           </div>
           <div className="stat-card" role="listitem">
-            <span className="stat-number">100+</span>
+            <span className="stat-number">3</span>
             <span className="stat-label">Genes</span>
           </div>
           <div className="stat-card" role="listitem">
-            <span className="stat-number">1M+</span>
+            <span className="stat-number">6M+</span>
             <span className="stat-label">Base Pairs</span>
           </div>
         </div>
@@ -160,24 +229,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
-      {/* Version Indicator */}
-      <div style={{
-        position: 'fixed',
-        bottom: '10px',
-        right: '10px',
-        background: 'var(--accent)',
-        color: 'white',
-        padding: '4px 12px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontWeight: '600',
-        fontFamily: 'monospace',
-        zIndex: 9999,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-      }}>
-        v2.2 - {new Date().toISOString().split('T')[0]}
-      </div>
     </main>
   )
 }

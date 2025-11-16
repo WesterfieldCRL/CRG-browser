@@ -50,17 +50,26 @@
   }
 }
 
+html {
+  min-height: 100vh;
+  height: 100%;
+}
+
 body {
-  background: var(--background);
+  background: var(--main-bg);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 main {
   margin: 0;
   padding: 20px;
   font-family: "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--main-bg);
+  background-color: transparent;
   color: var(--main-text);
   display: flex;
   flex-direction: column;
