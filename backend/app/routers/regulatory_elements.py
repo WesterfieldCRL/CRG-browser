@@ -66,9 +66,11 @@ async def get_variants_dict(gene_name: str, species_name: str, variants_list: li
             stmt = (select(Variants.category, Variants.start, Variants.end, Variants.chromosome)
                 .join(RegulatorySequences)
                 .join(Genes)
+                .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where(Variants.category == variant_name))
+                .where(Variants.category == variant_name)
+                .order_by(Variants.start))
         
             result = (await session.execute(stmt)).tuples().all()
 
