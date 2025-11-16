@@ -3,14 +3,18 @@ import {
   fetchAssembly,
   fetchEnhPromBars,
   fetchGeneNums,
+  fetchNucleotideBar,
   fetchNucleotides,
   fetchSequenceNums,
   fetchTFBSBars,
+  fetchVariantBars,
 } from "../utils/services";
 import Slider from "rc-slider";
 import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
 import { time } from "console";
+import Legend from "./Legend";
+import { tree } from "next/dist/build/templates/app-page";
 
 interface NavigatableBarProps {
   gene: string;
@@ -20,7 +24,9 @@ interface NavigatableBarProps {
   TFBS: string[];
   variants: string[];
   tfbs_color_map: { [key: string]: string };
-  enh_prom_color_map: { [key: string]: string};
+  enh_prom_color_map: { [key: string]: string };
+  nucleotides_color_map: { [key: string]: string };
+  variants_color_map: { [key: string]: string };
   zoomToRange?: { start: number; end: number } | null;
 }
 
@@ -31,11 +37,11 @@ interface ColorSegment {
   end: number;
 }
 
-const NUCLEOTIDES_VIEW = 100;
+const NUCLEOTIDES_VIEW = 1000;
+
+const NUCLEOTIDES_LETTERS = 100;
 
 const INITIAL_VIEW = 4000;
-
-
 
 export default function NavigatableBar({
   gene,
@@ -46,6 +52,8 @@ export default function NavigatableBar({
   variants,
   tfbs_color_map,
   enh_prom_color_map,
+  nucleotides_color_map,
+  variants_color_map,
   zoomToRange,
 }: NavigatableBarProps) {
   const [assembly, setAssembly] = useState<string>(null);
@@ -58,8 +66,11 @@ export default function NavigatableBar({
   const [tfbsSequence, setTFBSSequence] = useState<Array<ColorSegment>>(null);
   const [enhancerPromoterSequence, setEnhancerPromoterSequence] =
     useState<Array<ColorSegment>>(null);
-  const [nucletoides, setNucleotides] = useState<string>(null);
+  const [nucleotides, setNucleotides] = useState<Array<ColorSegment>>(null);
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
+  const [renderNucleotideLetters, setRenderNucleotideLetters] =
+    useState<boolean>(false);
+  const [variantsSequence, setVariantsSequence] = useState<Array<ColorSegment>>(null);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -76,8 +87,8 @@ export default function NavigatableBar({
     setGeneNumsValue([genomic_nums.start, genomic_nums.end]);
   }
 
-  async function loadSequences() {
-    const tfbs = await fetchTFBSBars(gene, species, TFBS, startValue, endValue);
+  async function loadSequences(start: number, end: number) {
+    const tfbs = await fetchTFBSBars(gene, species, TFBS, start, end);
     setTFBSSequence(tfbs);
 
     const enh_prom_list = [];
@@ -91,20 +102,34 @@ export default function NavigatableBar({
       gene,
       species,
       enh_prom_list,
-      startValue,
-      endValue
+      start,
+      end
     );
     setEnhancerPromoterSequence(enh_proms);
+
+    const vars = await fetchVariantBars(gene,
+      species,
+      variants,
+      start,
+      end
+    );
+
+    setVariantsSequence(vars);
   }
 
-  async function loadNucleotides() {
-    const nucleotides_string = await fetchNucleotides(
+  async function loadNucleotides(
+    start: number,
+    end: number,
+    showLetters: boolean
+  ) {
+    const nucleotides_bar = await fetchNucleotideBar(
       gene,
       species,
-      startValue,
-      endValue
+      start,
+      end,
+      showLetters
     );
-    setNucleotides(nucleotides_string);
+    setNucleotides(nucleotides_bar);
   }
 
   useEffect(() => {
@@ -120,6 +145,19 @@ export default function NavigatableBar({
   }, [gene, species, enh, prom, variants, TFBS]);
 
   useEffect(() => {
+    if (endValue - startValue <= NUCLEOTIDES_VIEW) {
+      setRenderNucleotides(true);
+      if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
+        setRenderNucleotideLetters(true);
+      } else {
+        setRenderNucleotideLetters(false);
+      }
+    } else {
+      setRenderNucleotides(false);
+    }
+  }, [nucleotides]);
+
+  useEffect(() => {
     if (!loading) return;
 
     if (
@@ -130,33 +168,18 @@ export default function NavigatableBar({
     ) {
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
+      loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
+      loadNucleotides(geneNums[0], geneNums[0] + INITIAL_VIEW, false);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
 
   useEffect(() => {
-    if (
-      startValue !== null &&
-      endValue !== null &&
-      enhancerPromoterSequence == null &&
-      tfbsSequence == null
-    ) {
-      loadSequences();
-    } else if (
-      !loading &&
-      startValue == geneNums[0] &&
-      endValue == geneNums[0] + INITIAL_VIEW
-    ) {
-      loadSequences();
-    }
-  }, [startValue, endValue]);
-
-  useEffect(() => {
     if (!loading) return;
 
-    if (enhancerPromoterSequence !== null && tfbsSequence !== null) {
+    if (enhancerPromoterSequence !== null && tfbsSequence !== null && variantsSequence !== null) {
       setLoading(false);
     }
-  }, [tfbsSequence, enhancerPromoterSequence]);
+  }, [tfbsSequence, enhancerPromoterSequence, variantsSequence]);
 
   useEffect(() => {
     if (zoomToRange && !loading) {
@@ -178,31 +201,42 @@ export default function NavigatableBar({
   }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
-    loadSequences();
+    loadSequences(startValue, endValue);
     if (endValue - startValue <= NUCLEOTIDES_VIEW) {
-      setRenderNucleotides(true);
-      loadNucleotides();
+      loadNucleotides(startValue, endValue, true);
     } else {
-      setRenderNucleotides(false);
+      loadNucleotides(startValue, endValue, false);
     }
   };
 
   const handleGeneSubmit = () => {
     setStartValue(geneNums[0]);
     setEndValue(geneNums[0] + INITIAL_VIEW);
+    loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
+    loadNucleotides(startValue, endValue, false);
+  };
+
+  const handleSegmentClick = (s: number, e: number) => {
+    setStartValue(s);
+    setEndValue(s + NUCLEOTIDES_LETTERS);
+    loadSequences(s, s + NUCLEOTIDES_LETTERS);
+    loadNucleotides(s, s + NUCLEOTIDES_LETTERS, true);
   };
 
   return (
-    <div className="container-box" style={{
-      background: 'var(--panel-bg)',
-      border: '1px solid var(--border)',
-      borderRadius: 'var(--radius-md, 12px)',
-      padding: '24px',
-      marginBottom: '16px'
-    }}>
+    <div
+      className="container-box"
+      style={{
+        background: "var(--panel-bg)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-md, 12px)",
+        padding: "24px",
+        marginBottom: "16px",
+      }}
+    >
       {!loading && (
         <div>
-          <h1 style={{ color: 'var(--text)', marginBottom: '16px' }}>
+          <h1 style={{ color: "var(--text)", marginBottom: "16px" }}>
             {species} -{" "}
             {gene === "ALDH1A3" && species !== "Homo sapiens"
               ? "ALDH1A1"
@@ -212,7 +246,10 @@ export default function NavigatableBar({
           <div className="flex items-center justify-between w-full gap-2">
             <div className="flex items-center gap-2">
               <div className="flex flex-col">
-                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+                <label
+                  className="text-sm mb-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Min Value = {sequenceStart}
                 </label>
                 <input
@@ -225,9 +262,9 @@ export default function NavigatableBar({
                   }
                   className="p-2 border rounded"
                   style={{
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderColor: 'var(--border)'
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    borderColor: "var(--border)",
                   }}
                   placeholder="Min value"
                 />
@@ -236,8 +273,8 @@ export default function NavigatableBar({
                 onClick={() => handleSubmit()}
                 className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
                 style={{
-                  background: 'var(--primary)',
-                  color: 'white'
+                  background: "var(--primary)",
+                  color: "white",
                 }}
               >
                 Set Min
@@ -277,14 +314,17 @@ export default function NavigatableBar({
                 onClick={() => handleGeneSubmit()}
                 className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
                 style={{
-                  background: 'var(--accent)',
-                  color: 'white'
+                  background: "var(--accent)",
+                  color: "white",
                 }}
               >
                 Reset to Gene
               </button>
               <div className="flex flex-col">
-                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+                <label
+                  className="text-sm mb-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {geneNums[0]} - {geneNums[0] + INITIAL_VIEW}
                 </label>
               </div>
@@ -294,14 +334,17 @@ export default function NavigatableBar({
                 onClick={() => handleSubmit()}
                 className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
                 style={{
-                  background: 'var(--primary)',
-                  color: 'white'
+                  background: "var(--primary)",
+                  color: "white",
                 }}
               >
                 Set Max
               </button>
               <div className="flex flex-col">
-                <label className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
+                <label
+                  className="text-sm mb-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Max Value = {sequenceEnd}
                 </label>
                 <input
@@ -312,9 +355,9 @@ export default function NavigatableBar({
                   }
                   className="p-2 border rounded"
                   style={{
-                    background: 'var(--bg)',
-                    color: 'var(--text)',
-                    borderColor: 'var(--border)'
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    borderColor: "var(--border)",
                   }}
                   placeholder="Max value"
                 />
@@ -328,15 +371,45 @@ export default function NavigatableBar({
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
                 padding: "16px 0",
-                borderBottom: '2px solid var(--border)',
+                borderBottom: "2px solid var(--border)",
               }}
             >
-              <label style={{
-                alignSelf: "center",
-                color: 'var(--text)',
-                fontWeight: 600,
-                fontSize: '14px'
-              }}>
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Legend
+              </label>
+              <div style={{ minWidth: 0 }}>
+                <Legend
+                  color_map={tfbs_color_map}
+                  visible_types={
+                    new Set(tfbsSequence.map((segment) => segment.type))
+                  }
+                />
+              </div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                padding: "16px 0",
+                borderBottom: "2px solid var(--border)",
+              }}
+            >
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
                 Transcription Factor Binding Sites
               </label>
               <div style={{ minWidth: 0 }}>
@@ -344,54 +417,8 @@ export default function NavigatableBar({
                   segments={tfbsSequence}
                   color_mapping={tfbs_color_map}
                   width="100%"
+                  onSegmentClick={handleSegmentClick}
                 />
-                {(() => {
-                  // Get unique TFBS types that are actually visible in current view
-                  const visibleTypes = new Set(
-                    tfbsSequence
-                      .map(segment => segment.type)
-                      .filter(type => type !== 'none')
-                  );
-
-                  return visibleTypes.size > 0 && (
-                    <div style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      marginTop: '8px',
-                      padding: '8px',
-                      background: 'var(--bg)',
-                      borderRadius: '4px',
-                      border: '1px solid var(--border)'
-                    }}>
-                      {Object.entries(tfbs_color_map)
-                        .filter(([key]) => visibleTypes.has(key))
-                        .map(([name, color]) => (
-                          <div key={name} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}>
-                            <div style={{
-                              width: '16px',
-                              height: '16px',
-                              backgroundColor: color,
-                              borderRadius: '3px',
-                              border: '1px solid var(--border)',
-                              flexShrink: 0
-                            }} />
-                            <span style={{
-                              fontSize: '12px',
-                              color: 'var(--text)',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {name}
-                            </span>
-                          </div>
-                        ))}
-                    </div>
-                  );
-                })()}
               </div>
             </div>
 
@@ -401,15 +428,17 @@ export default function NavigatableBar({
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
                 padding: "16px 0",
-                borderBottom: '2px solid var(--border)',
+                borderBottom: "2px solid var(--border)",
               }}
             >
-              <label style={{
-                alignSelf: "center",
-                color: 'var(--text)',
-                fontWeight: 600,
-                fontSize: '14px'
-              }}>
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
                 Enhancers and Promoters
               </label>
               <div style={{ minWidth: 0 }}>
@@ -417,6 +446,7 @@ export default function NavigatableBar({
                   segments={enhancerPromoterSequence}
                   color_mapping={enh_prom_color_map}
                   width="100%"
+                  onSegmentClick={handleSegmentClick}
                 />
               </div>
             </div>
@@ -429,47 +459,33 @@ export default function NavigatableBar({
                 padding: "16px 0",
               }}
             >
-              <label style={{
-                alignSelf: "center",
-                color: 'var(--text)',
-                fontWeight: 600,
-                fontSize: '14px'
-              }}>
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
                 Nucleotides/Variants
               </label>
               <div style={{ minWidth: 0 }}>
                 {renderNucleotides ? (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridAutoFlow: "row",
-                      gridTemplateColumns: `repeat(${
-                        nucletoides?.length || 1
-                      }, 1fr)`,
-                      width: "100%",
-                      gap: "1px",
-                      height: "30px", // Match ColorBar default height
-                    }}
-                  >
-                    {nucletoides?.split("").map((char, index) => (
-                      <span
-                        key={index}
-                        style={{
-                          border: '1px solid var(--border)',
-                          background: 'var(--panel-bg)',
-                          color: 'var(--text)',
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          minWidth: 0,
-                          fontSize: '12px',
-                          fontFamily: 'monospace'
-                        }}
-                      >
-                        {char}
-                      </span>
-                    ))}
-                  </div>
+                  <>
+                  <ColorBar
+                    segments={nucleotides}
+                    color_mapping={nucleotides_color_map}
+                    interactible={false}
+                    letters={renderNucleotideLetters}
+                    width="100%"
+                  />
+                  <ColorBar
+                  segments={variantsSequence}
+                  color_mapping={variants_color_map}
+                  width="100%"
+                  onSegmentClick={handleSegmentClick}
+                />
+                </>
                 ) : (
                   <div
                     style={{
@@ -477,15 +493,15 @@ export default function NavigatableBar({
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: 'var(--panel-bg)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '4px',
-                      color: 'var(--text-secondary)',
-                      fontSize: '13px',
-                      fontStyle: 'italic'
+                      background: "var(--panel-bg)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "4px",
+                      color: "var(--text-secondary)",
+                      fontSize: "13px",
+                      fontStyle: "italic",
                     }}
                   >
-                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
+                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides and ≤{NUCLEOTIDES_LETTERS}bp to view letters
                   </div>
                 )}
               </div>

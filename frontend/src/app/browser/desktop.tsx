@@ -15,12 +15,30 @@ import {
 const Enh_Prom_Color_Mapping = {
   Enh: "stripes",
   Prom: "bars",
-  none: "#8a8a8aff",
 };
+
+const Nucleotides_Color_Mapping = {
+  A: "#00ff2aff",
+  T: "#ff0000ff",
+  G: "#ca8606ff",
+  C: "#003ee7ff",
+};
+
+// I just want all the variants to be one color
+const Variants_Color_Mapping = () =>
+  new Proxy({}, {
+    get(_, prop: string) {
+      if (prop === "none") {
+        return undefined;       // return nothing
+      }
+      return "#555555ff";
+    }
+  }) as { [key: string]: string };
 
 export default function GeneBrowserPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
 
   const [color_map, setColorMap] = useState<{ [key: string]: string }>(null);
   const [loading, setLoading] = useState(true);
@@ -28,11 +46,11 @@ export default function GeneBrowserPage() {
   const [species, setSpecies] = useState<Array<string>>(null);
   const [allTFBS, setAllTFBS] = useState<Array<string>>(null);
   const [selectedTFBS, setSelectedTFBS] = useState<Array<string>>(null);
+  const [allVariants, setAllVariants] = useState<Array<string>>(null);
+  const [selectedVariants, setSelectedVariants] = useState<Array<string>>(null);
   const [selectedGene, setSelectedGene] = useState<string>(null);
   const [showEnhancers, setShowEnhancers] = useState<boolean>(false);
   const [showPromoters, setShowPromoters] = useState<boolean>(false);
-  const [selectedVariants, setSelectedVariants] = useState<Array<string>>([]);
-  const [allVariants, setAllVariants] = useState<Array<string>>([]);
   const [filtersCollapsed, setFiltersCollapsed] = useState<boolean>(false);
   const [variantPositions, setVariantPositions] = useState<{ [species: string]: { variants: { [variantType: string]: Array<{ type: string; start: number; end: number }> } } }>({});
   const [zoomRanges, setZoomRanges] = useState<{ [species: string]: { start: number; end: number } | null }>({});
@@ -124,10 +142,10 @@ export default function GeneBrowserPage() {
   }, [genes, species]);
 
   useEffect(() => {
-    if (selectedTFBS !== null && allTFBS !== null) {
+    if (selectedTFBS !== null && allTFBS !== null && selectedVariants !== null && allVariants !== null) {
       setColorMap(generateTFBSColorMap(selectedTFBS));
     }
-  }, [selectedTFBS, allTFBS]);
+  }, [selectedTFBS, allTFBS, selectedVariants, allVariants]);
 
   useEffect(() => {
     if (color_map !== null) {
@@ -421,6 +439,8 @@ export default function GeneBrowserPage() {
                   variants={selectedVariants}
                   tfbs_color_map={color_map}
                   enh_prom_color_map={Enh_Prom_Color_Mapping}
+                  nucleotides_color_map={Nucleotides_Color_Mapping}
+                  variants_color_map={Variants_Color_Mapping()}
                   zoomToRange={zoomRanges[species_name] || null}
                 ></NavigatableBar>
               </React.Fragment>

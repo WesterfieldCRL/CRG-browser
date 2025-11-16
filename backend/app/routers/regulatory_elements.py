@@ -9,11 +9,13 @@ from app.routers import regulatory_sequences
 
 class Element(BaseModel):
     type: str = Field(..., description="string representing what the element is")
+    chromosome: int = Field(..., description="chromsome this element belongs too")
     start: int = Field(..., description="start of this element")
     end: int = Field(..., description="end of this element")
 
 class Segment(BaseModel):
     type: str = Field(..., description="string representing what the element is")
+    chromosome: int = Field(..., description="chromsome this element belongs too")
     width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
     start: int = Field(..., description="start of this element")
     end: int = Field(..., description="end of this element")
@@ -24,8 +26,6 @@ class VariantsDict(BaseModel):
 router = APIRouter(prefix="/elements")    
 
 NORMAL_GAP = "none"
-
-THRESHOLD = 0.09
 
 @router.get("/all_TFBS", response_model=list[str])
 async def get_all_TFBS(gene_name: str) -> list[str]:
@@ -63,7 +63,7 @@ async def get_variants_dict(gene_name: str, species_name: str, variants_list: li
         variants_dict: dict[str, list[Element]] = {}
 
         for variant_name in variants_list:
-            stmt = (select(Variants.category, Variants.start, Variants.end)
+            stmt = (select(Variants.category, Variants.start, Variants.end, Variants.chromosome)
                 .join(RegulatorySequences)
                 .join(Genes)
                 .where(Genes.name == gene_name)
@@ -75,7 +75,7 @@ async def get_variants_dict(gene_name: str, species_name: str, variants_list: li
             if variant_name not in variants_dict:
                 variants_dict[variant_name] = []
             for item in result:
-                variants_dict[variant_name].append(Element(type=item[0], start=item[1], end=item[2]))
+                variants_dict[variant_name].append(Element(type=item[0], start=item[1], end=item[2], chromosome=item[3]))
         
 
     return VariantsDict(variants=variants_dict)
@@ -86,13 +86,13 @@ async def get_elements(model: type, gene_name: str, species_name: str, model_typ
         model_list: list[Element] = []
 
 
-        stmt = (select(model.category, model.start, model.end)
+        stmt = (select(model.category, model.start, model.end, model.chromosome)
                 .join(RegulatorySequences)
                 .join(Genes)
                 .join(Species)
                 .where(Genes.name == gene_name)
                 .where(Species.name == species_name)
-                .where(or_(((model.start >= start) & (model.start < end)), ((model.end <= end) & (model.end > start))))
+                .where(or_(((model.start >= start) & (model.start < end)), ((model.end <= end) & (model.end > start)), ((model.start <= start) & (model.end >= end))))
                 .where(model.category.in_(model_types))
                 .order_by(model.start))
             
@@ -101,13 +101,13 @@ async def get_elements(model: type, gene_name: str, species_name: str, model_typ
 
     for row in result:
 
-            model_list.append(Element(type = row[0], start = row[1], end = row[2]))
+            model_list.append(Element(type = row[0], start = row[1], end = row[2], chromosome=row[3]))
 
     
     return model_list
 
 # Returns a list of all variant locations within the given parameters
-@router.post("filtered_variants", response_model=list[Element])
+@router.post("/filtered_variants", response_model=list[Element])
 async def get_filtered_variants(gene_name: str, species_name: str, variants_types: list[str], start: int, end: int) -> list[Element]:
     return await get_elements(Variants, gene_name, species_name, variants_types, start, end)
 
@@ -150,6 +150,21 @@ async def get_mapped_Enh_Prom(gene_name: str, species_name: str, element_types: 
     color_map = await populate_color_map(sequence_start, sequence_end, element_list, offsets.offsets[species_name])
 
     return color_map
+
+@router.post("/mapped_Variants", response_model=list[Segment])
+async def get_mapped_Variants(gene_name: str, species_name: str, variant_types: list[str], start: int, end: int) -> list[Segment]:
+
+    element_list, offsets = await asyncio.gather(
+        get_filtered_variants(gene_name, species_name, variant_types, start, end),
+        regulatory_sequences.get_sequence_offsets(gene_name),
+    )
+
+    sequence_start = start + offsets.offsets[species_name]
+    sequence_end = end + offsets.offsets[species_name]
+
+    color_map = await populate_color_map(sequence_start, sequence_end, element_list, offsets.offsets[species_name])
+
+    return color_map
     
 # From the parameters generates a list of segments where the widths add up to 100 that can be given to the frontend to display
 async def populate_color_map(sequence_start: int, sequence_end: int, element_list: list[Element], offset: int) -> list[Segment]:
@@ -169,29 +184,33 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
         if relative_start < sequence_start:
             relative_start = sequence_start
-        elif relative_end > sequence_end:
+        
+        if relative_end > sequence_end:
             relative_end = sequence_end
 
         # if the elements are right not right next to each other we need this to fill in the gap
         if relative_start > prev_index:
             gap_width = ((relative_start - prev_index) / total_width) * 100
-            color_segment_list.append(Segment(type = NORMAL_GAP, width = gap_width, start =(prev_index - offset), end = (element.start)))
+            color_segment_list.append(Segment(type = NORMAL_GAP, width = gap_width, start =(prev_index - offset), end = (element.start), chromosome=(0)))
             curr_width += gap_width
             prev_index = relative_start
 
         # using prev_index instead of element.start to handle overlaps
         element_width = ((relative_end - prev_index) / total_width) * 100
-        if element_width < 0:
-            element_width = 0
-        color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end))
-        curr_width += element_width
-        prev_index = relative_end
+
+        if element_width == 0:
+            element_width = ((1) / total_width) * 100 # Variants have start and end the same if one nucleotide so this should handle that
+
+        if element_width > 0:
+            color_segment_list.append(Segment(type = element.type, width = element_width, start = element.start, end = element.end, chromosome=(element.chromosome)))
+            curr_width += element_width
+            prev_index = relative_end
 
     # add any remaing space in the sequence
 
     # add any remaing allignment space
     if (prev_index < sequence_end) and (curr_width < 100):
-        color_segment_list.append(Segment(type = NORMAL_GAP, width=100-curr_width, start = (prev_index - offset), end = (sequence_end - offset)))
+        color_segment_list.append(Segment(type = NORMAL_GAP, width=100-curr_width, start = (prev_index - offset), end = (sequence_end - offset), chromosome=(0)))
     
 
     # Merge segments that are below the threshold
@@ -215,4 +234,3 @@ async def populate_color_map(sequence_start: int, sequence_end: int, element_lis
 
 
     return color_segment_list
-    
