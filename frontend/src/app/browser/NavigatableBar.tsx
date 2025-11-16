@@ -190,10 +190,10 @@ export default function NavigatableBar({
 
   useEffect(() => {
     if (zoomToRange && !loading && startValue === zoomToRange.start && endValue === zoomToRange.end) {
-      loadSequences();
+      loadSequences(zoomToRange.start, zoomToRange.end);
       if (zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_VIEW) {
         setRenderNucleotides(true);
-        loadNucleotides();
+        loadNucleotides(zoomToRange.start, zoomToRange.end, zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_LETTERS);
       } else {
         setRenderNucleotides(false);
       }
