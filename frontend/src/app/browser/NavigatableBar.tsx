@@ -37,7 +37,7 @@ interface ColorSegment {
   end: number;
 }
 
-const NUCLEOTIDES_VIEW = 1000;
+const NUCLEOTIDES_VIEW = 10000;
 
 const NUCLEOTIDES_LETTERS = 100;
 
@@ -218,9 +218,9 @@ export default function NavigatableBar({
 
   const handleSegmentClick = (s: number, e: number) => {
     setStartValue(s);
-    setEndValue(s + NUCLEOTIDES_LETTERS);
-    loadSequences(s, s + NUCLEOTIDES_LETTERS);
-    loadNucleotides(s, s + NUCLEOTIDES_LETTERS, true);
+    setEndValue(s);
+    loadSequences(s, e);
+    loadNucleotides(s, e, true);
   };
 
   return (
