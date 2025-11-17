@@ -218,7 +218,7 @@ export default function NavigatableBar({
 
   const handleSegmentClick = (s: number, e: number) => {
     setStartValue(s);
-    setEndValue(s);
+    setEndValue(e);
     loadSequences(s, e);
     loadNucleotides(s, e, true);
   };

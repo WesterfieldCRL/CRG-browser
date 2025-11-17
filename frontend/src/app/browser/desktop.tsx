@@ -18,10 +18,10 @@ const Enh_Prom_Color_Mapping = {
 };
 
 const Nucleotides_Color_Mapping = {
-  A: "#00ff2aff",
-  T: "#ff0000ff",
-  G: "#ca8606ff",
-  C: "#003ee7ff",
+  A: "#00cc22",
+  T: "#cc0000",
+  G: "#996600",
+  C: "#0033bb",
 };
 
 // I just want all the variants to be one color
@@ -57,6 +57,7 @@ export default function GeneBrowserPage() {
   const [collapsedSpecies, setCollapsedSpecies] = useState<{ [species: string]: boolean }>({});
   const [collapsedVariantTypes, setCollapsedVariantTypes] = useState<{ [species: string]: { [variantType: string]: boolean } }>({});
   const [currentContext, setCurrentContext] = useState<{ species: string; variantType: string } | null>(null);
+  const speciesRefs = useRef<{ [species: string]: HTMLDivElement | null }>({});
 
   async function loadGenesAndSpecies() {
     const gene_list = await fetchGenes();
@@ -116,14 +117,29 @@ export default function GeneBrowserPage() {
 
     try {
       const positions: { [species: string]: any } = {};
+      const newCollapsedSpecies: { [species: string]: boolean } = {};
+      const newCollapsedVariantTypes: { [species: string]: { [variantType: string]: boolean } } = {};
 
       // Fetch variant positions for each species
       for (const speciesName of species) {
         const result = await fetchVariantsDict(selectedGene, speciesName, selectedVariants);
         positions[speciesName] = result;
+
+        // Collapse all species by default
+        newCollapsedSpecies[speciesName] = true;
+
+        // Collapse all variant types by default
+        if (result.variants) {
+          newCollapsedVariantTypes[speciesName] = {};
+          Object.keys(result.variants).forEach(variantType => {
+            newCollapsedVariantTypes[speciesName][variantType] = true;
+          });
+        }
       }
 
       setVariantPositions(positions);
+      setCollapsedSpecies(newCollapsedSpecies);
+      setCollapsedVariantTypes(newCollapsedVariantTypes);
     } catch (error) {
       console.error('Error loading variant positions:', error);
       setVariantPositions({});
@@ -323,6 +339,14 @@ export default function GeneBrowserPage() {
       ...zoomRanges,
       [speciesName]: { start: zoomStart, end: zoomEnd }
     });
+
+    // Scroll to the species bar
+    setTimeout(() => {
+      const speciesElement = speciesRefs.current[speciesName];
+      if (speciesElement) {
+        speciesElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 100);
   };
 
   const toggleSpeciesCollapse = (speciesName: string) => {
@@ -404,7 +428,9 @@ export default function GeneBrowserPage() {
                                             onClick={() => handleVariantClick(speciesName, instance.start, instance.end)}
                                           >
                                             <span className="variant-type-label">{variantType}:</span>
-                                            <span className="instance-position">{instance.start}-{instance.end}</span>
+                                            <span className="instance-position">
+                                              {instance.start === instance.end ? instance.start : `${instance.start}-${instance.end}`}
+                                            </span>
                                           </div>
                                         ))}
                                       </div>
@@ -544,7 +570,10 @@ export default function GeneBrowserPage() {
           {/* Browser Content */}
           <div className="browser-content">
             {species.map((species_name, index) => (
-              <React.Fragment key={species_name}>
+              <div
+                key={species_name}
+                ref={(el) => { speciesRefs.current[species_name] = el; }}
+              >
                 <NavigatableBar
                   gene={selectedGene}
                   species={species_name}
@@ -558,7 +587,7 @@ export default function GeneBrowserPage() {
                   variants_color_map={Variants_Color_Mapping()}
                   zoomToRange={zoomRanges[species_name] || null}
                 ></NavigatableBar>
-              </React.Fragment>
+              </div>
             ))}
           </div>
         </>
