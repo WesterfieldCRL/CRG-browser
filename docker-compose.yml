@@ -17,7 +17,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - ./backend:/code
 
   db:
     image: postgres:17

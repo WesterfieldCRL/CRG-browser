@@ -135,11 +135,11 @@ export default function GeneBrowserPage() {
   }, []);
 
   useEffect(() => {
-    if (genes !== null && species !== null) {
+    if (genes !== null && species !== null && selectedGene) {
       loadTFBS();
       loadVariants();
     }
-  }, [genes, species]);
+  }, [genes, species, selectedGene]);
 
   useEffect(() => {
     if (selectedTFBS !== null && allTFBS !== null && selectedVariants !== null && allVariants !== null) {
@@ -293,7 +293,7 @@ export default function GeneBrowserPage() {
     if (!loading && selectedGene) {
       updateURLParams();
     }
-  }, [selectedTFBS, selectedVariants, showEnhancers, showPromoters]);
+  }, [selectedGene, selectedTFBS, selectedVariants, showEnhancers, showPromoters]);
 
   const handleVariantClick = (speciesName: string, start: number, end: number) => {
     // Expand to at least 100bp range centered on the variant
@@ -433,7 +433,18 @@ export default function GeneBrowserPage() {
           <div className="filter-bar-container">
             <div className="filter-bar">
               <div className="filter-bar-header">
-                <h2 className="filter-bar-title">🧬 {selectedGene}</h2>
+                <div className="gene-selector-container">
+                  <span className="gene-icon">🧬</span>
+                  <select
+                    className="gene-selector"
+                    value={selectedGene}
+                    onChange={(e) => setSelectedGene(e.target.value)}
+                  >
+                    {genes && genes.map(gene => (
+                      <option key={gene} value={gene}>{gene}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {!filtersCollapsed && (
@@ -594,6 +605,39 @@ export default function GeneBrowserPage() {
           font-size: 1.125rem;
           font-weight: 700;
           color: var(--heading-color);
+        }
+
+        .gene-selector-container {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .gene-icon {
+          font-size: 1.125rem;
+        }
+
+        .gene-selector {
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: var(--heading-color);
+          background: var(--container-bg);
+          border: 2px solid var(--border-color);
+          border-radius: 6px;
+          padding: 0.25rem 0.5rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .gene-selector:hover {
+          border-color: var(--button-bg);
+          background: var(--main-bg);
+        }
+
+        .gene-selector:focus {
+          outline: none;
+          border-color: var(--button-bg);
+          box-shadow: 0 0 0 3px rgba(26, 143, 160, 0.2);
         }
 
         .filter-bar-content {
