@@ -233,7 +233,28 @@ export default function NavigatableBar({
   }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
-    loadSequences(startValue, endValue);
+    let s = startValue
+    let e = endValue
+
+    if (startValue >= endValue) {
+      setStartValue(endValue - 1);
+      s = endValue - 1;
+    }
+
+    if (endValue <= startValue) {
+      setEndValue(startValue + 1);
+      e = startValue + 1;
+    }
+
+    if (startValue < sequenceStart) {
+      setStartValue(sequenceStart)
+      s = sequenceStart;
+    }
+    if (endValue < sequenceEnd) {
+      setEndValue(sequenceEnd)
+      e = sequenceEnd
+    }
+    loadSequences(s, e);
   };
 
   const handleGeneSubmit = () => {
@@ -416,11 +437,12 @@ export default function NavigatableBar({
                   type="number"
                   value={startValue}
                   onChange={(e) => {
-                    const newMin = Math.max(
-                      sequenceStart,
-                      Number(e.target.value)
-                    );
-                    setStartValue(Math.min(newMin, endValue));
+                    // const newMin = Math.max(
+                    //   sequenceStart,
+                    //   Number(e.target.value)
+                    // );
+                    // setStartValue(Math.min(newMin, endValue));
+                    setStartValue(Number(e.target.value))
                   }}
                   className="p-2 border rounded"
                   style={{
@@ -452,11 +474,12 @@ export default function NavigatableBar({
                   type="number"
                   value={endValue}
                   onChange={(e) => {
-                    const newMax = Math.min(
-                      sequenceEnd,
-                      Number(e.target.value)
-                    );
-                    setEndValue(Math.max(newMax, startValue));
+                    // const newMax = Math.min(
+                    //   sequenceEnd,
+                    //   Number(e.target.value)
+                    // );
+                    // setEndValue(Math.max(newMax, startValue));
+                    setEndValue(Number(e.target.value))
                   }}
                   className="p-2 border rounded"
                   style={{
