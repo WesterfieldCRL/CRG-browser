@@ -4,17 +4,13 @@ import {
   fetchEnhPromBars,
   fetchGeneNums,
   fetchNucleotideBar,
-  fetchNucleotides,
   fetchSequenceNums,
   fetchTFBSBars,
   fetchVariantBars,
 } from "../utils/services";
-import Slider from "rc-slider";
-import { spec } from "node:test/reporters";
 import ColorBar from "./ColorBar";
-import { time } from "console";
 import Legend from "./Legend";
-import { tree } from "next/dist/build/templates/app-page";
+import { LineChart, ResponsiveContainer, XAxis } from "recharts";
 
 interface NavigatableBarProps {
   gene: string;
@@ -42,6 +38,8 @@ const NUCLEOTIDES_VIEW = 1000;
 const NUCLEOTIDES_LETTERS = 100;
 
 const INITIAL_VIEW = 4000;
+
+const TICKS_NUMS = 5;
 
 export default function NavigatableBar({
   gene,
@@ -73,6 +71,8 @@ export default function NavigatableBar({
   const [variantsSequence, setVariantsSequence] =
     useState<Array<ColorSegment>>(null);
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
+  const [currStart, setCurrStart] = useState<number>(null);
+  const [currEnd, setCurrEnd] = useState<number>(null);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -91,6 +91,8 @@ export default function NavigatableBar({
 
   async function loadSequences(start: number, end: number) {
     setLoading(true);
+    setCurrStart(start);
+    setCurrEnd(end);
     try {
       const vars_coroutine = fetchVariantBars(
         gene,
@@ -124,21 +126,21 @@ export default function NavigatableBar({
         if (end - start <= NUCLEOTIDES_LETTERS) {
           setRenderNucleotideLetters(true);
           nucleotides_bar = await fetchNucleotideBar(
-          gene,
-          species,
-          start,
-          end,
-          true
-        );
+            gene,
+            species,
+            start,
+            end,
+            true
+          );
         } else {
           setRenderNucleotideLetters(false);
           nucleotides_bar = await fetchNucleotideBar(
-          gene,
-          species,
-          start,
-          end,
-          false
-        );
+            gene,
+            species,
+            start,
+            end,
+            false
+          );
         }
       } else {
         setRenderNucleotides(false);
@@ -268,7 +270,6 @@ export default function NavigatableBar({
         s = e - 1;
       }
     }
-
 
     setEndValue(e);
     setStartValue(s);
@@ -511,6 +512,45 @@ export default function NavigatableBar({
             </div>
           </div>
           <div style={{ marginTop: 24 }}>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "200px 1fr",
+                gap: "16px",
+                padding: "16px 0",
+                borderBottom: "2px solid var(--border)",
+              }}
+            >
+              <label
+                style={{
+                  alignSelf: "center",
+                  color: "var(--text)",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Number Line
+              </label>
+              <div style={{ minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height={50}>
+                  <LineChart data={[{ x: currStart }, { x: currEnd }]}>
+                    <XAxis
+                      interval="preserveStartEnd"
+                      dataKey="x"
+                      type="number"
+                      domain={[currStart, currEnd]}
+                      ticks={Array.from(
+                        { length: TICKS_NUMS + 1 },
+                        (_, i) =>
+                          currStart + (i * (currEnd - currStart)) / TICKS_NUMS
+                      )} // customize tick positions
+                      tickLine={{ strokeWidth: 1 }}
+                      axisLine={{ strokeWidth: 2 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
             <div
               style={{
                 display: "grid",
