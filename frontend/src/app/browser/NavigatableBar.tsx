@@ -248,6 +248,119 @@ export default function NavigatableBar({
     loadSequences(s, e);
   };
 
+  const SkeletonLoader = () => (
+    <div>
+      {/* Title skeleton */}
+      <div
+        style={{
+          height: "32px",
+          background: "var(--border)",
+          borderRadius: "4px",
+          marginBottom: "16px",
+          animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        }}
+      />
+
+      {/* Controls skeleton */}
+      <div className="flex items-center justify-between w-full gap-4">
+        <div className="flex items-center gap-2">
+          <div
+            style={{
+              width: "120px",
+              height: "40px",
+              background: "var(--border)",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+          <div
+            style={{
+              width: "200px",
+              height: "20px",
+              background: "var(--border)",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            style={{
+              width: "150px",
+              height: "60px",
+              background: "var(--border)",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+          <div
+            style={{
+              width: "80px",
+              height: "40px",
+              background: "var(--border)",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+          <div
+            style={{
+              width: "150px",
+              height: "60px",
+              background: "var(--border)",
+              borderRadius: "4px",
+              animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Content sections skeleton */}
+      <div style={{ marginTop: 24 }}>
+        {[1, 2, 3, 4].map((index) => (
+          <div
+            key={index}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "200px 1fr",
+              gap: "16px",
+              padding: "16px 0",
+              borderBottom: index < 4 ? "2px solid var(--border)" : "none",
+            }}
+          >
+            <div
+              style={{
+                height: "20px",
+                background: "var(--border)",
+                borderRadius: "4px",
+                width: "80%",
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              }}
+            />
+            <div
+              style={{
+                height: "40px",
+                background: "var(--border)",
+                borderRadius: "4px",
+                animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+        }
+      `}</style>
+    </div>
+  );
+
   return (
     <div
       className="container-box"
@@ -259,7 +372,9 @@ export default function NavigatableBar({
         marginBottom: "16px",
       }}
     >
-      {!loading && (
+      {loading ? (
+        <SkeletonLoader />
+      ) : (
         <div>
           <h1 style={{ color: "var(--text)", marginBottom: "16px" }}>
             {species} -{" "}
