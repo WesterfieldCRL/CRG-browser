@@ -1,92 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-
 export default function Page() {
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
-
-  useEffect(() => {
-    // Haptic feedback utility
-    const vibrate = (duration = 10) => {
-      if ('vibrate' in navigator) {
-        navigator.vibrate(duration)
-      }
-    }
-
-    // Add haptic feedback to interactive elements
-    const interactiveElements = document.querySelectorAll('a, button, .feature-card')
-    const handleTouchStart = () => vibrate(10)
-
-    interactiveElements.forEach(el => {
-      el.addEventListener('touchstart', handleTouchStart, { passive: true })
-    })
-
-    // PWA install prompt handling
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-
-      // Show install prompt after 3 seconds
-      setTimeout(() => {
-        if (!localStorage.getItem('pwa-dismissed')) {
-          setShowInstallPrompt(true)
-        }
-      }, 3000)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-
-    // Performance monitoring
-    if ('PerformanceObserver' in window) {
-      const observer = new PerformanceObserver((list) => {
-        for (const entry of list.getEntries()) {
-          if (entry.entryType === 'largest-contentful-paint') {
-            console.log('LCP:', entry.startTime)
-          }
-        }
-      })
-      observer.observe({ entryTypes: ['largest-contentful-paint'] })
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      interactiveElements.forEach(el => {
-        el.removeEventListener('touchstart', handleTouchStart)
-      })
-    }
-  }, [])
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      console.log(`User response: ${outcome}`)
-      setDeferredPrompt(null)
-    }
-    setShowInstallPrompt(false)
-  }
-
-  const handleDismiss = () => {
-    setShowInstallPrompt(false)
-    localStorage.setItem('pwa-dismissed', 'true')
-  }
-
   return (
     <main className="container">
-      {/* Hero Section */}
-      <section className="hero-section" aria-labelledby="hero-title">
-        <h1 id="hero-title" className="hero-title">🧬 Welcome to CoRGi</h1>
-        <p className="hero-subtitle">
-          Comparative Regulatory Genomics<br />
-          Explore aligned nucleotide sequences across multiple species
-        </p>
-        <Link href="/browser" className="cta-button" role="button">
-          Start Browsing Genes →
-        </Link>
-      </section>
-
       {/* User Documentation */}
       <div className="documentation-section">
         <h2 className="doc-title">How to Use CoRGi</h2>
@@ -117,6 +33,7 @@ export default function Page() {
                     <li><strong>Regulatory Elements</strong> - Toggle Enhancers and Promoters</li>
                     <li><strong>Transcription Factor Binding Sites (TFBS)</strong> - Select specific binding sites with &ldquo;Select All&rdquo; option</li>
                     <li><strong>Variants</strong> - Choose genetic variant categories to analyze with &ldquo;Select All&rdquo; option</li>
+                    <li><strong>Apply Changes</strong> - After making selections, click the &quot;Update View&quot; button at the bottom of the filter bar to apply your changes</li>
                   </ul>
                   <p>The filter bar can be collapsed using the pull tab to save screen space while browsing.</p>
                 </div>
@@ -134,7 +51,7 @@ export default function Page() {
                     <li><strong>Color-Coded Elements</strong> - Each element type (TFBS, Enhancers, Promoters, Variants) has unique colors with a legend for reference</li>
                     <li><strong>Nucleotide View</strong> - Zoom in to ≤1000bp to see nucleotide bars, or ≤100bp to view individual nucleotide letters</li>
                     <li><strong>Interactive Elements</strong> - Click on any regulatory element to zoom to that region at 100bp resolution</li>
-                    <li><strong>Direct Editing</strong> - All filter changes update the view in real-time without page navigation</li>
+                    <li><strong>Update View</strong> - After making filter selections, click the &quot;Update View&quot; button to apply changes and refresh the visualization</li>
                   </ul>
                 </div>
               </div>
@@ -154,81 +71,56 @@ export default function Page() {
               <div className="doc-step">
                 <span className="step-number">1</span>
                 <div className="step-content">
-                  <h4>Conservation Scores</h4>
-                  <p>View PhastCons and PhyloP scores to identify highly conserved regions indicating functional importance.</p>
+                  <h4>Access Conservation Data</h4>
+                  <p>Navigate to the Gene Comparison page to view conservation analysis for all available genes.</p>
+                  <ul>
+                    <li><strong>Spreadsheet Access</strong> - Click the spreadsheet link at the top of the page to access comprehensive conservation data in spreadsheet format</li>
+                    <li><strong>Visual Histograms</strong> - View PhastCons and PhyloP score distributions for each gene</li>
+                  </ul>
                 </div>
               </div>
 
               <div className="doc-step">
                 <span className="step-number">2</span>
                 <div className="step-content">
-                  <h4>Cross-Species Analysis</h4>
-                  <p>Compare regulatory elements across human, mouse, and macaque to understand evolutionary conservation and species-specific variations.</p>
+                  <h4>Understanding Conservation Scores</h4>
+                  <p>Two types of conservation scores are provided for evolutionary analysis:</p>
+                  <ul>
+                    <li><strong>PhastCons Scores</strong> - Measure the probability that a nucleotide is in a conserved element. Higher scores indicate regions under selective pressure across species.</li>
+                    <li><strong>PhyloP Scores</strong> - Detect both conservation and acceleration of evolution. Positive scores indicate conservation, while negative scores suggest rapid evolution.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="doc-step">
+                <span className="step-number">3</span>
+                <div className="step-content">
+                  <h4>Download Gene-Specific Data</h4>
+                  <p>Export conservation scores for individual genes for further analysis:</p>
+                  <ul>
+                    <li><strong>CSV Download</strong> - Click the &quot;Download CSV&quot; button next to any gene to download its complete conservation score data</li>
+                    <li><strong>Data Format</strong> - Downloaded files contain nucleotide positions with corresponding PhastCons and PhyloP scores</li>
+                    <li><strong>External Analysis</strong> - Use the exported data in your own statistical analysis tools or visualization software</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="doc-step">
+                <span className="step-number">4</span>
+                <div className="step-content">
+                  <h4>Interpreting Results</h4>
+                  <p>Use conservation scores to identify functionally important regions:</p>
+                  <ul>
+                    <li><strong>High Conservation</strong> - Regions with high PhastCons and positive PhyloP scores likely have functional significance</li>
+                    <li><strong>Regulatory Importance</strong> - Conserved non-coding regions often indicate regulatory elements like enhancers or promoters</li>
+                    <li><strong>Cross-Species Comparison</strong> - Compare conservation patterns across human, mouse, and macaque to understand evolutionary relationships</li>
+                  </ul>
                 </div>
               </div>
             </div>
           </div>
         </div>
-
-        <div className="doc-card">
-          <div className="doc-header">
-            <span className="doc-icon">💡</span>
-            <h3>Data & Features</h3>
-          </div>
-          <div className="doc-content">
-            <ul className="feature-list">
-              <li><strong>Aligned Sequences</strong> - Multi-species sequence alignments with synchronized coordinates</li>
-              <li><strong>Regulatory Elements</strong> - Comprehensive annotation of enhancers, promoters, and TFBS</li>
-              <li><strong>Genetic Variants</strong> - Catalogued variant positions and categories with clickable sidebar navigation</li>
-              <li><strong>Conservation Analysis</strong> - PhastCons and PhyloP conservation scores</li>
-              <li><strong>Interactive Navigation</strong> - Collapsible filter bar, expandable variant sidebar, and zoom controls</li>
-              <li><strong>Real-time Updates</strong> - Filter changes update visualizations instantly without page reloads</li>
-              <li><strong>Responsive Design</strong> - Optimized for desktop browsers (mobile not currently supported)</li>
-            </ul>
-          </div>
-        </div>
       </div>
-
-      {/* About Section */}
-      <section className="about-section" aria-labelledby="about-title">
-        <h2 id="about-title" className="about-title">About CoRGi</h2>
-        <p className="about-text">
-          CoRGi (Comparative Regulatory Genomics) is an interactive platform for exploring and comparing regulatory elements across species. Our tool provides aligned genomic sequences and comprehensive regulatory annotations for key genes involved in neurodevelopment and behavior.
-        </p>
-        <p className="about-text">
-          By integrating transcription factor binding sites, enhancers, promoters, and genetic variants with conservation scores, CoRGi enables researchers to identify functionally important regulatory regions and understand their evolutionary patterns across human, mouse, and macaque.
-        </p>
-
-        {/* Statistics */}
-        <div className="stats-grid" role="list">
-          <div className="stat-card" role="listitem">
-            <span className="stat-number">3</span>
-            <span className="stat-label">Species</span>
-          </div>
-          <div className="stat-card" role="listitem">
-            <span className="stat-number">3</span>
-            <span className="stat-label">Genes</span>
-          </div>
-          <div className="stat-card" role="listitem">
-            <span className="stat-number">6M+</span>
-            <span className="stat-label">Base Pairs</span>
-          </div>
-        </div>
-      </section>
-
-      {/* PWA Install Prompt */}
-      {showInstallPrompt && (
-        <div className="install-prompt" role="dialog" aria-labelledby="install-title" aria-describedby="install-description">
-          <div className="install-content">
-            <h3 id="install-title">Install CoRGi</h3>
-            <p id="install-description">Add CoRGi to your home screen for quick access and offline capability.</p>
-            <div className="install-buttons">
-              <button onClick={handleInstall} className="install-accept">Install</button>
-              <button onClick={handleDismiss} className="install-dismiss">Not Now</button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   )
 }

@@ -243,72 +243,7 @@ export default function NavigatableBar({
               : gene}
             :{assembly}
           </h1>
-          <div className="flex items-center justify-between w-full gap-2">
-            <div className="flex items-center gap-2">
-              <div className="flex flex-col">
-                <label
-                  className="text-sm mb-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Min Value = {sequenceStart}
-                </label>
-                <input
-                  type="number"
-                  value={startValue}
-                  onChange={(e) =>
-                    setStartValue(
-                      Math.max(sequenceStart, Number(e.target.value))
-                    )
-                  }
-                  className="p-2 border rounded"
-                  style={{
-                    background: "var(--bg)",
-                    color: "var(--text)",
-                    borderColor: "var(--border)",
-                  }}
-                  placeholder="Min value"
-                />
-              </div>
-              <button
-                onClick={() => handleSubmit()}
-                className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
-                style={{
-                  background: "var(--primary)",
-                  color: "white",
-                }}
-              >
-                Set Min
-              </button>
-            </div>{" "}
-            {/*Commented out cause it looked like shit, we can do something with this later*/}
-            {/* <div style={{ display: "contents", pointerEvents: "none" }}>
-              <Slider
-                range={{ draggableTrack: true }}
-                min={sequenceStart}
-                max={sequenceEnd}
-                value={range}
-                styles={{
-                  handle: {
-                    height: "130px",
-                    marginTop: "40px",
-                    border: "3px solid var(--accent, #2db4b6)",
-                    boxShadow: "inset 0 0 15px rgba(45, 180, 182, 0.4)",
-                  },
-                  rail: {
-                    backgroundColor: "gray",
-                    marginTop: "105px",
-                    height: "5px",
-                  },
-                  track: {
-                    height: "130px",
-                    marginTop: "40px",
-                    backgroundColor: "rgba(45, 180, 182, 0.35)",
-                    border: "3px solid var(--accent, #2db4b6)",
-                    boxShadow: "inset 0 0 15px rgba(45, 180, 182, 0.4)",
-                  },
-                }}
-              />
-            </div> */}
+          <div className="flex items-center justify-between w-full gap-4">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleGeneSubmit()}
@@ -330,6 +265,29 @@ export default function NavigatableBar({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <div className="flex flex-col">
+                <label
+                  className="text-sm mb-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Min Value = {sequenceStart}
+                </label>
+                <input
+                  type="number"
+                  value={startValue}
+                  onChange={(e) => {
+                    const newMin = Math.max(sequenceStart, Number(e.target.value));
+                    setStartValue(Math.min(newMin, endValue));
+                  }}
+                  className="p-2 border rounded"
+                  style={{
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    borderColor: "var(--border)",
+                  }}
+                  placeholder="Min value"
+                />
+              </div>
               <button
                 onClick={() => handleSubmit()}
                 className="px-4 py-2 rounded hover:opacity-90 transition-opacity"
@@ -338,7 +296,7 @@ export default function NavigatableBar({
                   color: "white",
                 }}
               >
-                Set Max
+                Go
               </button>
               <div className="flex flex-col">
                 <label
@@ -350,9 +308,10 @@ export default function NavigatableBar({
                 <input
                   type="number"
                   value={endValue}
-                  onChange={(e) =>
-                    setEndValue(Math.min(sequenceEnd, Number(e.target.value)))
-                  }
+                  onChange={(e) => {
+                    const newMax = Math.min(sequenceEnd, Number(e.target.value));
+                    setEndValue(Math.max(newMax, startValue));
+                  }}
                   className="p-2 border rounded"
                   style={{
                     background: "var(--bg)",

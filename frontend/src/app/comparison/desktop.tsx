@@ -107,6 +107,28 @@ export default function RegComp() {
 
         {!loading && genes.length > 0 && (
           <div className="conservation-section">
+            <div style={{ marginBottom: '1rem' }}>
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: 'var(--primary)',
+                  textDecoration: 'underline',
+                  fontSize: '1rem',
+                  fontWeight: '500'
+                }}
+              >
+                View Full Conservation Data Spreadsheet
+              </a>
+              <p style={{
+                color: 'var(--text-secondary)',
+                fontSize: '0.875rem',
+                marginTop: '0.25rem'
+              }}>
+                Access comprehensive conservation scores and analysis data in spreadsheet format
+              </p>
+            </div>
             <h2>Conservation Analysis</h2>
             <div className="conservation-table-container">
               <table className="conservation-table">
