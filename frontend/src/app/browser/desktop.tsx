@@ -13,8 +13,8 @@ import {
 } from "../utils/services";
 
 const Enh_Prom_Color_Mapping = {
-  Enh: "stripes",
-  Prom: "bars",
+  Enh: "#cc3333",  // Red for enhancers
+  Prom: "#3366cc",  // Blue for promoters
 };
 
 const Nucleotides_Color_Mapping = {
@@ -52,6 +52,12 @@ export default function GeneBrowserPage() {
   const [showEnhancers, setShowEnhancers] = useState<boolean>(false);
   const [showPromoters, setShowPromoters] = useState<boolean>(false);
   const [filtersCollapsed, setFiltersCollapsed] = useState<boolean>(false);
+
+  // Staged filter states (pending changes before "Update View" is clicked)
+  const [stagedShowEnhancers, setStagedShowEnhancers] = useState<boolean>(false);
+  const [stagedShowPromoters, setStagedShowPromoters] = useState<boolean>(false);
+  const [stagedSelectedTFBS, setStagedSelectedTFBS] = useState<Array<string>>(null);
+  const [stagedSelectedVariants, setStagedSelectedVariants] = useState<Array<string>>(null);
   const [variantPositions, setVariantPositions] = useState<{ [species: string]: { variants: { [variantType: string]: Array<{ type: string; start: number; end: number }> } } }>({});
   const [zoomRanges, setZoomRanges] = useState<{ [species: string]: { start: number; end: number } | null }>({});
   const [collapsedSpecies, setCollapsedSpecies] = useState<{ [species: string]: boolean }>({});
@@ -267,42 +273,70 @@ export default function GeneBrowserPage() {
   };
 
   const handleTFBSToggle = (tfbs: string) => {
-    const newSelection = selectedTFBS.includes(tfbs)
-      ? selectedTFBS.filter(t => t !== tfbs)
-      : [...selectedTFBS, tfbs];
-    setSelectedTFBS(newSelection);
+    const newSelection = stagedSelectedTFBS.includes(tfbs)
+      ? stagedSelectedTFBS.filter(t => t !== tfbs)
+      : [...stagedSelectedTFBS, tfbs];
+    setStagedSelectedTFBS(newSelection);
   };
 
   const handleTFBSSelectAll = () => {
-    if (selectedTFBS.length === allTFBS.length) {
-      setSelectedTFBS([]);
+    if (stagedSelectedTFBS.length === allTFBS.length) {
+      setStagedSelectedTFBS([]);
     } else {
-      setSelectedTFBS([...allTFBS]);
+      setStagedSelectedTFBS([...allTFBS]);
     }
   };
 
   const handleVariantToggle = (variant: string) => {
-    const newSelection = selectedVariants.includes(variant)
-      ? selectedVariants.filter(v => v !== variant)
-      : [...selectedVariants, variant];
-    setSelectedVariants(newSelection);
+    const newSelection = stagedSelectedVariants.includes(variant)
+      ? stagedSelectedVariants.filter(v => v !== variant)
+      : [...stagedSelectedVariants, variant];
+    setStagedSelectedVariants(newSelection);
   };
 
   const handleVariantSelectAll = () => {
-    if (selectedVariants.length === allVariants.length) {
-      setSelectedVariants([]);
+    if (stagedSelectedVariants.length === allVariants.length) {
+      setStagedSelectedVariants([]);
     } else {
-      setSelectedVariants([...allVariants]);
+      setStagedSelectedVariants([...allVariants]);
     }
   };
 
   const handleEnhancerToggle = (checked: boolean) => {
-    setShowEnhancers(checked);
+    setStagedShowEnhancers(checked);
   };
 
   const handlePromoterToggle = (checked: boolean) => {
-    setShowPromoters(checked);
+    setStagedShowPromoters(checked);
   };
+
+  const handleUpdateView = () => {
+    setShowEnhancers(stagedShowEnhancers);
+    setShowPromoters(stagedShowPromoters);
+    setSelectedTFBS(stagedSelectedTFBS);
+    setSelectedVariants(stagedSelectedVariants);
+  };
+
+  // Initialize staged state when actual state is loaded
+  useEffect(() => {
+    if (selectedTFBS !== null) {
+      setStagedSelectedTFBS(selectedTFBS);
+    }
+  }, [selectedTFBS]);
+
+  useEffect(() => {
+    if (selectedVariants !== null) {
+      setStagedSelectedVariants(selectedVariants);
+    }
+  }, [selectedVariants]);
+
+  useEffect(() => {
+    setStagedShowEnhancers(showEnhancers);
+  }, [showEnhancers]);
+
+  useEffect(() => {
+    setStagedShowPromoters(showPromoters);
+  }, [showPromoters]);
 
   // Update URL when filters change
   useEffect(() => {
@@ -485,7 +519,7 @@ export default function GeneBrowserPage() {
                         <label className="checkbox-label-inline">
                           <input
                             type="checkbox"
-                            checked={showEnhancers}
+                            checked={stagedShowEnhancers}
                             onChange={(e) => handleEnhancerToggle(e.target.checked)}
                           />
                           <span>Enhancers</span>
@@ -493,7 +527,7 @@ export default function GeneBrowserPage() {
                         <label className="checkbox-label-inline">
                           <input
                             type="checkbox"
-                            checked={showPromoters}
+                            checked={stagedShowPromoters}
                             onChange={(e) => handlePromoterToggle(e.target.checked)}
                           />
                           <span>Promoters</span>
@@ -502,12 +536,12 @@ export default function GeneBrowserPage() {
                     </div>
 
                     {/* TFBS Selection */}
-                    {allTFBS && allTFBS.length > 0 && (
+                    {allTFBS && allTFBS.length > 0 && stagedSelectedTFBS && (
                       <div className="filter-section-inline">
                         <div className="filter-section-header">
-                          <span className="filter-section-label">TFBS ({selectedTFBS.length}/{allTFBS.length}):</span>
+                          <span className="filter-section-label">TFBS ({stagedSelectedTFBS.length}/{allTFBS.length}):</span>
                           <button className="select-all-btn-inline" onClick={handleTFBSSelectAll}>
-                            {selectedTFBS.length === allTFBS.length ? 'Deselect All' : 'Select All'}
+                            {stagedSelectedTFBS.length === allTFBS.length ? 'Deselect All' : 'Select All'}
                           </button>
                         </div>
                         <div className="checkbox-grid-inline">
@@ -515,7 +549,7 @@ export default function GeneBrowserPage() {
                             <label key={tfbs} className="checkbox-label-inline">
                               <input
                                 type="checkbox"
-                                checked={selectedTFBS.includes(tfbs)}
+                                checked={stagedSelectedTFBS.includes(tfbs)}
                                 onChange={() => handleTFBSToggle(tfbs)}
                               />
                               <span style={{ color: color_map[tfbs] }}>{tfbs}</span>
@@ -526,12 +560,12 @@ export default function GeneBrowserPage() {
                     )}
 
                     {/* Variants Selection */}
-                    {allVariants && allVariants.length > 0 && (
+                    {allVariants && allVariants.length > 0 && stagedSelectedVariants && (
                       <div className="filter-section-inline">
                         <div className="filter-section-header">
-                          <span className="filter-section-label">Variants ({selectedVariants.length}/{allVariants.length}):</span>
+                          <span className="filter-section-label">Variants ({stagedSelectedVariants.length}/{allVariants.length}):</span>
                           <button className="select-all-btn-inline" onClick={handleVariantSelectAll}>
-                            {selectedVariants.length === allVariants.length ? 'Deselect All' : 'Select All'}
+                            {stagedSelectedVariants.length === allVariants.length ? 'Deselect All' : 'Select All'}
                           </button>
                         </div>
                         <div className="checkbox-grid-inline">
@@ -539,7 +573,7 @@ export default function GeneBrowserPage() {
                             <label key={variant} className="checkbox-label-inline">
                               <input
                                 type="checkbox"
-                                checked={selectedVariants.includes(variant)}
+                                checked={stagedSelectedVariants.includes(variant)}
                                 onChange={() => handleVariantToggle(variant)}
                               />
                               <span>{variant}</span>
@@ -548,6 +582,26 @@ export default function GeneBrowserPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Update View Button */}
+                    <div className="filter-section-inline" style={{ marginTop: '12px' }}>
+                      <button
+                        className="update-view-btn"
+                        onClick={handleUpdateView}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'var(--primary)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontWeight: '500',
+                          fontSize: '14px'
+                        }}
+                      >
+                        Update View
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

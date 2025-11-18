@@ -41,10 +41,7 @@ export default function Header() {
                     {isMobile ? (
                       <Icon size={20} strokeWidth={active ? 2.5 : 2} />
                     ) : (
-                      <>
-                        <Icon size={16} strokeWidth={active ? 2.5 : 2} />
-                        <span>{label}</span>
-                      </>
+                      <span>{label}</span>
                     )}
                   </Link>
                 </li>
@@ -72,8 +69,8 @@ export default function Header() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.375rem 3rem;
-          gap: 3rem;
+          padding: 0.75rem 3rem;
+          gap: 4rem;
         }
 
         .logo {
@@ -97,7 +94,7 @@ export default function Header() {
         }
 
         .logo-text {
-          font-size: 1.375rem;
+          font-size: 1.875rem;
           font-weight: 800;
           letter-spacing: -0.03em;
           line-height: 1;
@@ -115,7 +112,7 @@ export default function Header() {
         .nav-links {
           display: flex;
           list-style: none;
-          gap: 1.5rem;
+          gap: 2rem;
           margin: 0;
           padding: 0;
           align-items: center;
@@ -125,8 +122,8 @@ export default function Header() {
           color: rgba(255, 255, 255, 0.95);
           text-decoration: none;
           font-weight: 500;
-          font-size: 0.875rem;
-          padding: 0.5rem 1.25rem;
+          font-size: 1.5rem;
+          padding: 0.75rem 1.75rem;
           border-radius: 8px;
           transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex !important;

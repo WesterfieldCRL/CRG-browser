@@ -24,16 +24,6 @@ const getBackgroundStyle = (color: string, displayLetters: boolean, isDark: bool
   if (displayLetters) {
     return {color: color};
   }
-  // For stripes and bars, we'll handle them differently with borders
-  // Just return background color for now
-  const bgColor = isDark ? "#1a2332" : "#ffffff";
-  if (color === "stripes" || color === "bars") {
-    return {
-      backgroundColor: bgColor,
-      border: `3px solid ${isDark ? "#999999" : "#555555"}`,
-      boxSizing: 'border-box' as const,
-    };
-  }
   return { backgroundColor: color };
 };
 
@@ -127,8 +117,6 @@ export default function ColorBar({
       >
         {segments.map((segment, index) => {
           const mappedColor = color_mapping[segment.type];
-          const isEnhancer = mappedColor === "stripes";
-          const isPromoter = mappedColor === "bars";
 
           return (
             <div
@@ -147,39 +135,6 @@ export default function ColorBar({
                 onSegmentClick(segment.start, segment.end);
               }}
             >
-              {/* SVG overlay for enhancers (hashtag pattern - ##) */}
-              {isEnhancer && !letters && (
-                <svg
-                  style={{ position: "absolute", width: "100%", height: "100%", pointerEvents: "none" }}
-                >
-                  <defs>
-                    <pattern id={`hashtag-${index}-${isDark}`} patternUnits="userSpaceOnUse" width="8" height="30">
-                      {/* Hashtag pattern with two horizontal bars at y=8 and y=17 */}
-                      <line x1="0" y1="8" x2="8" y2="8" stroke={isDark ? "#ff4444" : "#d42626"} strokeWidth="2" />
-                      <line x1="0" y1="17" x2="8" y2="17" stroke={isDark ? "#ff4444" : "#d42626"} strokeWidth="2" />
-                      {/* Vertical line - centered with reduced spacing */}
-                      <line x1="4" y1="0" x2="4" y2="30" stroke={isDark ? "#ff4444" : "#d42626"} strokeWidth="2" />
-                    </pattern>
-                  </defs>
-                  <rect x="0" y="0" width="100%" height="100%" fill={`url(#hashtag-${index}-${isDark})`} />
-                </svg>
-              )}
-
-              {/* SVG overlay for promoters (diagonal slashes - ///) */}
-              {isPromoter && !letters && (
-                <svg
-                  style={{ position: "absolute", width: "100%", height: "100%", pointerEvents: "none" }}
-                >
-                  <defs>
-                    <pattern id={`slashes-${index}-${isDark}`} x="0" y="0" width="15" height="15" patternUnits="userSpaceOnUse">
-                      {/* Simple diagonal slashes */}
-                      <line x1="0" y1="15" x2="15" y2="0" stroke={isDark ? "#4466ff" : "#153be2"} strokeWidth="2" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill={`url(#slashes-${index}-${isDark})`} />
-                </svg>
-              )}
-
               {letters && (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: 'center' }}>
                   {segment.type}
