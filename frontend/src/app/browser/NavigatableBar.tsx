@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   fetchAssembly,
   fetchEnhPromBars,
@@ -10,7 +10,14 @@ import {
 } from "../utils/services";
 import ColorBar from "./ColorBar";
 import Legend from "./Legend";
-import { LineChart, ResponsiveContainer, XAxis } from "recharts";
+import {
+  LineChart,
+  MouseHandlerDataParam,
+  ReferenceArea,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface NavigatableBarProps {
   gene: string;
@@ -40,6 +47,10 @@ const NUCLEOTIDES_LETTERS = 100;
 const INITIAL_VIEW = 4000;
 
 const TICKS_NUMS = 5;
+
+const Y_AXIS_MIN = 0;
+
+const Y_AXIS_MAX = 10;
 
 export default function NavigatableBar({
   gene,
@@ -73,6 +84,9 @@ export default function NavigatableBar({
   const [initialLoad, setInitialLoad] = useState<boolean>(true);
   const [currStart, setCurrStart] = useState<number>(null);
   const [currEnd, setCurrEnd] = useState<number>(null);
+  const [referenceAreaLeft, setReferenceAreaLeft] = useState<number | undefined>(undefined);
+  const [referenceAreaRight, setReferenceAreaRight] =
+    useState<number | undefined>(undefined);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -251,9 +265,9 @@ export default function NavigatableBar({
     }
   }, [startValue, endValue, zoomToRange]);
 
-  const handleSubmit = () => {
-    let s = Math.max(startValue, sequenceStart);
-    let e = Math.min(endValue, sequenceEnd);
+  const handleSubmit = (start: number = startValue, end: number = endValue) => {
+    let s = Math.max(start, sequenceStart);
+    let e = Math.min(end, sequenceEnd);
 
     if (s >= e) {
       s = e - 1;
@@ -401,6 +415,28 @@ export default function NavigatableBar({
     </div>
   );
 
+
+  // Triggered on mouse up
+  const zoom = useCallback(() => {
+    if (referenceAreaLeft !== undefined && referenceAreaRight !== undefined) {
+      handleSubmit(Math.round(referenceAreaLeft), Math.round(referenceAreaRight));
+    }
+    setReferenceAreaLeft(undefined);
+    setReferenceAreaRight(undefined);
+  }, [referenceAreaLeft, referenceAreaRight]);
+
+  const onMouseDown = useCallback((e: MouseHandlerDataParam) => {
+    setReferenceAreaLeft(Number(e.activeLabel));
+    setReferenceAreaRight(undefined); // reset right on new drag
+  }, []);
+
+  const onMouseMove = useCallback((e: MouseHandlerDataParam) => {
+    if (referenceAreaLeft !== undefined) {
+      setReferenceAreaRight(Number(e.activeLabel));
+    }
+  }, [referenceAreaLeft]);
+
+
   return (
     <div
       className="container-box"
@@ -517,7 +553,6 @@ export default function NavigatableBar({
                 display: "grid",
                 gridTemplateColumns: "200px 1fr",
                 gap: "16px",
-                padding: "16px 0",
                 borderBottom: "2px solid var(--border)",
               }}
             >
@@ -532,13 +567,20 @@ export default function NavigatableBar({
                 Number Line
               </label>
               <div style={{ minWidth: 0 }}>
-                <ResponsiveContainer width="100%" height={50}>
-                  <LineChart data={[{ x: currStart }, { x: currEnd }]}>
+                <ResponsiveContainer width="100%" height={80}>
+                  <LineChart
+                    data={Array.from({ length: 101 }, (_, i) => ({
+                      x: currStart + (i * (currEnd - currStart)) / 100,
+                      y: Y_AXIS_MIN + ((Y_AXIS_MAX - Y_AXIS_MIN) * i) / 100,
+                    }))}
+                    onMouseDown={onMouseDown}
+                    onMouseMove={onMouseMove}
+                    onMouseUp={zoom}
+                  >
                     <XAxis
                       interval="preserveStartEnd"
                       dataKey="x"
                       type="number"
-                      domain={[currStart, currEnd]}
                       ticks={Array.from(
                         { length: TICKS_NUMS + 1 },
                         (_, i) =>
@@ -547,6 +589,14 @@ export default function NavigatableBar({
                       tickLine={{ strokeWidth: 1 }}
                       axisLine={{ strokeWidth: 2 }}
                     />
+                    <YAxis hide dataKey="y" width={"auto"} />
+                    {referenceAreaLeft !== undefined && referenceAreaRight !== undefined ? (
+                      <ReferenceArea
+                        x1={Math.min(referenceAreaLeft, referenceAreaRight)}
+                        x2={Math.max(referenceAreaLeft, referenceAreaRight)}
+                        strokeOpacity={0.3}
+                      />
+                    ) : null}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
