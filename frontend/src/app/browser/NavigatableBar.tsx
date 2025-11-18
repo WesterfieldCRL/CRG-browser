@@ -117,18 +117,36 @@ export default function NavigatableBar({
         end
       );
 
-      const nucleotides_coroutine = fetchNucleotideBar(
-      gene,
-      species,
-      start,
-      end,
-      true
-    );
+      let nucleotides_bar = [];
+
+      if (end - start <= NUCLEOTIDES_VIEW) {
+        setRenderNucleotides(true);
+        if (end - start <= NUCLEOTIDES_LETTERS) {
+          setRenderNucleotideLetters(true);
+          nucleotides_bar = await fetchNucleotideBar(
+          gene,
+          species,
+          start,
+          end,
+          true
+        );
+        } else {
+          setRenderNucleotideLetters(false);
+          nucleotides_bar = await fetchNucleotideBar(
+          gene,
+          species,
+          start,
+          end,
+          false
+        );
+        }
+      } else {
+        setRenderNucleotides(false);
+      }
 
       const tfbs = await tfbs_coroutine;
       const enh_proms = await enh_proms_coroutine;
       const vars = await vars_coroutine;
-      const nucleotides_bar = await nucleotides_coroutine;
 
       setTFBSSequence(tfbs);
 
@@ -137,7 +155,6 @@ export default function NavigatableBar({
       setVariantsSequence(vars);
 
       setNucleotides(nucleotides_bar);
-
     } finally {
       setLoading(false);
       console.log("set loading false");
@@ -172,18 +189,18 @@ export default function NavigatableBar({
     setLoading(true);
   }, [gene, species, enh, prom, variants, TFBS]);
 
-  useEffect(() => {
-    if (endValue - startValue <= NUCLEOTIDES_VIEW) {
-      setRenderNucleotides(true);
-      if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
-        setRenderNucleotideLetters(true);
-      } else {
-        setRenderNucleotideLetters(false);
-      }
-    } else {
-      setRenderNucleotides(false);
-    }
-  }, [nucleotides]);
+  // useEffect(() => {
+  //   if (endValue - startValue <= NUCLEOTIDES_VIEW) {
+  //     setRenderNucleotides(true);
+  //     if (endValue - startValue <= NUCLEOTIDES_LETTERS) {
+  //       setRenderNucleotideLetters(true);
+  //     } else {
+  //       setRenderNucleotideLetters(false);
+  //     }
+  //   } else {
+  //     setRenderNucleotides(false);
+  //   }
+  // }, [nucleotides]);
 
   useEffect(() => {
     if (!loading) return;
@@ -233,27 +250,28 @@ export default function NavigatableBar({
   }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
-    let s = startValue
-    let e = endValue
+    let s = Math.max(startValue, sequenceStart);
+    let e = Math.min(endValue, sequenceEnd);
 
-    if (startValue >= endValue) {
-      setStartValue(endValue - 1);
-      s = endValue - 1;
-    }
-
-    if (endValue <= startValue) {
-      setEndValue(startValue + 1);
-      e = startValue + 1;
+    if (s >= e) {
+      s = e - 1;
+      if (s < sequenceStart) {
+        s = sequenceStart;
+        e = s + 1;
+      }
     }
 
-    if (startValue < sequenceStart) {
-      setStartValue(sequenceStart)
-      s = sequenceStart;
+    if (e <= s) {
+      e = s + 1;
+      if (e > sequenceEnd) {
+        e = sequenceEnd;
+        s = e - 1;
+      }
     }
-    if (endValue < sequenceEnd) {
-      setEndValue(sequenceEnd)
-      e = sequenceEnd
-    }
+
+
+    setEndValue(e);
+    setStartValue(s);
     loadSequences(s, e);
   };
 
@@ -442,7 +460,7 @@ export default function NavigatableBar({
                     //   Number(e.target.value)
                     // );
                     // setStartValue(Math.min(newMin, endValue));
-                    setStartValue(Number(e.target.value))
+                    setStartValue(Number(e.target.value));
                   }}
                   className="p-2 border rounded"
                   style={{
@@ -479,7 +497,7 @@ export default function NavigatableBar({
                     //   Number(e.target.value)
                     // );
                     // setEndValue(Math.max(newMax, startValue));
-                    setEndValue(Number(e.target.value))
+                    setEndValue(Number(e.target.value));
                   }}
                   className="p-2 border rounded"
                   style={{
