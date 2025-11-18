@@ -37,7 +37,7 @@ interface ColorSegment {
   end: number;
 }
 
-const NUCLEOTIDES_VIEW = 10000;
+const NUCLEOTIDES_VIEW = 1000;
 
 const NUCLEOTIDES_LETTERS = 100;
 
@@ -70,7 +70,8 @@ export default function NavigatableBar({
   const [renderNucleotides, setRenderNucleotides] = useState<boolean>(false);
   const [renderNucleotideLetters, setRenderNucleotideLetters] =
     useState<boolean>(false);
-  const [variantsSequence, setVariantsSequence] = useState<Array<ColorSegment>>(null);
+  const [variantsSequence, setVariantsSequence] =
+    useState<Array<ColorSegment>>(null);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -88,49 +89,72 @@ export default function NavigatableBar({
   }
 
   async function loadSequences(start: number, end: number) {
-    const tfbs = await fetchTFBSBars(gene, species, TFBS, start, end);
-    setTFBSSequence(tfbs);
+    try {
+      const vars_coroutine = fetchVariantBars(
+        gene,
+        species,
+        variants,
+        start,
+        end
+      );
 
-    const enh_prom_list = [];
-    if (enh == true) {
-      enh_prom_list.push("Enh");
-    }
-    if (prom == true) {
-      enh_prom_list.push("Prom");
-    }
-    const enh_proms = await fetchEnhPromBars(
-      gene,
-      species,
-      enh_prom_list,
-      start,
-      end
-    );
-    setEnhancerPromoterSequence(enh_proms);
+      const tfbs_coroutine = fetchTFBSBars(gene, species, TFBS, start, end);
 
-    const vars = await fetchVariantBars(gene,
-      species,
-      variants,
-      start,
-      end
-    );
+      const enh_prom_list = [];
+      if (enh == true) {
+        enh_prom_list.push("Enh");
+      }
+      if (prom == true) {
+        enh_prom_list.push("Prom");
+      }
+      const enh_proms_coroutine = fetchEnhPromBars(
+        gene,
+        species,
+        enh_prom_list,
+        start,
+        end
+      );
 
-    setVariantsSequence(vars);
-  }
-
-  async function loadNucleotides(
-    start: number,
-    end: number,
-    showLetters: boolean
-  ) {
-    const nucleotides_bar = await fetchNucleotideBar(
+      const nucleotides_coroutine = fetchNucleotideBar(
       gene,
       species,
       start,
       end,
-      showLetters
+      false
     );
-    setNucleotides(nucleotides_bar);
+
+      const tfbs = await tfbs_coroutine;
+      const enh_proms = await enh_proms_coroutine;
+      const vars = await vars_coroutine;
+      const nucleotides_bar = await nucleotides_coroutine;
+
+      setTFBSSequence(tfbs);
+
+      setEnhancerPromoterSequence(enh_proms);
+
+      setVariantsSequence(vars);
+
+      setNucleotides(nucleotides_bar);
+
+    } finally {
+      setLoading(false);
+    }
   }
+
+  // async function loadNucleotides(
+  //   start: number,
+  //   end: number,
+  //   showLetters: boolean
+  // ) {
+  //   const nucleotides_bar = await fetchNucleotideBar(
+  //     gene,
+  //     species,
+  //     start,
+  //     end,
+  //     showLetters
+  //   );
+  //   setNucleotides(nucleotides_bar);
+  // }
 
   useEffect(() => {
     loadAssembly();
@@ -142,6 +166,7 @@ export default function NavigatableBar({
     loadAssembly();
     loadSequenceNums();
     loadGenomicNums();
+    setLoading(true);
   }, [gene, species, enh, prom, variants, TFBS]);
 
   useEffect(() => {
@@ -169,14 +194,17 @@ export default function NavigatableBar({
       setStartValue(geneNums[0]);
       setEndValue(geneNums[0] + INITIAL_VIEW);
       loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
-      loadNucleotides(geneNums[0], geneNums[0] + INITIAL_VIEW, false);
     }
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
 
   useEffect(() => {
     if (!loading) return;
 
-    if (enhancerPromoterSequence !== null && tfbsSequence !== null && variantsSequence !== null) {
+    if (
+      enhancerPromoterSequence !== null &&
+      tfbsSequence !== null &&
+      variantsSequence !== null
+    ) {
       setLoading(false);
     }
   }, [tfbsSequence, enhancerPromoterSequence, variantsSequence]);
@@ -189,38 +217,30 @@ export default function NavigatableBar({
   }, [zoomToRange]);
 
   useEffect(() => {
-    if (zoomToRange && !loading && startValue === zoomToRange.start && endValue === zoomToRange.end) {
+    if (
+      zoomToRange &&
+      !loading &&
+      startValue === zoomToRange.start &&
+      endValue === zoomToRange.end
+    ) {
       loadSequences(zoomToRange.start, zoomToRange.end);
-      if (zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_VIEW) {
-        setRenderNucleotides(true);
-        loadNucleotides(zoomToRange.start, zoomToRange.end, zoomToRange.end - zoomToRange.start <= NUCLEOTIDES_LETTERS);
-      } else {
-        setRenderNucleotides(false);
-      }
     }
   }, [startValue, endValue, zoomToRange]);
 
   const handleSubmit = () => {
     loadSequences(startValue, endValue);
-    if (endValue - startValue <= NUCLEOTIDES_VIEW) {
-      loadNucleotides(startValue, endValue, true);
-    } else {
-      loadNucleotides(startValue, endValue, false);
-    }
   };
 
   const handleGeneSubmit = () => {
     setStartValue(geneNums[0]);
     setEndValue(geneNums[0] + INITIAL_VIEW);
     loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
-    loadNucleotides(startValue, endValue, false);
   };
 
   const handleSegmentClick = (s: number, e: number) => {
     setStartValue(s);
     setEndValue(e);
     loadSequences(s, e);
-    loadNucleotides(s, e, true);
   };
 
   return (
@@ -276,7 +296,10 @@ export default function NavigatableBar({
                   type="number"
                   value={startValue}
                   onChange={(e) => {
-                    const newMin = Math.max(sequenceStart, Number(e.target.value));
+                    const newMin = Math.max(
+                      sequenceStart,
+                      Number(e.target.value)
+                    );
                     setStartValue(Math.min(newMin, endValue));
                   }}
                   className="p-2 border rounded"
@@ -309,7 +332,10 @@ export default function NavigatableBar({
                   type="number"
                   value={endValue}
                   onChange={(e) => {
-                    const newMax = Math.min(sequenceEnd, Number(e.target.value));
+                    const newMax = Math.min(
+                      sequenceEnd,
+                      Number(e.target.value)
+                    );
                     setEndValue(Math.max(newMax, startValue));
                   }}
                   className="p-2 border rounded"
@@ -431,20 +457,20 @@ export default function NavigatableBar({
               <div style={{ minWidth: 0 }}>
                 {renderNucleotides ? (
                   <>
-                  <ColorBar
-                    segments={nucleotides}
-                    color_mapping={nucleotides_color_map}
-                    interactible={false}
-                    letters={renderNucleotideLetters}
-                    width="100%"
-                  />
-                  <ColorBar
-                  segments={variantsSequence}
-                  color_mapping={variants_color_map}
-                  width="100%"
-                  onSegmentClick={handleSegmentClick}
-                />
-                </>
+                    <ColorBar
+                      segments={nucleotides}
+                      color_mapping={nucleotides_color_map}
+                      interactible={false}
+                      letters={renderNucleotideLetters}
+                      width="100%"
+                    />
+                    <ColorBar
+                      segments={variantsSequence}
+                      color_mapping={variants_color_map}
+                      width="100%"
+                      onSegmentClick={handleSegmentClick}
+                    />
+                  </>
                 ) : (
                   <div
                     style={{
@@ -460,7 +486,8 @@ export default function NavigatableBar({
                       fontStyle: "italic",
                     }}
                   >
-                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides and ≤{NUCLEOTIDES_LETTERS}bp to view letters
+                    Zoom in to ≤{NUCLEOTIDES_VIEW}bp range to view nucleotides
+                    and ≤{NUCLEOTIDES_LETTERS}bp to view letters
                   </div>
                 )}
               </div>
