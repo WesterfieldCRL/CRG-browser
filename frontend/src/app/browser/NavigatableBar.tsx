@@ -72,6 +72,7 @@ export default function NavigatableBar({
     useState<boolean>(false);
   const [variantsSequence, setVariantsSequence] =
     useState<Array<ColorSegment>>(null);
+  const [initialLoad, setInitialLoad] = useState<boolean>(true);
 
   async function loadAssembly() {
     setAssembly((await fetchAssembly(species)).assembly);
@@ -89,6 +90,7 @@ export default function NavigatableBar({
   }
 
   async function loadSequences(start: number, end: number) {
+    setLoading(true);
     try {
       const vars_coroutine = fetchVariantBars(
         gene,
@@ -120,7 +122,7 @@ export default function NavigatableBar({
       species,
       start,
       end,
-      false
+      true
     );
 
       const tfbs = await tfbs_coroutine;
@@ -138,6 +140,7 @@ export default function NavigatableBar({
 
     } finally {
       setLoading(false);
+      console.log("set loading false");
     }
   }
 
@@ -198,16 +201,18 @@ export default function NavigatableBar({
   }, [assembly, sequenceStart, sequenceEnd, geneNums]);
 
   useEffect(() => {
-    if (!loading) return;
+    if (!loading && !initialLoad) return;
 
     if (
       enhancerPromoterSequence !== null &&
       tfbsSequence !== null &&
-      variantsSequence !== null
+      variantsSequence !== null &&
+      nucleotides !== null
     ) {
+      setInitialLoad(false);
       setLoading(false);
     }
-  }, [tfbsSequence, enhancerPromoterSequence, variantsSequence]);
+  }, [tfbsSequence, enhancerPromoterSequence, variantsSequence, nucleotides]);
 
   useEffect(() => {
     if (zoomToRange && !loading) {
