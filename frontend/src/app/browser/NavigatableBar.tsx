@@ -650,7 +650,7 @@ export default function NavigatableBar({
                   fontSize: "14px",
                 }}
               >
-                Transcription Factor Binding Sites
+                TFBS
               </label>
               <div style={{ minWidth: 0 }}>
                 <ColorBar
