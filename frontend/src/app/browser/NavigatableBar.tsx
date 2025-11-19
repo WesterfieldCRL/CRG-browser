@@ -419,7 +419,11 @@ export default function NavigatableBar({
   // Triggered on mouse up
   const zoom = useCallback(() => {
     if (referenceAreaLeft !== undefined && referenceAreaRight !== undefined) {
-      handleSubmit(Math.round(referenceAreaLeft), Math.round(referenceAreaRight));
+      if (referenceAreaLeft > referenceAreaRight) {
+        handleSubmit(Math.round(referenceAreaRight), Math.round(referenceAreaLeft));
+      } else {
+        handleSubmit(Math.round(referenceAreaLeft), Math.round(referenceAreaRight));
+      }
     }
     setReferenceAreaLeft(undefined);
     setReferenceAreaRight(undefined);
