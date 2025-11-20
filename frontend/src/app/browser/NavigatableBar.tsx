@@ -292,8 +292,8 @@ export default function NavigatableBar({
 
   const handleGeneSubmit = () => {
     setStartValue(geneNums[0]);
-    setEndValue(geneNums[0] + INITIAL_VIEW);
-    loadSequences(geneNums[0], geneNums[0] + INITIAL_VIEW);
+    setEndValue(geneNums[1]);
+    loadSequences(geneNums[0], geneNums[1]);
   };
 
   const handleSegmentClick = (s: number, e: number) => {
@@ -418,7 +418,7 @@ export default function NavigatableBar({
 
   // Triggered on mouse up
   const zoom = useCallback(() => {
-    if (referenceAreaLeft !== undefined && referenceAreaRight !== undefined) {
+    if (referenceAreaLeft !== undefined && referenceAreaRight !== undefined && !Number.isNaN(referenceAreaLeft) && !Number.isNaN(referenceAreaRight) ) {
       if (referenceAreaLeft > referenceAreaRight) {
         handleSubmit(Math.round(referenceAreaRight), Math.round(referenceAreaLeft));
       } else {
@@ -480,7 +480,7 @@ export default function NavigatableBar({
                   className="text-sm mb-1"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  {geneNums[0]} - {geneNums[0] + INITIAL_VIEW}
+                  {geneNums[0]} - {geneNums[1]}
                 </label>
               </div>
             </div>
