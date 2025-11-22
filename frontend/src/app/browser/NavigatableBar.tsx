@@ -173,7 +173,6 @@ export default function NavigatableBar({
       setNucleotides(nucleotides_bar);
     } finally {
       setLoading(false);
-      console.log("set loading false");
     }
   }
 
