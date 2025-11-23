@@ -109,7 +109,8 @@ export default function RegComp() {
           <div className="conservation-section">
             <div style={{ marginBottom: '1rem' }}>
               <a
-                href="#"
+                href="/CoRGi Overlaps TFBS Labeled.csv"
+      download
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
