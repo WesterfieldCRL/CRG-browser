@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ConservationHistogram from "./ConservationHistogram";
-import {
-  fetchGenes,
-} from "../utils/services";
+import { fetchGenes } from "../utils/services";
 
 class LineShapes {
   start: number;
@@ -60,41 +58,23 @@ export default function RegComp() {
     }
   }
 
-  async function downloadCSV(geneName: string) {
-    setDownloading(geneName);
-    try {
-      const response = await fetch(
-        `/api/conservation_scores/histogram_data?species_name=Homo%20sapiens&gene_name=${encodeURIComponent(geneName)}`
-      );
+  const downloadCSV = (gene) => {
+    // Build the file name or path dynamically like the <a> tag did
+    const fileName = `ConservationAnalysis${gene}.csv`;
+    const filePath = `/${fileName}`; // same path as your static <a href>
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+    // Create an invisible link
+    const link = document.createElement("a");
+    link.href = filePath;
+    link.download = fileName; // same behavior as <a download="...">
+    document.body.appendChild(link);
 
-      const data = await response.json();
+    // Trigger the download
+    link.click();
 
-      // Convert JSON to CSV
-      const csvHeader = 'Nucleotide,PhastCons Score,PhyloP Score\n';
-      const csvRows = data.map((row: any) =>
-        `${row.nucleotide},${row.phastcon_score},${row.phylop_score}`
-      ).join('\n');
-      const csvContent = csvHeader + csvRows;
-
-      // Create download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${geneName}_conservation_scores.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Error downloading CSV:', error);
-      alert('Failed to download CSV data');
-    } finally {
-      setDownloading(null);
-    }
-  }
+    // Cleanup
+    document.body.removeChild(link);
+  };
 
   // Initial load
   useEffect(() => {
@@ -104,29 +84,32 @@ export default function RegComp() {
   return (
     <>
       <main>
-
         {!loading && genes.length > 0 && (
           <div className="conservation-section">
-            <div style={{ marginBottom: '1rem' }}>
+            <div style={{ marginBottom: "1rem" }}>
               <a
-                href="#"
+                href="/CoRGi Overlaps TFBS Labeled.csv"
+                download
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  color: 'var(--primary)',
-                  textDecoration: 'underline',
-                  fontSize: '1rem',
-                  fontWeight: '500'
+                  color: "var(--primary)",
+                  textDecoration: "underline",
+                  fontSize: "1rem",
+                  fontWeight: "500",
                 }}
               >
                 View Full Conservation Data Spreadsheet
               </a>
-              <p style={{
-                color: 'var(--text-secondary)',
-                fontSize: '0.875rem',
-                marginTop: '0.25rem'
-              }}>
-                Access comprehensive conservation scores and analysis data in spreadsheet format
+              <p
+                style={{
+                  color: "var(--text-secondary)",
+                  fontSize: "0.875rem",
+                  marginTop: "0.25rem",
+                }}
+              >
+                Access comprehensive conservation scores and analysis data in
+                spreadsheet format
               </p>
             </div>
             <h2>Conservation Analysis</h2>
@@ -145,10 +128,16 @@ export default function RegComp() {
                     <tr key={gene}>
                       <td className="gene-name-cell">{gene}</td>
                       <td className="data-cell">
-                        <ConservationHistogram geneName={gene} scoreType="phastcons" />
+                        <ConservationHistogram
+                          geneName={gene}
+                          scoreType="phastcons"
+                        />
                       </td>
                       <td className="data-cell">
-                        <ConservationHistogram geneName={gene} scoreType="phylop" />
+                        <ConservationHistogram
+                          geneName={gene}
+                          scoreType="phylop"
+                        />
                       </td>
                       <td className="download-cell">
                         <button
@@ -156,7 +145,9 @@ export default function RegComp() {
                           disabled={downloading === gene}
                           className="download-button"
                         >
-                          {downloading === gene ? 'Downloading...' : 'Download CSV'}
+                          {downloading === gene
+                            ? "Downloading..."
+                            : "Download CSV"}
                         </button>
                       </td>
                     </tr>
