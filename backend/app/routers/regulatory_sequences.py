@@ -147,7 +147,7 @@ async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicC
         return GeonomicCoordinate(start = result[0], end = result[1])
     
 # gets the genomic coordinates for the total sequence
-@router.get("/sequence_coordinate", response_model=GeonomicCoordinate, tags=["Data"], summary="")
+@router.get("/sequence_coordinate", response_model=GeonomicCoordinate, tags=["Data"], summary="Get's start and end for sequence", description=("Returns the start and end coordinates "))
 async def get_sequence_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
     """
     Docstring for get_sequence_coordinate
