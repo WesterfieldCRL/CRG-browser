@@ -246,7 +246,38 @@ async def lifespan(app: FastAPI):
     # Runs after application ends
 
 
-app = FastAPI(lifespan=lifespan)
+tags_metadata = [
+    {
+        "name": "Genes",
+        "description": "Endpoints only interacting with the Genes database table."
+    },
+    {
+        "name": "Species",
+        "description": "Endpoints only interacting with the Species database table."
+    },
+    {
+        "name": "Conservation Scores",
+        "description": "Endpoints only interacting with the ConservationScores and ConservationNucleotides database tables."
+    },
+    {
+        "name": "Regulatory Sequences",
+        "description": "Endpoints mainly dealing with the RegulatorySequences database table."
+    },
+    {
+        "name": "Regulatory Elements",
+        "description": "Endpoints mainly dealing with any of the regulatory element tables, namely the tables EnhancersPromoters, TranscriptionFactorBindingSites, and Variants"
+    },
+    {
+        "name": "Data",
+        "description": "Endpoints that just return raw data from the database"
+    },
+    {
+        "name": "Processed",
+        "description": "Endpoints that return processed data, usually to format the data for a graphical component"
+    }
+]
+
+app = FastAPI(lifespan=lifespan, openapi_tags=tags_metadata)
 
 origins = [
     "http://localhost:5432",  # Database

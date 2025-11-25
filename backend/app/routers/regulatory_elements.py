@@ -29,6 +29,14 @@ NORMAL_GAP = "none"
 
 @router.get("/all_TFBS", response_model=list[str])
 async def get_all_TFBS(gene_name: str) -> list[str]:
+    """
+    Docstring for get_all_TFBS
+    
+    :param gene_name: Description
+    :type gene_name: str
+    :return: Description
+    :rtype: list[str]
+    """
     async with async_session() as session:
 
         stmt = (select(TranscriptionFactorBindingSites.category)
