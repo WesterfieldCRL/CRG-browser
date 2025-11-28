@@ -11,7 +11,7 @@ async def get_names() -> List[str]:
     """
     Docstring for get_names
     
-    :return: Description
+    :return: distinct list all of the gene names in the database
     :rtype: List[str]
     """
     async with async_session() as session:
@@ -26,9 +26,9 @@ async def get_id(name: str) -> int:
     """
     Docstring for get_id
     
-    :param name: Description
+    :param name: name of the gene
     :type name: str
-    :return: Description
+    :return: id of the gene
     :rtype: int
     """
     async with async_session() as session:

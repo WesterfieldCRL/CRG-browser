@@ -50,11 +50,11 @@ async def get_sequence(gene_name: str, species_name: str) -> str:
     """
     Docstring for get_sequence
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :return: Description
+    :return: full sequence of nucleotides
     :rtype: str
     """
     async with async_session() as session:
@@ -71,15 +71,15 @@ async def get_sequence_range(gene_name: str, species_name: str, start: int, end:
     """
     Docstring for get_sequence_range
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :param start: Description
+    :param start: start of the desired range
     :type start: int
-    :param end: Description
+    :param end: end of the desired range
     :type end: int
-    :return: Description
+    :return: sequence of nucleotides within desired range
     :rtype: str
     """
     range, sequence = await asyncio.gather(
@@ -100,9 +100,9 @@ async def get_allignment_numbers(gene_name: str) -> dict[str,int]:
     """
     Docstring for get_allignment_numbers
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :return: Description
+    :return: dictionary mapping the allignement number to their species's
     :rtype: dict[str, int]
 
     This is an artifact from when sequences were going to be visually alligned.
@@ -125,11 +125,11 @@ async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicC
     """
     Docstring for get_genomic_coordinate
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :return: Description
+    :return: start and end coordinates for the gene
     :rtype: GeonomicCoordinate
     """
     async with async_session() as session:
@@ -152,11 +152,11 @@ async def get_sequence_coordinate(gene_name: str, species_name: str) -> Geonomic
     """
     Docstring for get_sequence_coordinate
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :return: Description
+    :return: start and end coordinates of the entire sequence
     :rtype: GeonomicCoordinate
     """
     async with async_session() as session:
@@ -179,9 +179,9 @@ async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoor
     """
     Docstring for get_all_sequence_coordinates
 
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :return: Description
+    :return: dictionary mapping species to their start and end coordinates for the entire sequence
     :rtype: dict[str, GenomicCoordinate]
     """
     async with async_session() as session:
@@ -208,9 +208,9 @@ async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoor
     """
     Docstring for get_all_geonomic_coordinates
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :return: Description
+    :return: dictionary mapping species to their start and end coordinates for the gene
     :rtype: dict[str, GeonomicCoordinate]
     """
     async with async_session() as session:
@@ -237,9 +237,9 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
     """
     Docstring for get_sequence_offsets
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :return: Description
+    :return: dictionary mapping species to their alligned offset from zero. Also include the maximum value of any sequence.
     :rtype: Offsets
 
     This is an artifact from when sequences were going to be visually alligned.
@@ -302,17 +302,17 @@ async def get_mapped_nucleotides(gene_name: str, species_name: str, start: int, 
     """
     Docstring for get_mapped_nucleotides
     
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :param start: Description
+    :param start: start of the desired range (inclusive)
     :type start: int
-    :param end: Description
+    :param end: end of the desired range (inclusive)
     :type end: int
-    :param show_letters: Description
+    :param show_letters: whether to combine nucleotides of the same value. (True is no)
     :type show_letters: bool
-    :return: Description
+    :return: list of all of the nucleotides within given parameters along with widths that add up to 100
     :rtype: list[NucleotideSegment]
     """
 

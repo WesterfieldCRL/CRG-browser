@@ -15,7 +15,7 @@ async def get_names() -> List[str]:
     """
     Docstring for get_names
     
-    :return: Description
+    :return: distinct list of all species names in the database
     :rtype: List[str]
     """
     async with async_session() as session:
@@ -30,9 +30,9 @@ async def get_id(name: str) -> int:
     """
     Docstring for get_id
     
-    :param name: Description
+    :param name: name of the species
     :type name: str
-    :return: Description
+    :return: id of the species
     :rtype: int
     """
     async with async_session() as session:    
@@ -52,10 +52,12 @@ async def get_assemblies(species_name: str) -> Assembly:
     """
     Docstring for get_assemblies
     
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :return: Description
+    :return: assembly used in the species
     :rtype: Assembly
+
+    ALDH1A3 is stored as such for the sake of my sanity but is not the assembly used for macaque and mouse sequences. Please see the write up for more details.
     """
     async with async_session() as session:
         stmt = select(Species.assembly).where(Species.name == species_name)

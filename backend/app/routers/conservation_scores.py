@@ -18,11 +18,11 @@ async def get_histogram_data(species_name: str, gene_name: str) -> List[Histogra
     """
     Docstring for get_histogram_data
     
-    :param species_name: Description
+    :param species_name: name of the species
     :type species_name: str
-    :param gene_name: Description
+    :param gene_name: name of the gene
     :type gene_name: str
-    :return: Description
+    :return: list of all nucleotides, phastcon_scores, and phylop scores orderd by their position
     :rtype: List[HistogramData]
     """
     async with async_session() as session:
