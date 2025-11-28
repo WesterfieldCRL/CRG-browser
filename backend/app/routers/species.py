@@ -8,7 +8,7 @@ from app.utils import async_session
 from fastapi import APIRouter
 
 
-router = APIRouter(prefix="/species", tags=["species", "Data"])
+router = APIRouter(prefix="/species", tags=["Species", "Data"])
 
 @router.get("/names", response_model=List[str], summary="Gets all species names", description="Returns a distinct list of all species in the database")
 async def get_names() -> List[str]:
