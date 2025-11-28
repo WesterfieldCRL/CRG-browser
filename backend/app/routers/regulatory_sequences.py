@@ -29,11 +29,11 @@ async def get_id(species_name: str, gene_name: str) -> int:
     """
     Docstring for get_id
     
-    :param species_name: Description
+    :param species_name: Name of the species
     :type species_name: str
-    :param gene_name: Description
+    :param gene_name: Name of the gene
     :type gene_name: str
-    :return: Description
+    :return: id of the sequence
     :rtype: int
     """
     async with async_session() as session:
@@ -105,7 +105,7 @@ async def get_allignment_numbers(gene_name: str) -> dict[str,int]:
     :return: Description
     :rtype: dict[str, int]
 
-    This is a artifact from when sequences were going to be visually alligned.
+    This is an artifact from when sequences were going to be visually alligned.
     This is just the start coordinates for the gene, rather than a unique number.
     """
     async with async_session() as session:
@@ -174,8 +174,16 @@ async def get_sequence_coordinate(gene_name: str, species_name: str) -> Geonomic
         return GeonomicCoordinate(start = result[0], end = result[1])
 
 # gets the sequence coordinates for every species in a dictionary with species as the key
-@router.get("/all_sequence_coordinates", response_model=dict[str, GeonomicCoordinate])
+@router.get("/all_sequence_coordinates", response_model=dict[str, GeonomicCoordinate], tags=["Data"], summary="Get dictionary of coordinates", description=("Returns a dictionary mapping species names to the genomic start and end coordinates for the stored sequences."))
 async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+    """
+    Docstring for get_all_sequence_coordinates
+
+    :param gene_name: Description
+    :type gene_name: str
+    :return: Description
+    :rtype: dict[str, GenomicCoordinate]
+    """
     async with async_session() as session:
 
         stmt = (select(Species.name, RegulatorySequences.total_start, RegulatorySequences.total_end)
@@ -195,8 +203,16 @@ async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoor
         return return_value
     
 # gets the gene coordinates for every species in a dictionary with species as the key
-@router.get("/all_geonomic_coordinates", response_model=dict[str, GeonomicCoordinate])
+@router.get("/all_geonomic_coordinates", response_model=dict[str, GeonomicCoordinate], tags=["Data"], summary="Get dictionary of gene coordinates", description=("Returns a dictionary mapping species names to the genomic start and end coordinates of the gene for the stored sequences."))
 async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+    """
+    Docstring for get_all_geonomic_coordinates
+    
+    :param gene_name: Description
+    :type gene_name: str
+    :return: Description
+    :rtype: dict[str, GeonomicCoordinate]
+    """
     async with async_session() as session:
 
         stmt = (select(Species.name, RegulatorySequences.gene_start, RegulatorySequences.gene_end)
@@ -216,8 +232,20 @@ async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoor
         return return_value
     
 # This is going to return a list of all species mapped to the offsets of their sequences from zero
-@router.get("/sequence_offsets", response_model=Offsets)
+@router.get("/sequence_offsets", response_model=Offsets, tags=["Processed"], summary="Gets alligned offsets from zero", description=("Returns offsets from zero in a dictionary mapped to each species, along with the maximum value of the sequences.\n\n" "The sequences are alligned along the start of the gene in each species's sequence, and then shifted so the smallest value is at zero."))
 async def get_sequence_offsets(gene_name: str) -> Offsets:
+    """
+    Docstring for get_sequence_offsets
+    
+    :param gene_name: Description
+    :type gene_name: str
+    :return: Description
+    :rtype: Offsets
+
+    This is an artifact from when sequences were going to be visually alligned.
+    This process is not really necessary since the allignemnt of the sequences respective to each other does not matter.
+    However, this is used in several places before I realized it was not necessary.
+    """
 
     allignment_num = await get_allignment_numbers(gene_name)
 
@@ -269,8 +297,24 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
 
 #     return (min, max)
 
-@router.get("/mapped_nucleotides", response_model=list[NucleotideSegment])
+@router.get("/mapped_nucleotides", response_model=list[NucleotideSegment], tags=["Processed"], summary="Gets a proccessed list of nucleotides", description=("Returns a list of numbers and strings, where the numbers represent widths and add up to 100, and the strings are the nucleotide for that segment.\n\n" "This is for use in a component in the fronted.\n" "If show_letters is passed as true than nucleotides of the same type that are next to each other will not be combined so that they show up better when displayed in the frontend."))
 async def get_mapped_nucleotides(gene_name: str, species_name: str, start: int, end: int, show_letters: bool) -> list[NucleotideSegment]:
+    """
+    Docstring for get_mapped_nucleotides
+    
+    :param gene_name: Description
+    :type gene_name: str
+    :param species_name: Description
+    :type species_name: str
+    :param start: Description
+    :type start: int
+    :param end: Description
+    :type end: int
+    :param show_letters: Description
+    :type show_letters: bool
+    :return: Description
+    :rtype: list[NucleotideSegment]
+    """
 
     sequence = await get_sequence_range(gene_name, species_name, start, end)
 
