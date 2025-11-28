@@ -22,11 +22,20 @@ class NucleotideSegment(BaseModel):
     type: str = Field(..., description="single char representing a nucelotide letter")
     width: float = Field(..., ge=0, le=100, description="Width percentage (0-100)")
 
-router = APIRouter(prefix="/sequences")
+router = APIRouter(prefix="/sequences", tags=["Regulatory Sequences"])
 
-@router.get("/id", response_model=int)
+@router.get("/id", response_model=int, tags=["Data"], summary="Get's Regulatory Sequence id", description=("Returns id of regulatory sequence matching the given gene and species names\n\n" "Raises a 404 exception if unable to find a sequence matching given gene and species"))
 async def get_id(species_name: str, gene_name: str) -> int:
-
+    """
+    Docstring for get_id
+    
+    :param species_name: Name of the species
+    :type species_name: str
+    :param gene_name: Name of the gene
+    :type gene_name: str
+    :return: id of the sequence
+    :rtype: int
+    """
     async with async_session() as session:
         stmt = select(RegulatorySequences.id).join(Genes).join(Species).where(Species.name == species_name).where(Genes.name == gene_name)
         result = (await session.execute(stmt)).scalar() # We should never get more than one row from this query
@@ -36,8 +45,18 @@ async def get_id(species_name: str, gene_name: str) -> int:
         else:
             raise HTTPException(status_code=404, detail="Unable to find sequence")
         
-@router.get("/sequence", response_model=str)
+@router.get("/sequence", response_model=str, tags=["Data"], summary="Get's full sequence of nucleotides", description=("Returns complete sequence of nucleotides matching given gene and species name.\n\n" "Raises a 404 exception if unable to find a sequence matching given gene and species"))
 async def get_sequence(gene_name: str, species_name: str) -> str:
+    """
+    Docstring for get_sequence
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :return: full sequence of nucleotides
+    :rtype: str
+    """
     async with async_session() as session:
         stmt = select(RegulatorySequences.sequence).join(Genes).join(Species).where(Genes.name == gene_name).where(Species.name == species_name)
         result = (await session.execute(stmt)).scalar() # There should only be 1 result
@@ -46,42 +65,49 @@ async def get_sequence(gene_name: str, species_name: str) -> str:
             return result
         else:
             raise HTTPException(status_code=404, detail="Unable to find sequence")
-    
-# returns the range in [start, end]
-@router.get("/total_range", response_model=tuple[int, int])
-async def get_total_range(gene_name: str, species_name: str) -> tuple[int, int]:
-    async with async_session() as session:
-        stmt = (select(RegulatorySequences.total_start, RegulatorySequences.total_end)
-                .join(Genes)
-                .join(Species)
-                .where(Genes.name == gene_name)
-                .where(Species.name == species_name))
-    
-        result = (await session.execute(stmt)).tuples().first()
 
-        if result is None:
-            raise HTTPException(status_code=404, detail=f"Unable to find range for {gene_name} and {species_name}")
-
-    return (result[0], result[1])
-
-@router.get("/range", response_model=str)
+@router.get("/range", response_model=str, tags=["Data"], summary="Gets range of nucleotides", description=("Returns a segment of the stored nucleotide sequence starting and ending at the provided coordinares.\n\n" "Raises a 400 exception if the start or end coordinates are not within the stored sequence of nucleotides."))
 async def get_sequence_range(gene_name: str, species_name: str, start: int, end: int) -> str:
-
+    """
+    Docstring for get_sequence_range
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: sequence of nucleotides within desired range
+    :rtype: str
+    """
     range, sequence = await asyncio.gather(
-        get_total_range(gene_name, species_name),
+        get_sequence_coordinate(gene_name, species_name),
         get_sequence(gene_name, species_name)
     )
 
-    if range[0] > start or range[1] < end:
+    if range.start > start or range.end < end:
         raise HTTPException(status_code=400, detail="Invalid coordinates")
 
-    relative_start = start - range[0]
-    relative_end = end - range[0]
+    relative_start = start - range.start
+    relative_end = end - range.start
 
     return sequence[relative_start:relative_end]
         
-@router.get("/allignment_numbers", response_model=dict[str,int])
+@router.get("/allignment_numbers", response_model=dict[str,int], tags=["Data"], summary="Get's dict of allignment numbers.", description=("Returns a dictionary mapping each species to their respective allignment numbers for the given gene name."))
 async def get_allignment_numbers(gene_name: str) -> dict[str,int]:
+    """
+    Docstring for get_allignment_numbers
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :return: dictionary mapping the allignement number to their species's
+    :rtype: dict[str, int]
+
+    This is an artifact from when sequences were going to be visually alligned.
+    This is just the start coordinates for the gene, rather than a unique number.
+    """
     async with async_session() as session:
         stmt = select(RegulatorySequences.allignment_num, Species.name).select_from(RegulatorySequences).join(Genes).join(Species).where(Genes.name == gene_name)
         result = (await session.execute(stmt)).tuples().all()
@@ -94,8 +120,18 @@ async def get_allignment_numbers(gene_name: str) -> dict[str,int]:
     return return_value
 
 # gets the genomic coordinates for the individual gene
-@router.get("/genomic_coordinate", response_model=GeonomicCoordinate)
+@router.get("/genomic_coordinate", response_model=GeonomicCoordinate, tags=["Data"], summary="Gets start and end coordinates for gene.", description=("Returns the start and end coordinates of the selected gene name for the given species name.\n\n" "Raises 404 exception if unable to find sequence matching given gene and species."))
 async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
+    """
+    Docstring for get_genomic_coordinate
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :return: start and end coordinates for the gene
+    :rtype: GeonomicCoordinate
+    """
     async with async_session() as session:
         stmt = (select(RegulatorySequences.gene_start, RegulatorySequences.gene_end)
                 .join(Genes)
@@ -111,8 +147,18 @@ async def get_genomic_coordinate(gene_name: str, species_name: str) -> GeonomicC
         return GeonomicCoordinate(start = result[0], end = result[1])
     
 # gets the genomic coordinates for the total sequence
-@router.get("/sequence_coordinate", response_model=GeonomicCoordinate)
+@router.get("/sequence_coordinate", response_model=GeonomicCoordinate, tags=["Data"], summary="Get's start and end for sequence", description=("Returns the start and end coordinates "))
 async def get_sequence_coordinate(gene_name: str, species_name: str) -> GeonomicCoordinate:
+    """
+    Docstring for get_sequence_coordinate
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :return: start and end coordinates of the entire sequence
+    :rtype: GeonomicCoordinate
+    """
     async with async_session() as session:
         stmt = (select(RegulatorySequences.total_start, RegulatorySequences.total_end)
                 .join(Genes)
@@ -128,8 +174,16 @@ async def get_sequence_coordinate(gene_name: str, species_name: str) -> Geonomic
         return GeonomicCoordinate(start = result[0], end = result[1])
 
 # gets the sequence coordinates for every species in a dictionary with species as the key
-@router.get("/all_sequence_coordinates", response_model=dict[str, GeonomicCoordinate])
+@router.get("/all_sequence_coordinates", response_model=dict[str, GeonomicCoordinate], tags=["Data"], summary="Get dictionary of coordinates", description=("Returns a dictionary mapping species names to the genomic start and end coordinates for the stored sequences."))
 async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+    """
+    Docstring for get_all_sequence_coordinates
+
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :return: dictionary mapping species to their start and end coordinates for the entire sequence
+    :rtype: dict[str, GenomicCoordinate]
+    """
     async with async_session() as session:
 
         stmt = (select(Species.name, RegulatorySequences.total_start, RegulatorySequences.total_end)
@@ -149,8 +203,16 @@ async def get_all_sequence_coordinates(gene_name: str) -> dict[str, GeonomicCoor
         return return_value
     
 # gets the gene coordinates for every species in a dictionary with species as the key
-@router.get("/all_geonomic_coordinates", response_model=dict[str, GeonomicCoordinate])
+@router.get("/all_geonomic_coordinates", response_model=dict[str, GeonomicCoordinate], tags=["Data"], summary="Get dictionary of gene coordinates", description=("Returns a dictionary mapping species names to the genomic start and end coordinates of the gene for the stored sequences."))
 async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoordinate]:
+    """
+    Docstring for get_all_geonomic_coordinates
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :return: dictionary mapping species to their start and end coordinates for the gene
+    :rtype: dict[str, GeonomicCoordinate]
+    """
     async with async_session() as session:
 
         stmt = (select(Species.name, RegulatorySequences.gene_start, RegulatorySequences.gene_end)
@@ -170,8 +232,20 @@ async def get_all_geonomic_coordinates(gene_name: str) -> dict[str, GeonomicCoor
         return return_value
     
 # This is going to return a list of all species mapped to the offsets of their sequences from zero
-@router.get("/sequence_offsets", response_model=Offsets)
+@router.get("/sequence_offsets", response_model=Offsets, tags=["Processed"], summary="Gets alligned offsets from zero", description=("Returns offsets from zero in a dictionary mapped to each species, along with the maximum value of the sequences.\n\n" "The sequences are alligned along the start of the gene in each species's sequence, and then shifted so the smallest value is at zero."))
 async def get_sequence_offsets(gene_name: str) -> Offsets:
+    """
+    Docstring for get_sequence_offsets
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :return: dictionary mapping species to their alligned offset from zero. Also include the maximum value of any sequence.
+    :rtype: Offsets
+
+    This is an artifact from when sequences were going to be visually alligned.
+    This process is not really necessary since the allignemnt of the sequences respective to each other does not matter.
+    However, this is used in several places before I realized it was not necessary.
+    """
 
     allignment_num = await get_allignment_numbers(gene_name)
 
@@ -223,8 +297,24 @@ async def get_sequence_offsets(gene_name: str) -> Offsets:
 
 #     return (min, max)
 
-@router.get("/mapped_nucleotides", response_model=list[NucleotideSegment])
+@router.get("/mapped_nucleotides", response_model=list[NucleotideSegment], tags=["Processed"], summary="Gets a proccessed list of nucleotides", description=("Returns a list of numbers and strings, where the numbers represent widths and add up to 100, and the strings are the nucleotide for that segment.\n\n" "This is for use in a component in the fronted.\n" "If show_letters is passed as true than nucleotides of the same type that are next to each other will not be combined so that they show up better when displayed in the frontend."))
 async def get_mapped_nucleotides(gene_name: str, species_name: str, start: int, end: int, show_letters: bool) -> list[NucleotideSegment]:
+    """
+    Docstring for get_mapped_nucleotides
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param start: start of the desired range (inclusive)
+    :type start: int
+    :param end: end of the desired range (inclusive)
+    :type end: int
+    :param show_letters: whether to combine nucleotides of the same value. (True is no)
+    :type show_letters: bool
+    :return: list of all of the nucleotides within given parameters along with widths that add up to 100
+    :rtype: list[NucleotideSegment]
+    """
 
     sequence = await get_sequence_range(gene_name, species_name, start, end)
 

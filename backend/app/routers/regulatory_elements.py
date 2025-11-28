@@ -23,12 +23,20 @@ class Segment(BaseModel):
 class VariantsDict(BaseModel):
     variants: dict[str, list[Element]] = Field(..., description="dictionary mapping variant types to a list of positions in the given gene/species combo where those variants are")
 
-router = APIRouter(prefix="/elements")    
+router = APIRouter(prefix="/elements", tags=["Regulatory Elements"])    
 
 NORMAL_GAP = "none"
 
-@router.get("/all_TFBS", response_model=list[str])
+@router.get("/all_TFBS", response_model=list[str], tags=["Data"], summary="Gets all TFBS in given gene", description=("Returns a distinct list of strings, which are the names of all transcription factor binding sites found for the given gene name."))
 async def get_all_TFBS(gene_name: str) -> list[str]:
+    """
+    Docstring for get_all_TFBS
+    
+    :param gene_name: Name of the gene
+    :type gene_name: str
+    :return: list of all found TFBS's
+    :rtype: list[str]
+    """
     async with async_session() as session:
 
         stmt = (select(TranscriptionFactorBindingSites.category)
@@ -41,8 +49,16 @@ async def get_all_TFBS(gene_name: str) -> list[str]:
 
     return list(result)
 
-@router.get("/all_variants", response_model=list[str])
+@router.get("/all_variants", response_model=list[str], tags=["Data"], summary="Gets all variants in given gene", description=("Returns a distinct list of all the variants in the given gene represented as strings."))
 async def get_all_variants(gene_name: str) -> list[str]:
+    """
+    Docstring for get_all_variants
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :return: list of all found variants
+    :rtype: list[str]
+    """
     async with async_session() as session:
 
         stmt = (select(Variants.category)
@@ -56,8 +72,20 @@ async def get_all_variants(gene_name: str) -> list[str]:
     return list(result)
 
 # returns a dictionary mapping the given variants list to a list of all of the locations where those variants appear in the given gene
-@router.post("/variants_dict", response_model=VariantsDict)
+@router.post("/variants_dict", response_model=VariantsDict, tags=["Data"], summary="Gets a dictionary mapping species to their variants.", description=("Returns a dictionary of species names to a distinct list of all variants found for the given gene and species.\n Additionally only returns variants in the given variant list."))
 async def get_variants_dict(gene_name: str, species_name: str, variants_list: list[str]) -> VariantsDict:
+    """
+    Docstring for get_variants_dict
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_list: list of all desired variants
+    :type variants_list: list[str]
+    :return: dictionary mapping found variant locations to their species
+    :rtype: VariantsDict
+    """
     async with async_session() as session:
         
         variants_dict: dict[str, list[Element]] = {}
@@ -85,6 +113,7 @@ async def get_variants_dict(gene_name: str, species_name: str, variants_list: li
 
     return VariantsDict(variants=variants_dict)
 
+# Function to get elements for all of the "Element" tables. Sorts by start number
 async def get_elements(model: type, gene_name: str, species_name: str, model_types: list[str], start: int, end: int) -> list[Element]:
     async with async_session() as session:
 
@@ -112,22 +141,86 @@ async def get_elements(model: type, gene_name: str, species_name: str, model_typ
     return model_list
 
 # Returns a list of all variant locations within the given parameters
-@router.post("/filtered_variants", response_model=list[Element])
+@router.post("/filtered_variants", response_model=list[Element], tags=["Data"], summary="Gets all variants in the given gene and species, filtered by given list.", description=("Returns a list of Elements for the given gene and species names.\n Additionally only returns elements that are present in the given list.\n Ommits elements not present in the given range."))
 async def get_filtered_variants(gene_name: str, species_name: str, variants_types: list[str], start: int, end: int) -> list[Element]:
+    """
+    Docstring for get_filtered_variants
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elements
+    :rtype: list[Element]
+    """
     return await get_elements(Variants, gene_name, species_name, variants_types, start, end)
 
 # Returns a list of all enahncers and promoter locations within the given parameters
-@router.post("/filtered_Enh_Prom", response_model=list[Element])
+@router.post("/filtered_Enh_Prom", response_model=list[Element], tags=["Data"], summary="Gets all Enhancers and Promoters in the given gene and species, filtered by given list.", description=("Returns a list of Elements for the given gene and species names.\n Additionally only returns elements that are present in the given list.\n Ommits elements not present in the given range."))
 async def get_filtered_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
+    """
+    Docstring for get_filtered_Enh_Prom
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elements
+    :rtype: list[Element]
+    """
     return await get_elements(EnhancersPromoters, gene_name, species_name, element_types, start, end)
     
 # Returns a list of all transcription factor binding site locations within the given parameters
-@router.post("/filtered_TFBS", response_model=list[Element])
+@router.post("/filtered_TFBS", response_model=list[Element], tags=["Data"], summary="Gets all Transcription Factor Binding Sites in the given gene and species, filtered by given list.", description=("Returns a list of Elements for the given gene and species names.\n Additionally only returns elements that are present in the given list.\n Ommits elements not present in the given range."))
 async def get_filtered_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Element]:
+    """
+    Docstring for get_filtered_TFBS
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elements
+    :rtype: list[Element]
+    """
     return await get_elements(TranscriptionFactorBindingSites, gene_name, species_name, element_types, start, end)
     
-@router.post("/mapped_TFBS", response_model=list[Segment])
+@router.post("/mapped_TFBS", response_model=list[Segment], tags=["Processed"], summary="Gets a processed list of TFBS's.", description=("Returns a list of Segments, filtered by the given gene and species names, the given list, and the given range.\n\n" f"The segments containg data to be displayed and widths that add up to 100.\n Any area that does not contain an element will have a type of {NORMAL_GAP}."))
 async def get_mapped_TFBS(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Segment]:
+    """
+    Docstring for get_mapped_TFBS
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elemens processed to be displayed on the frontend
+    :rtype: list[Segment]
+    """
 
     element_list, offsets = await asyncio.gather(
         get_filtered_TFBS(gene_name, species_name, element_types, start, end),
@@ -141,9 +234,24 @@ async def get_mapped_TFBS(gene_name: str, species_name: str, element_types: list
 
     return color_map
 
-@router.post("/mapped_Enh_Prom", response_model=list[Segment])
+@router.post("/mapped_Enh_Prom", response_model=list[Segment], tags=["Processed"], summary="Gets a processed list of Enhancers and Promoters", description=("Returns a list of Segments, filtered by the given gene and species names, the given list, and the given range.\n\n" f"The segments containg data to be displayed and widths that add up to 100.\n Any area that does not contain an element will have a type of {NORMAL_GAP}."))
 async def get_mapped_Enh_Prom(gene_name: str, species_name: str, element_types: list[str], start: int, end: int) -> list[Segment]:
-
+    """
+    Docstring for get_mapped_Enh_Prom
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elemens processed to be displayed on the frontend
+    :rtype: list[Segment]
+    """
     element_list, offsets = await asyncio.gather(
         get_filtered_Enh_Prom(gene_name, species_name, element_types, start, end),
         regulatory_sequences.get_sequence_offsets(gene_name),
@@ -156,9 +264,24 @@ async def get_mapped_Enh_Prom(gene_name: str, species_name: str, element_types: 
 
     return color_map
 
-@router.post("/mapped_Variants", response_model=list[Segment])
+@router.post("/mapped_Variants", response_model=list[Segment], tags=["Processed"], summary="Gets a processed list of Variant's.", description=("Returns a list of Segments, filtered by the given gene and species names, the given list, and the given range.\n\n" f"The segments containg data to be displayed and widths that add up to 100.\n Any area that does not contain an element will have a type of {NORMAL_GAP}."))
 async def get_mapped_Variants(gene_name: str, species_name: str, variant_types: list[str], start: int, end: int) -> list[Segment]:
-
+    """
+    Docstring for get_mapped_Variants
+    
+    :param gene_name: name of the gene
+    :type gene_name: str
+    :param species_name: name of the species
+    :type species_name: str
+    :param variants_types: list of desired elements
+    :type variants_types: list[str]
+    :param start: start of the desired range
+    :type start: int
+    :param end: end of the desired range
+    :type end: int
+    :return: list of all found elemens processed to be displayed on the frontend
+    :rtype: list[Segment]
+    """
     element_list, offsets = await asyncio.gather(
         get_filtered_variants(gene_name, species_name, variant_types, start, end),
         regulatory_sequences.get_sequence_offsets(gene_name),
